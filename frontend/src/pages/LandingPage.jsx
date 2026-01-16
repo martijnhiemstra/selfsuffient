@@ -51,7 +51,7 @@ export const LandingPage = () => {
             <div className="w-9 h-9 rounded-full bg-primary flex items-center justify-center">
               <Leaf className="w-5 h-5 text-primary-foreground" />
             </div>
-            <span className="font-display font-bold text-lg">Self-Sufficient Life</span>
+            <span className="font-display font-bold text-lg">{APP_NAME}</span>
           </div>
           <Link to="/login">
             <Button className="rounded-full" data-testid="login-button">Sign In</Button>
