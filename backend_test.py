@@ -160,12 +160,43 @@ class SelfSufficientAPITester:
             return False
         
         # Test list users (admin only)
-        success, response = self.run_test("List Users (Admin)", "GET", "admin/users", 200)
+        success1, response = self.run_test("List Users (Admin)", "GET", "admin/users", 200)
         
-        if success:
+        if success1:
             print(f"   Found {len(response)} users")
         
-        return success
+        # Test create user (admin only)
+        test_user_data = {
+            "name": "Test User",
+            "email": f"testuser_{datetime.now().strftime('%H%M%S')}@test.com",
+            "password": "testpass123",
+            "is_admin": False
+        }
+        
+        success2, user_response = self.run_test(
+            "Create User (Admin)", 
+            "POST", 
+            "admin/users", 
+            200, 
+            data=test_user_data
+        )
+        
+        created_user_id = None
+        if success2 and 'id' in user_response:
+            created_user_id = user_response['id']
+            print(f"   Created user with ID: {created_user_id}")
+        
+        # Test delete user (admin only) - only if we created one
+        success3 = True
+        if created_user_id:
+            success3, _ = self.run_test(
+                "Delete User (Admin)", 
+                "DELETE", 
+                f"admin/users/{created_user_id}", 
+                200
+            )
+        
+        return success1 and success2 and success3
 
     def test_unauthorized_access(self):
         """Test unauthorized access to protected routes"""
