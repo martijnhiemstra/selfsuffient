@@ -71,7 +71,7 @@ services:
     networks:
       - app-network
 
-  # Cron Service - Daily Reminders
+  # Cron Service - Daily Reminders (Python script with direct DB access)
   cron:
     build:
       context: ./cron
@@ -80,12 +80,23 @@ services:
     restart: unless-stopped
     environment:
       # Cron schedule for daily reminders (default: 7:00 AM)
-      # Format: minute hour day month weekday
       - CRON_SCHEDULE=${CRON_SCHEDULE:-0 7 * * *}
-      # Backend URL (internal Docker network)
-      - BACKEND_URL=http://backend:8001
+      # Database (same as backend)
+      - MONGO_URL=mongodb://mongodb:27017
+      - DB_NAME=${DB_NAME:-selfsufficient_db}
+      # App Configuration
+      - APP_NAME=${APP_NAME:-Self-Sufficient Life}
+      - APP_URL=${APP_URL:-http://localhost:3000}
+      # Email Configuration (same as backend)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Self-Sufficient Life}
     depends_on:
-      - backend
+      mongodb:
+        condition: service_healthy
     networks:
       - app-network
     volumes:
