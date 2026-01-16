@@ -26,11 +26,13 @@ import {
   Search,
   ArrowUpDown,
   Image,
-  Folder
+  Folder,
+  Share2
 } from 'lucide-react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { getImageUrl } from '../utils';
+import { ShareButton, ShareIcons } from '../components/ShareButton';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
