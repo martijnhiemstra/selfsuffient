@@ -71,9 +71,30 @@ services:
     networks:
       - app-network
 
+  # Cron Service - Daily Reminders
+  cron:
+    build:
+      context: ./cron
+      dockerfile: Dockerfile
+    container_name: selfsufficient-cron
+    restart: unless-stopped
+    environment:
+      # Cron schedule for daily reminders (default: 7:00 AM)
+      # Format: minute hour day month weekday
+      - CRON_SCHEDULE=${CRON_SCHEDULE:-0 7 * * *}
+      # Backend URL (internal Docker network)
+      - BACKEND_URL=http://backend:8001
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    volumes:
+      - cron_logs:/var/log
+
 volumes:
   mongodb_data:
   backend_uploads:
+  cron_logs:
 
 networks:
   app-network:
