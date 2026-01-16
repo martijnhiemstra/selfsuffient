@@ -505,10 +505,13 @@ class Phase3APITester:
         
         # Print summary
         print("\n" + "=" * 50)
-        print(f"📊 Phase 3 Test Results: {self.tests_passed}/{self.tests_run} passed")
-        print(f"Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        if self.tests_run > 0:
+            print(f"📊 Phase 3 Test Results: {self.tests_passed}/{self.tests_run} passed")
+            print(f"Success Rate: {(self.tests_passed/self.tests_run)*100:.1f}%")
+        else:
+            print("📊 No tests were executed")
         
-        if self.tests_passed == self.tests_run:
+        if self.tests_passed == self.tests_run and self.tests_run > 0:
             print("🎉 All Phase 3 API tests passed!")
             return True
         else:
