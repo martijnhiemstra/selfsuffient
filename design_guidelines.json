@@ -1,0 +1,210 @@
+{
+  "identity": {
+    "persona": "E1",
+    "mission": "Create a digital sanctuary for self-sufficiency that feels like a well-worn field journal—tactile, organic, and deeply personal.",
+    "principles": [
+      "Fusion: Digital precision meets analog warmth.",
+      "Emotion: Every interaction should feel like planting a seed or turning a page.",
+      "Content: The user's life is the story; the UI is the paper.",
+      "Negative Space: Let the content breathe like a forest.",
+      "Contrast: Soft backgrounds vs. sharp, legible typography."
+    ]
+  },
+  "typography": {
+    "fonts": {
+      "heading": {
+        "family": "Playfair Display",
+        "url": "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap",
+        "usage": "Headings (h1-h3), Hero text, Feature titles",
+        "weights": ["400", "600", "700", "900"]
+      },
+      "body": {
+        "family": "DM Sans",
+        "url": "https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap",
+        "usage": "Body text, UI elements, Buttons, Inputs",
+        "weights": ["400", "500", "700"]
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "url": "https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap",
+        "usage": "Data points, Dates, Technical labels",
+        "weights": ["400", "500"]
+      }
+    },
+    "rules": [
+      "Headings must use 'tracking-tight' or 'tracking-tighter'.",
+      "Overlines/Labels must be Uppercase + 'tracking-widest' + 'text-xs'.",
+      "Body text should have 'leading-relaxed' for readability.",
+      "Never use 'Inter' for headings."
+    ]
+  },
+  "colors": {
+    "theme": "Organic & Earthy",
+    "palette": {
+      "light": {
+        "background": "60 10% 97%",
+        "foreground": "140 15% 15%",
+        "card": "0 0% 100%",
+        "card_foreground": "140 15% 15%",
+        "popover": "0 0% 100%",
+        "popover_foreground": "140 15% 15%",
+        "primary": "140 35% 25%",
+        "primary_foreground": "60 20% 96%",
+        "secondary": "25 40% 55%",
+        "secondary_foreground": "60 20% 96%",
+        "muted": "60 10% 92%",
+        "muted_foreground": "140 10% 40%",
+        "accent": "45 30% 85%",
+        "accent_foreground": "140 35% 25%",
+        "destructive": "0 60% 50%",
+        "destructive_foreground": "0 0% 98%",
+        "border": "140 10% 85%",
+        "input": "140 10% 90%",
+        "ring": "140 35% 25%",
+        "chart_1": "140 35% 25%",
+        "chart_2": "25 40% 55%",
+        "chart_3": "45 30% 60%",
+        "chart_4": "180 20% 40%",
+        "chart_5": "300 10% 40%"
+      },
+      "dark": {
+        "background": "140 20% 8%",
+        "foreground": "60 10% 90%",
+        "card": "140 20% 10%",
+        "card_foreground": "60 10% 90%",
+        "popover": "140 20% 10%",
+        "popover_foreground": "60 10% 90%",
+        "primary": "140 30% 50%",
+        "primary_foreground": "140 20% 10%",
+        "secondary": "25 40% 60%",
+        "secondary_foreground": "140 20% 10%",
+        "muted": "140 20% 15%",
+        "muted_foreground": "140 10% 60%",
+        "accent": "140 20% 15%",
+        "accent_foreground": "60 10% 90%",
+        "destructive": "0 60% 40%",
+        "destructive_foreground": "0 0% 98%",
+        "border": "140 20% 20%",
+        "input": "140 20% 20%",
+        "ring": "140 30% 50%",
+        "chart_1": "140 30% 50%",
+        "chart_2": "25 40% 60%",
+        "chart_3": "45 30% 70%",
+        "chart_4": "180 20% 50%",
+        "chart_5": "300 10% 50%"
+      }
+    },
+    "usage_rules": [
+      "Use 'bg-background' for the main canvas.",
+      "Use 'bg-card' for containers/panels.",
+      "Use 'text-primary' for key actions and active states.",
+      "Use 'text-muted-foreground' for secondary text.",
+      "Avoid pure black (#000000) or pure white (#FFFFFF) except in 'card' backgrounds if necessary for contrast.",
+      "Gradients should be subtle and noise-textured, not smooth digital gradients."
+    ]
+  },
+  "layout": {
+    "spacing_scale": {
+      "base": "0.25rem",
+      "container_padding": "p-6 md:p-12 lg:p-16",
+      "section_gap": "gap-8 md:gap-16",
+      "item_gap": "gap-4"
+    },
+    "grid_systems": {
+      "dashboard": "Bento Grid Mode B: grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6",
+      "landing": "Tetris Grid Mode A: grid-cols-1 md:grid-cols-8 lg:grid-cols-12 gap-8",
+      "gallery": "Masonry or Strict Grid with aspect-ratio enforcement"
+    },
+    "border_radius": {
+      "default": "rounded-xl",
+      "card": "rounded-2xl",
+      "button": "rounded-full",
+      "input": "rounded-lg"
+    }
+  },
+  "components": {
+    "buttons": {
+      "style": "Pill-shaped (rounded-full). Primary buttons should be solid earthy green. Secondary buttons should be outline or ghost with terracotta text.",
+      "hover": "Scale up slightly (scale-105) and deepen color."
+    },
+    "cards": {
+      "style": "Neumorphic/Tactile. bg-card, border border-border/50, shadow-sm hover:shadow-md transition-all duration-300.",
+      "padding": "p-6 or p-8"
+    },
+    "inputs": {
+      "style": "bg-muted/30 border-transparent focus:border-primary focus:ring-1 focus:ring-primary/20 rounded-lg h-12 px-4"
+    },
+    "navigation": {
+      "style": "Floating Glassmorphism. bg-background/80 backdrop-blur-md border-b border-border/40 sticky top-0 z-50"
+    },
+    "calendar": {
+      "style": "Clean, minimalist. No heavy grid lines. Use soft backgrounds for event blocks. Rounded corners for days."
+    }
+  },
+  "visual_enhancers": {
+    "textures": "Use subtle grain/noise overlays on the background to give a paper-like feel.",
+    "shadows": "Soft, diffuse shadows: shadow-[0_8px_30px_rgb(0,0,0,0.04)].",
+    "glassmorphism": "Use 'backdrop-blur-xl' and 'bg-white/70' (light) or 'bg-black/60' (dark) for overlays."
+  },
+  "images": {
+    "hero_backgrounds": [
+      {
+        "url": "https://images.unsplash.com/photo-1666228347956-eec27310e2d2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBsYW5kc2NhcGUlMjBmb3Jlc3QlMjBnYXJkZW58ZW58MHx8fHwxNzY4NTQzNjA0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Stone staircase with plants - Good for Landing Page Hero",
+        "category": "hero"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1663185777535-86bf6a489607?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwyfHxuYXR1cmUlMjBsYW5kc2NhcGUlMjBmb3Jlc3QlMjBnYXJkZW58ZW58MHx8fHwxNzY4NTQzNjA0fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Stream in forest - Alternative Hero",
+        "category": "hero"
+      }
+    ],
+    "project_thumbnails": [
+      {
+        "url": "https://images.unsplash.com/photo-1648090229186-6188eaefcc6a?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHw0fHx2ZWdldGFibGUlMjBnYXJkZW4lMjBoYXJ2ZXN0JTIwdG9vbHN8ZW58MHx8fHwxNzY4NTQzNjA4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Vegetable harvest basket - Project Cover",
+        "category": "project"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1568633967669-13e645a6a6b7?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2Mzl8MHwxfHNlYXJjaHwxfHx2ZWdldGFibGUlMjBnYXJkZW4lMjBoYXJ2ZXN0JTIwdG9vbHN8ZW58MHx8fHwxNzY4NTQzNjA4fDA&ixlib=rb-4.1.0&q=85",
+        "description": "Green wooden table - Project Cover",
+        "category": "project"
+      }
+    ],
+    "library_context": [
+      {
+        "url": "https://images.unsplash.com/photo-1639786881601-9efd9ce6b0ee?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwxfHxjb3p5JTIwd29vZGVuJTIwY2FiaW4lMjBpbnRlcmlvciUyMGxpYnJhcnl8ZW58MHx8fHwxNzY4NTQzNjExfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Cozy reading nook - Library Header",
+        "category": "library"
+      },
+      {
+        "url": "https://images.unsplash.com/photo-1618809198343-7478d6019985?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHwzfHxjb3p5JTIwd29vZGVuJTIwY2FiaW4lMjBpbnRlcmlvciUyMGxpYnJhcnl8ZW58MHx8fHwxNzY4NTQzNjExfDA&ixlib=rb-4.1.0&q=85",
+        "description": "Wooden bookshelf - Library Context",
+        "category": "library"
+      }
+    ]
+  },
+  "motion": {
+    "transitions": "transition-all duration-300 ease-out",
+    "hover_effects": "hover:-translate-y-1 hover:shadow-lg",
+    "page_transition": "initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}",
+    "stagger": "staggerChildren: 0.1"
+  },
+  "accessibility": {
+    "contrast": "Ensure 4.5:1 contrast ratio for normal text.",
+    "focus_states": "Visible focus rings (ring-2 ring-primary) on all interactive elements.",
+    "aria": "Use aria-labels for icon-only buttons.",
+    "reduced_motion": "Respect prefers-reduced-motion media query."
+  },
+  "universal_guidelines": [
+    "Do not use 'Inter' for headings.",
+    "Do not use generic centered layouts.",
+    "Do not use gradients for dark colors.",
+    "Use 'sonner' for toasts.",
+    "Use 'lucide-react' for icons.",
+    "All interactive elements must have 'data-testid'.",
+    "Use 'date-fns' for date formatting.",
+    "Use 'recharts' for charts if needed."
+  ],
+  "instructions_to_main_agent": "1. Install 'lucide-react', 'date-fns', 'recharts', 'framer-motion', 'clsx', 'tailwind-merge' if not present. 2. Update 'tailwind.config.js' with the provided colors and fonts. 3. Create a 'Layout' component that wraps the app with the font classes. 4. Implement the 'Bento Grid' for the dashboard. 5. Use the provided images for the landing page and dummy data."
+}
