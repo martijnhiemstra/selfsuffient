@@ -1847,11 +1847,70 @@ async def get_dashboard_today(current_user: dict = Depends(get_current_user)):
 
 @api_router.get("/")
 async def root():
-    return {"message": "Self-Sufficient Lifestyle API", "status": "healthy"}
+    return {"message": f"{APP_NAME} API", "status": "healthy", "app_name": APP_NAME}
 
 @api_router.get("/health")
 async def health_check():
-    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat()}
+    return {"status": "healthy", "timestamp": datetime.now(timezone.utc).isoformat(), "app_name": APP_NAME}
+
+@api_router.get("/config")
+async def get_app_config():
+    """Get public app configuration"""
+    return {
+        "app_name": APP_NAME,
+        "app_url": APP_URL,
+        "email_configured": bool(SMTP_HOST and SMTP_USER)
+    }
+
+# ============ FOLDER PATH ENDPOINTS ============
+
+@api_router.get("/projects/{project_id}/gallery/folders/{folder_id}/path")
+async def get_gallery_folder_path(
+    project_id: str,
+    folder_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get the full path of a gallery folder for breadcrumb navigation"""
+    await verify_project_access(project_id, current_user["id"])
+    
+    path = []
+    current_id = folder_id
+    
+    while current_id:
+        folder = await db.gallery_folders.find_one(
+            {"id": current_id, "project_id": project_id},
+            {"_id": 0}
+        )
+        if not folder:
+            break
+        path.insert(0, {"id": folder["id"], "name": folder["name"]})
+        current_id = folder.get("parent_id")
+    
+    return {"path": path}
+
+@api_router.get("/projects/{project_id}/library/folders/{folder_id}/path")
+async def get_library_folder_path(
+    project_id: str,
+    folder_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Get the full path of a library folder for breadcrumb navigation"""
+    await verify_project_access(project_id, current_user["id"])
+    
+    path = []
+    current_id = folder_id
+    
+    while current_id:
+        folder = await db.library_folders.find_one(
+            {"id": current_id, "project_id": project_id},
+            {"_id": 0}
+        )
+        if not folder:
+            break
+        path.insert(0, {"id": folder["id"], "name": folder["name"]})
+        current_id = folder.get("parent_id")
+    
+    return {"path": path}
 
 # Include the router in the main app
 app.include_router(api_router)
