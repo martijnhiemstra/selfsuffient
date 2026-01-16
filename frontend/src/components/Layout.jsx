@@ -44,7 +44,7 @@ export const Layout = ({ children }) => {
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f0f7f0]">
       {/* Navigation */}
       <nav className="glass-nav px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
