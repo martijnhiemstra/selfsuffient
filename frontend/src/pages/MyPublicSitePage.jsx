@@ -117,15 +117,18 @@ export const MyPublicSitePage = () => {
                 <div className="h-48 bg-muted overflow-hidden relative">
                   {project.image ? (
                     <img 
-                      src={`${process.env.REACT_APP_BACKEND_URL}${project.image}`}
+                      src={getImageUrl(project.image)}
                       alt={project.name}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextSibling.style.display = 'flex';
+                      }}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
-                    </div>
-                  )}
+                  ) : null}
+                  <div className={`w-full h-full items-center justify-center ${project.image ? 'hidden' : 'flex'}`}>
+                    <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
+                  </div>
                   <Badge className="absolute top-3 right-3 gap-1">
                     <Globe className="w-3 h-3" /> Public
                   </Badge>
