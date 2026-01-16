@@ -693,6 +693,30 @@ async def upload_project_image(
 
 # ============ PUBLIC ROUTES ============
 
+class PublicUserProfileResponse(BaseModel):
+    id: str
+    name: str
+    projects: List[ProjectResponse]
+
+@api_router.get("/public/users/{user_id}/profile", response_model=PublicUserProfileResponse)
+async def get_public_user_profile(user_id: str):
+    """Get a user's public profile with their public projects"""
+    user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Get user's public projects
+    projects = await db.projects.find(
+        {"user_id": user_id, "is_public": True},
+        {"_id": 0}
+    ).sort("created_at", -1).to_list(1000)
+    
+    return PublicUserProfileResponse(
+        id=user["id"],
+        name=user["name"],
+        projects=[ProjectResponse(**p) for p in projects]
+    )
+
 @api_router.get("/public/projects", response_model=ProjectListResponse)
 async def list_public_projects(
     search: Optional[str] = None,
