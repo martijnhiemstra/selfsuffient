@@ -25,6 +25,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { getImageUrl, stripHtml, truncateText } from '../utils';
+import { ShareIcons } from '../components/ShareButton';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
