@@ -72,7 +72,7 @@ export const Layout = ({ children }) => {
                 </Button>
               </Link>
             ))}
-            <Link to="/" target="_blank">
+            <Link to="/my-public-site">
               <Button variant="ghost" className="gap-2" data-testid="nav-public">
                 <Globe className="w-4 h-4" />
                 Public Site
