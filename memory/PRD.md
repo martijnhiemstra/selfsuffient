@@ -74,6 +74,15 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - [x] Light green (#f0f7f0) background for authenticated section
 - [x] Custom landing page background image
 
+### Phase 7 - Daily Reminders & UI Improvements (2026-01-16) ✅
+- [x] Renamed "Startup" to "Start of Day Items" throughout the app
+- [x] Renamed "Shutdown" to "End of Day Items" throughout the app
+- [x] Added `daily_reminders` property to user profile
+- [x] Settings page has Daily Reminders toggle with description
+- [x] Daily reminder email template with Start of Day → Tasks → End of Day order
+- [x] Cron endpoint `/api/cron/send-daily-reminders` for scheduled emails
+- [x] View counts show "0 views" explicitly on public project pages
+
 ## Environment Configuration
 See `/app/.env.example` for all options:
 - `APP_NAME` - Application name displayed throughout
@@ -90,7 +99,9 @@ See `/app/.env.example` for all options:
 
 ## Key API Endpoints
 - `/api/auth/{login, logout, forgot-password, reset-password}`
+- `/api/auth/settings` (PUT) - Update user settings (daily_reminders)
 - `/api/config` - Get app configuration
+- `/api/cron/send-daily-reminders` (POST) - Send daily reminder emails
 - `/api/projects/...` (CRUD)
 - `/api/projects/{project_id}/{diary, blog, library, tasks, routines}`
 - `/api/projects/{project_id}/gallery/folders/{folderId}/path` - Breadcrumb path
