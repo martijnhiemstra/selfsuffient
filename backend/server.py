@@ -71,6 +71,7 @@ class UserCreate(BaseModel):
     password: str
     name: str
     is_admin: bool = False
+    daily_reminders: bool = False
 
 class UserLogin(BaseModel):
     email: EmailStr
@@ -81,7 +82,11 @@ class UserResponse(BaseModel):
     email: str
     name: str
     is_admin: bool
+    daily_reminders: bool = False
     created_at: str
+
+class UserUpdateSettings(BaseModel):
+    daily_reminders: Optional[bool] = None
 
 class TokenResponse(BaseModel):
     access_token: str
