@@ -56,10 +56,16 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - [x] Admin user management
 
 ### P1 (High)
-- [ ] Diary entries
-- [ ] Gallery with recursive folders
-- [ ] Blog (public/private)
-- [ ] Library
+- [x] Diary entries with rich text
+- [x] Gallery with recursive folders
+- [x] Blog (public/private)
+- [x] Library with folders/entries
+
+### P2 (Medium)
+- [ ] Tasks & Calendar (month/week/day view, drag-drop, recurring)
+- [ ] Startup/Shutdown daily task lists
+- [ ] Public project view with view tracking
+- [ ] Sorting preferences persistence
 
 ### P2 (Medium)
 - [ ] Tasks & Calendar
