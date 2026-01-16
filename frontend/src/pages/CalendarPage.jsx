@@ -15,6 +15,16 @@ import {
   DialogTitle,
 } from '../components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '../components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -29,7 +39,9 @@ import {
   Loader2,
   LayoutGrid,
   List,
-  CalendarDays
+  CalendarDays,
+  Trash2,
+  GripVertical
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -47,6 +59,10 @@ export const CalendarPage = () => {
   const [view, setView] = useState('month');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editMode, setEditMode] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [draggedTask, setDraggedTask] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -118,21 +134,53 @@ export const CalendarPage = () => {
         recurrence: formData.recurrence === 'none' ? null : formData.recurrence
       };
 
-      await axios.post(`${API}/projects/${formData.project_id}/tasks`, payload, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Task created!');
+      if (editMode && selectedTask) {
+        // Update existing task
+        await axios.put(`${API}/projects/${selectedTask.project_id}/tasks/${selectedTask.id}`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success('Task updated!');
+      } else {
+        // Create new task
+        await axios.post(`${API}/projects/${formData.project_id}/tasks`, payload, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        toast.success('Task created!');
+      }
+      
       setDialogOpen(false);
       resetForm();
       fetchData();
     } catch (error) {
-      toast.error(error.response?.data?.detail || 'Failed to create task');
+      toast.error(error.response?.data?.detail || 'Failed to save task');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDeleteTask = async () => {
+    if (!selectedTask) return;
+    
+    setSaving(true);
+    try {
+      await axios.delete(`${API}/projects/${selectedTask.project_id}/tasks/${selectedTask.id}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success('Task deleted!');
+      setDeleteDialogOpen(false);
+      setDialogOpen(false);
+      resetForm();
+      fetchData();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete task');
     } finally {
       setSaving(false);
     }
   };
 
   const openCreateDialog = (date = null) => {
+    setEditMode(false);
+    setSelectedTask(null);
     resetForm();
     if (date) {
       setFormData(prev => ({
@@ -140,6 +188,23 @@ export const CalendarPage = () => {
         task_datetime: format(date, "yyyy-MM-dd'T'09:00")
       }));
     }
+    setDialogOpen(true);
+  };
+
+  const openEditDialog = (task, e) => {
+    if (e) {
+      e.stopPropagation();
+    }
+    setEditMode(true);
+    setSelectedTask(task);
+    setFormData({
+      title: task.title,
+      description: task.description || '',
+      task_datetime: task.task_datetime.slice(0, 16),
+      is_all_day: task.is_all_day,
+      recurrence: task.recurrence || 'none',
+      project_id: task.project_id
+    });
     setDialogOpen(true);
   };
 
@@ -152,6 +217,8 @@ export const CalendarPage = () => {
       recurrence: null,
       project_id: projects.length > 0 ? projects[0].id : ''
     });
+    setEditMode(false);
+    setSelectedTask(null);
   };
 
   const navigate = (direction) => {
@@ -181,6 +248,59 @@ export const CalendarPage = () => {
     });
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e, task) => {
+    // Don't allow dragging recurring tasks
+    if (task.recurrence) {
+      e.preventDefault();
+      toast.info('Recurring tasks cannot be moved by drag-and-drop');
+      return;
+    }
+    setDraggedTask(task);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', task.id);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  };
+
+  const handleDrop = async (e, targetDate, targetHour = null) => {
+    e.preventDefault();
+    if (!draggedTask) return;
+
+    // Build new datetime
+    let newDateTime;
+    if (targetHour !== null) {
+      const newDate = new Date(targetDate);
+      newDate.setHours(targetHour, 0, 0, 0);
+      newDateTime = format(newDate, "yyyy-MM-dd'T'HH:mm:ss");
+    } else {
+      // Keep the original time, just change the date
+      const originalTime = draggedTask.task_datetime.split('T')[1];
+      newDateTime = `${format(targetDate, 'yyyy-MM-dd')}T${originalTime}`;
+    }
+
+    try {
+      await axios.put(
+        `${API}/projects/${draggedTask.project_id}/tasks/${draggedTask.id}`,
+        { task_datetime: newDateTime },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Task rescheduled!');
+      fetchData();
+    } catch (error) {
+      toast.error('Failed to reschedule task');
+    } finally {
+      setDraggedTask(null);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedTask(null);
+  };
+
   const renderMonthView = () => {
     const monthStart = startOfMonth(currentDate);
     const monthEnd = endOfMonth(currentDate);
@@ -203,14 +323,18 @@ export const CalendarPage = () => {
           const dayTasks = getTasksForDate(day);
           const isCurrentMonth = isSameMonth(day, currentDate);
           const isToday = isSameDay(day, new Date());
+          const isDragOver = draggedTask !== null;
           
           return (
             <div
               key={idx}
               className={`min-h-[100px] p-1 border border-border/50 rounded-lg cursor-pointer hover:bg-muted/50 transition-colors ${
                 !isCurrentMonth ? 'opacity-40' : ''
-              } ${isToday ? 'bg-primary/5 border-primary' : ''}`}
+              } ${isToday ? 'bg-primary/5 border-primary' : ''} ${isDragOver ? 'hover:bg-primary/10' : ''}`}
               onClick={() => openCreateDialog(day)}
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, day)}
+              data-testid={`calendar-day-${format(day, 'yyyy-MM-dd')}`}
             >
               <div className={`text-sm font-medium mb-1 ${isToday ? 'text-primary' : ''}`}>
                 {format(day, 'd')}
@@ -219,12 +343,19 @@ export const CalendarPage = () => {
                 {dayTasks.slice(0, 3).map(task => (
                   <div
                     key={task.id}
-                    className={`text-xs p-1 rounded truncate ${
+                    draggable={!task.recurrence}
+                    onDragStart={(e) => handleDragStart(e, task)}
+                    onDragEnd={handleDragEnd}
+                    onClick={(e) => openEditDialog(task, e)}
+                    className={`text-xs p-1 rounded truncate cursor-pointer hover:opacity-80 transition-opacity flex items-center gap-1 ${
                       task.recurrence ? 'bg-secondary/20 text-secondary-foreground' : 'bg-primary/20 text-primary'
-                    }`}
-                    title={`${task.title} (${task.projectName})`}
+                    } ${!task.recurrence ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                    title={`${task.title} (${task.projectName})${task.recurrence ? ' - Click to edit' : ' - Drag to reschedule'}`}
+                    data-testid={`task-${task.id}`}
                   >
-                    {task.title}
+                    {!task.recurrence && <GripVertical className="w-3 h-3 flex-shrink-0 opacity-50" />}
+                    {task.recurrence && <Repeat className="w-3 h-3 flex-shrink-0" />}
+                    <span className="truncate">{task.title}</span>
                   </div>
                 ))}
                 {dayTasks.length > 3 && (
@@ -273,9 +404,22 @@ export const CalendarPage = () => {
                       newDate.setHours(hour);
                       openCreateDialog(newDate);
                     }}
+                    onDragOver={handleDragOver}
+                    onDrop={(e) => handleDrop(e, day, hour)}
                   >
                     {dayTasks.map(task => (
-                      <div key={task.id} className="text-xs p-1 bg-primary/20 rounded mb-1 truncate" title={task.projectName}>
+                      <div 
+                        key={task.id} 
+                        draggable={!task.recurrence}
+                        onDragStart={(e) => handleDragStart(e, task)}
+                        onDragEnd={handleDragEnd}
+                        onClick={(e) => openEditDialog(task, e)}
+                        className={`text-xs p-1 rounded mb-1 truncate cursor-pointer hover:opacity-80 ${
+                          task.recurrence ? 'bg-secondary/20' : 'bg-primary/20'
+                        } ${!task.recurrence ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                        title={task.projectName}
+                        data-testid={`task-week-${task.id}`}
+                      >
                         {task.title}
                       </div>
                     ))}
@@ -303,15 +447,31 @@ export const CalendarPage = () => {
           });
           
           return (
-            <div key={hour} className="flex gap-4 border-b pb-2">
+            <div 
+              key={hour} 
+              className="flex gap-4 border-b pb-2"
+              onDragOver={handleDragOver}
+              onDrop={(e) => handleDrop(e, currentDate, hour)}
+            >
               <div className="w-20 text-sm text-muted-foreground">
                 {format(new Date().setHours(hour, 0), 'h:mm a')}
               </div>
               <div className="flex-1 min-h-[40px]">
                 {hourTasks.map(task => (
-                  <Card key={task.id} className="mb-2">
+                  <Card 
+                    key={task.id} 
+                    className={`mb-2 cursor-pointer hover:shadow-md transition-shadow ${!task.recurrence ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                    draggable={!task.recurrence}
+                    onDragStart={(e) => handleDragStart(e, task)}
+                    onDragEnd={handleDragEnd}
+                    onClick={() => openEditDialog(task)}
+                    data-testid={`task-day-${task.id}`}
+                  >
                     <CardContent className="p-3">
-                      <div className="font-medium">{task.title}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {!task.recurrence && <GripVertical className="w-4 h-4 text-muted-foreground" />}
+                        {task.title}
+                      </div>
                       <div className="text-xs text-muted-foreground">{task.projectName}</div>
                       {task.recurrence && (
                         <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
@@ -334,7 +494,7 @@ export const CalendarPage = () => {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-3xl font-display font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground">View tasks across all projects</p>
+          <p className="text-muted-foreground">View and manage tasks across all projects</p>
         </div>
         <Button className="rounded-full gap-2" onClick={() => openCreateDialog()} data-testid="create-task-btn" disabled={projects.length === 0}>
           <Plus className="w-4 h-4" /> New Task
@@ -344,9 +504,9 @@ export const CalendarPage = () => {
       {/* Calendar Controls */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon" onClick={() => navigate('prev')}><ChevronLeft className="w-4 h-4" /></Button>
-          <Button variant="outline" size="icon" onClick={() => navigate('next')}><ChevronRight className="w-4 h-4" /></Button>
-          <Button variant="outline" onClick={() => setCurrentDate(new Date())}>Today</Button>
+          <Button variant="outline" size="icon" onClick={() => navigate('prev')} data-testid="prev-btn"><ChevronLeft className="w-4 h-4" /></Button>
+          <Button variant="outline" size="icon" onClick={() => navigate('next')} data-testid="next-btn"><ChevronRight className="w-4 h-4" /></Button>
+          <Button variant="outline" onClick={() => setCurrentDate(new Date())} data-testid="today-btn">Today</Button>
           <h2 className="text-xl font-display font-semibold ml-4">
             {view === 'day' ? format(currentDate, 'EEEE, MMMM d, yyyy') : 
              view === 'week' ? `Week of ${format(startOfWeek(currentDate), 'MMM d')}` :
@@ -354,13 +514,13 @@ export const CalendarPage = () => {
           </h2>
         </div>
         <div className="flex gap-1 bg-muted rounded-lg p-1">
-          <Button variant={view === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('month')}>
+          <Button variant={view === 'month' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('month')} data-testid="month-view-btn">
             <LayoutGrid className="w-4 h-4 mr-1" /> Month
           </Button>
-          <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('week')}>
+          <Button variant={view === 'week' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('week')} data-testid="week-view-btn">
             <CalendarDays className="w-4 h-4 mr-1" /> Week
           </Button>
-          <Button variant={view === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('day')}>
+          <Button variant={view === 'day' ? 'secondary' : 'ghost'} size="sm" onClick={() => setView('day')} data-testid="day-view-btn">
             <List className="w-4 h-4 mr-1" /> Day
           </Button>
         </div>
@@ -384,19 +544,30 @@ export const CalendarPage = () => {
         </Card>
       )}
 
+      {/* Drag hint */}
+      {allTasks.some(t => !t.recurrence) && (
+        <p className="text-xs text-muted-foreground text-center mt-4">
+          Tip: Drag non-recurring tasks to reschedule them. Click any task to edit.
+        </p>
+      )}
+
       {/* Task Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { setDialogOpen(open); if (!open) resetForm(); }}>
         <DialogContent className="sm:max-w-lg">
           <form onSubmit={handleSubmit}>
             <DialogHeader>
-              <DialogTitle className="font-display">New Task</DialogTitle>
-              <DialogDescription>Add a task to your calendar</DialogDescription>
+              <DialogTitle className="font-display">{editMode ? 'Edit Task' : 'New Task'}</DialogTitle>
+              <DialogDescription>{editMode ? 'Update task details' : 'Add a task to your calendar'}</DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="project">Project</Label>
-                <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger>
+                <Select 
+                  value={formData.project_id} 
+                  onValueChange={(v) => setFormData({ ...formData, project_id: v })}
+                  disabled={editMode}
+                >
+                  <SelectTrigger data-testid="project-select"><SelectValue placeholder="Select project" /></SelectTrigger>
                   <SelectContent>
                     {projects.map(p => (
                       <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
@@ -406,21 +577,39 @@ export const CalendarPage = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="title">Title</Label>
-                <Input id="title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} placeholder="Task title" />
+                <Input 
+                  id="title" 
+                  value={formData.title} 
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
+                  placeholder="Task title"
+                  data-testid="task-title-input"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="description">Description</Label>
-                <Textarea id="description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} rows={2} />
+                <Textarea 
+                  id="description" 
+                  value={formData.description} 
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
+                  rows={2}
+                  data-testid="task-description-input"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="datetime">Date & Time</Label>
-                  <Input id="datetime" type="datetime-local" value={formData.task_datetime} onChange={(e) => setFormData({ ...formData, task_datetime: e.target.value })} />
+                  <Input 
+                    id="datetime" 
+                    type="datetime-local" 
+                    value={formData.task_datetime} 
+                    onChange={(e) => setFormData({ ...formData, task_datetime: e.target.value })}
+                    data-testid="task-datetime-input"
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="recurrence">Repeat</Label>
                   <Select value={formData.recurrence || 'none'} onValueChange={(v) => setFormData({ ...formData, recurrence: v })}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger data-testid="recurrence-select"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">No repeat</SelectItem>
                       <SelectItem value="daily">Daily</SelectItem>
@@ -433,19 +622,55 @@ export const CalendarPage = () => {
               </div>
               <div className="flex items-center justify-between">
                 <Label htmlFor="allday">All day event</Label>
-                <Switch id="allday" checked={formData.is_all_day} onCheckedChange={(c) => setFormData({ ...formData, is_all_day: c })} />
+                <Switch 
+                  id="allday" 
+                  checked={formData.is_all_day} 
+                  onCheckedChange={(c) => setFormData({ ...formData, is_all_day: c })}
+                  data-testid="allday-switch"
+                />
               </div>
             </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={saving}>
-                {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Create Task
-              </Button>
+            <DialogFooter className="flex justify-between">
+              {editMode && (
+                <Button 
+                  type="button" 
+                  variant="destructive" 
+                  onClick={() => setDeleteDialogOpen(true)}
+                  data-testid="delete-task-btn"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete
+                </Button>
+              )}
+              <div className="flex gap-2 ml-auto">
+                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={saving} data-testid="save-task-btn">
+                  {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                  {editMode ? 'Update Task' : 'Create Task'}
+                </Button>
+              </div>
             </DialogFooter>
           </form>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Task</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{selectedTask?.title}"? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteTask} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" data-testid="confirm-delete-btn">
+              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
