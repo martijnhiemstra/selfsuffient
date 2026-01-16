@@ -12,6 +12,7 @@ import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LandingPage } from "./pages/LandingPage";
 import { PublicProjectPage } from "./pages/PublicProjectPage";
+import { PublicUserPage } from "./pages/PublicUserPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
@@ -36,6 +37,7 @@ function App() {
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/public/project/:projectId" element={<PublicProjectPage />} />
+          <Route path="/public/user/:userId" element={<PublicUserPage />} />
 
           {/* Protected Routes */}
           <Route path="/dashboard" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
