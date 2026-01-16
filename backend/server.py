@@ -2086,6 +2086,28 @@ async def startup_event():
     await db.projects.create_index("user_id")
     await db.projects.create_index("is_public")
     logger.info("Database indexes created")
+    
+    # Auto-seed admin user if no users exist
+    user_count = await db.users.count_documents({})
+    if user_count == 0:
+        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@selfsufficient.app')
+        admin_name = os.environ.get('ADMIN_NAME', 'Admin')
+        
+        hashed = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        await db.users.insert_one({
+            "id": str(uuid.uuid4()),
+            "email": admin_email,
+            "password": hashed.decode('utf-8'),
+            "name": admin_name,
+            "is_admin": True,
+            "daily_reminders": False,
+            "created_at": now,
+            "updated_at": now
+        })
+        logger.info(f"Admin user created: {admin_email}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
