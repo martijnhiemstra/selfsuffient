@@ -22,6 +22,8 @@ import { BlogPage } from "./pages/BlogPage";
 import { LibraryPage } from "./pages/LibraryPage";
 import { TasksPage } from "./pages/TasksPage";
 import { RoutinesPage } from "./pages/RoutinesPage";
+import { CalendarPage } from "./pages/CalendarPage";
+import { MyPublicSitePage } from "./pages/MyPublicSitePage";
 
 function App() {
   return (
