@@ -387,6 +387,9 @@ def main():
     test_results.append(("Protected Routes", tester.test_protected_routes()))
     test_results.append(("Forgot Password", tester.test_forgot_password()))
     test_results.append(("Admin Routes", tester.test_admin_routes()))
+    test_results.append(("Projects CRUD", tester.test_projects_crud()))
+    test_results.append(("Public Projects", tester.test_public_projects()))
+    test_results.append(("Change Password", tester.test_change_password()))
     test_results.append(("Unauthorized Access", tester.test_unauthorized_access()))
     
     # Print summary
