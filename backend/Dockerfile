@@ -18,11 +18,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Install pymongo for the daily reminders script
 RUN pip install --no-cache-dir pymongo
 
+# Copy entrypoint script first and set permissions
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # Copy application code
 COPY . .
-
-# Make entrypoint executable
-RUN chmod +x /app/entrypoint.sh
 
 # Create uploads directory
 RUN mkdir -p uploads
@@ -31,4 +32,4 @@ RUN mkdir -p uploads
 EXPOSE 8001
 
 # Use entrypoint script to start cron + uvicorn
-ENTRYPOINT ["/app/entrypoint.sh"]
+ENTRYPOINT ["/bin/bash", "/entrypoint.sh"]
