@@ -38,9 +38,8 @@
 | Service | Description | Port |
 |---------|-------------|------|
 | `frontend` | React SPA with Nginx | 3000 |
-| `backend` | FastAPI REST API | 8001 |
+| `backend` | FastAPI REST API + Cron | 8001 |
 | `mongodb` | MongoDB database | 27017 |
-| `cron` | Scheduled tasks (Python script) | - |
 
 ## Environment Variables
 
@@ -77,7 +76,7 @@ SMTP_FROM_NAME=Self-Sufficient Life
 
 ### Cron / Scheduled Tasks
 
-Daily reminder emails are sent by the `cron` service:
+Daily reminder emails are handled by a cron job inside the backend container:
 
 ```env
 # Cron schedule (default: 7:00 AM daily)
@@ -100,15 +99,14 @@ docker-compose up -d
 # View logs (all services)
 docker-compose logs -f
 
-# View specific service logs
+# View backend logs (includes cron output)
 docker-compose logs -f backend
-docker-compose logs -f cron
 
-# Check cron job logs
-docker-compose exec cron cat /var/log/cron.log
+# View cron job logs specifically
+docker-compose exec backend cat /var/log/cron.log
 
-# Manually trigger daily reminders
-docker-compose exec cron curl -X POST http://backend:8001/api/cron/send-daily-reminders
+# Test daily reminders manually
+docker-compose exec backend python /app/daily_reminders.py
 
 # Stop services
 docker-compose down
@@ -118,9 +116,6 @@ docker-compose down -v
 
 # Rebuild containers
 docker-compose up -d --build
-
-# Rebuild specific service
-docker-compose up -d --build cron
 
 # Access MongoDB shell
 docker exec -it selfsufficient-mongodb mongosh
@@ -132,7 +127,7 @@ For development with hot-reload:
 
 ```bash
 # Start backend services only
-docker-compose up -d mongodb backend cron
+docker-compose up -d mongodb backend
 
 # Run frontend locally with hot-reload
 cd frontend
@@ -143,17 +138,14 @@ yarn start
 ## Architecture
 
 ```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│   Frontend  │────▶│   Backend   │────▶│   MongoDB   │
-│  (Nginx)    │     │  (FastAPI)  │     │             │
-│  :3000      │     │  :8001      │     │  :27017     │
-└─────────────┘     └──────▲──────┘     └─────────────┘
-                          │
-                   ┌──────┴──────┐
-                   │    Cron     │
-                   │  (Alpine)   │
-                   │  7:00 AM    │
-                   └─────────────┘
+┌─────────────┐     ┌─────────────────────┐     ┌─────────────┐
+│   Frontend  │────▶│      Backend        │────▶│   MongoDB   │
+│   (Nginx)   │     │  (FastAPI + Cron)   │     │             │
+│   :3000     │     │      :8001          │     │   :27017    │
+└─────────────┘     └─────────────────────┘     └─────────────┘
+                            │
+                            ├── API Server (uvicorn)
+                            └── Cron Daemon (daily reminders)
 ```
 
 ## Production Deployment
@@ -193,15 +185,14 @@ docker-compose restart backend
 
 **Cron not running:**
 ```bash
-# Check cron container status
-docker-compose ps cron
+# Check if cron is running in the backend container
+docker-compose exec backend ps aux | grep cron
 
 # View cron logs
-docker-compose logs cron
-docker-compose exec cron cat /var/log/cron.log
+docker-compose exec backend cat /var/log/cron.log
 
-# Test the script manually (runs immediately)
-docker-compose exec cron python /app/daily_reminders.py
+# Test the daily reminders script manually
+docker-compose exec backend python /app/daily_reminders.py
 ```
 
 **Frontend build issues:**
