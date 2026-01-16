@@ -4,21 +4,29 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../co
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
 import { 
   User, 
   Lock, 
   Loader2,
-  CheckCircle
+  CheckCircle,
+  Bell,
+  Mail
 } from 'lucide-react';
 import { toast } from 'sonner';
+import axios from 'axios';
+
+const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const SettingsPage = () => {
-  const { user, changePassword } = useAuth();
+  const { user, token, refreshUser } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changing, setChanging] = useState(false);
+  const [savingReminders, setSavingReminders] = useState(false);
+  const [dailyReminders, setDailyReminders] = useState(user?.daily_reminders || false);
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
@@ -35,7 +43,10 @@ export const SettingsPage = () => {
 
     setChanging(true);
     try {
-      await changePassword(currentPassword, newPassword);
+      await axios.post(`${API}/auth/change-password`, {
+        current_password: currentPassword,
+        new_password: newPassword
+      }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Password changed successfully!');
       setCurrentPassword('');
       setNewPassword('');
@@ -44,6 +55,25 @@ export const SettingsPage = () => {
       toast.error(error.response?.data?.detail || 'Failed to change password');
     } finally {
       setChanging(false);
+    }
+  };
+
+  const handleToggleDailyReminders = async (checked) => {
+    setSavingReminders(true);
+    try {
+      await axios.put(`${API}/auth/settings`, {
+        daily_reminders: checked
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      setDailyReminders(checked);
+      if (refreshUser) {
+        await refreshUser();
+      }
+      toast.success(checked ? 'Daily reminders enabled!' : 'Daily reminders disabled');
+    } catch (error) {
+      toast.error('Failed to update settings');
+      setDailyReminders(!checked); // Revert on error
+    } finally {
+      setSavingReminders(false);
     }
   };
 
@@ -86,6 +116,45 @@ export const SettingsPage = () => {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Notifications */}
+      <Card className="border border-border/50 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="w-5 h-5" />
+            Notifications
+          </CardTitle>
+          <CardDescription>Configure how you want to be notified</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <div className="flex items-center gap-2">
+                <Mail className="w-4 h-4 text-muted-foreground" />
+                <Label htmlFor="daily-reminders" className="font-medium">Daily Reminders</Label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Receive a daily email each morning with your Start of Day items, daily tasks, and End of Day items
+              </p>
+            </div>
+            <Switch
+              id="daily-reminders"
+              checked={dailyReminders}
+              onCheckedChange={handleToggleDailyReminders}
+              disabled={savingReminders}
+              data-testid="daily-reminders-switch"
+            />
+          </div>
+          {dailyReminders && (
+            <div className="bg-muted/50 p-4 rounded-lg text-sm text-muted-foreground">
+              <p className="flex items-center gap-2">
+                <CheckCircle className="w-4 h-4 text-primary" />
+                You'll receive daily task summaries at your configured email: <strong>{user?.email}</strong>
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
