@@ -119,11 +119,11 @@ class TestAuthentication:
         })
         assert response.status_code == 200
         data = response.json()
-        assert "token" in data
+        assert "access_token" in data
         assert "user" in data
         assert data["user"]["email"] == "admin@selfsufficient.app"
         print("✓ Login with admin credentials successful")
-        return data["token"]
+        return data["access_token"]
     
     def test_login_with_invalid_credentials(self):
         """Test login with invalid credentials"""
