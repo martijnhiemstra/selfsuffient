@@ -406,6 +406,67 @@ def get_password_reset_email_html(reset_url: str, user_name: str) -> str:
     </html>
     """
 
+def get_daily_reminder_email_html(user_name: str, startup_tasks: list, daily_tasks: list, shutdown_tasks: list) -> str:
+    """Generate daily reminder email HTML"""
+    
+    def format_task_list(tasks: list, section_name: str, icon: str) -> str:
+        if not tasks:
+            return ""
+        items = "".join([f'<li style="padding: 8px 0; border-bottom: 1px solid #eee;">{t["title"]}</li>' for t in tasks])
+        return f"""
+        <div style="margin: 20px 0;">
+            <h3 style="color: #2d5a3d; margin-bottom: 10px;">{icon} {section_name}</h3>
+            <ul style="list-style: none; padding: 0; margin: 0;">{items}</ul>
+        </div>
+        """
+    
+    startup_html = format_task_list(startup_tasks, "Start of Day Items", "🌅")
+    daily_html = format_task_list(daily_tasks, "Today's Tasks", "📋")
+    shutdown_html = format_task_list(shutdown_tasks, "End of Day Items", "🌙")
+    
+    today = datetime.now().strftime("%A, %B %d, %Y")
+    
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+            .header {{ background: linear-gradient(135deg, #2d5a3d 0%, #4a7c59 100%); color: white; padding: 30px; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 24px; }}
+            .header p {{ margin: 10px 0 0; opacity: 0.9; }}
+            .content {{ padding: 30px; }}
+            .footer {{ padding: 20px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; }}
+            .button {{ display: inline-block; background: #2d5a3d; color: white; text-decoration: none; padding: 12px 24px; border-radius: 25px; font-weight: bold; margin: 20px 0; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Good Morning, {user_name}!</h1>
+                <p>{today}</p>
+            </div>
+            <div class="content">
+                <p>Here's your daily task summary to help you stay on track:</p>
+                {startup_html}
+                {daily_html}
+                {shutdown_html}
+                {f'<p style="text-align: center; color: #666; margin-top: 30px;">No tasks scheduled for today. Enjoy your day!</p>' if not (startup_tasks or daily_tasks or shutdown_tasks) else ''}
+                <p style="text-align: center; margin-top: 30px;">
+                    <a href="{APP_URL}/dashboard" class="button">Open Dashboard</a>
+                </p>
+            </div>
+            <div class="footer">
+                <p>You're receiving this because you enabled daily reminders.</p>
+                <p>Manage your preferences in <a href="{APP_URL}/settings">Settings</a>.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         token = credentials.credentials
