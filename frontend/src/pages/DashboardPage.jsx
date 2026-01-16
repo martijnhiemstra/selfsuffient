@@ -34,7 +34,7 @@ export const DashboardPage = () => {
       try {
         const [projectsRes, dashboardRes] = await Promise.all([
           axios.get(`${API}/projects`, { headers: { Authorization: `Bearer ${token}` } }),
-          axios.get(`${API}/dashboard/today`, { headers: { Authorization: `Bearer ${token}` } })
+          axios.get(`${API}/dashboard/data`, { headers: { Authorization: `Bearer ${token}` } })
         ]);
         
         setProjects(projectsRes.data.projects || []);
