@@ -329,6 +329,11 @@ export const GalleryPage = () => {
               data-testid={`folder-${folder.id}`}
             >
               <CardContent className="p-4 text-center relative">
+                {folder.is_public && (
+                  <Badge variant="secondary" className="absolute top-2 left-2 gap-1 text-xs">
+                    <Globe className="w-3 h-3" />
+                  </Badge>
+                )}
                 <Button
                   variant="ghost"
                   size="icon"
@@ -378,23 +383,38 @@ export const GalleryPage = () => {
       )}
 
       {/* Create Folder Dialog */}
-      <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
+      <Dialog open={folderDialogOpen} onOpenChange={(open) => { setFolderDialogOpen(open); if (!open) { setFolderName(''); setFolderIsPublic(false); } }}>
         <DialogContent>
           <form onSubmit={handleCreateFolder}>
             <DialogHeader>
               <DialogTitle className="font-display">New Folder</DialogTitle>
               <DialogDescription>Create a new folder {currentFolderId ? 'in this location' : 'in the root'}</DialogDescription>
             </DialogHeader>
-            <div className="py-4">
-              <Label htmlFor="folderName">Folder Name</Label>
-              <Input 
-                id="folderName"
-                value={folderName}
-                onChange={(e) => setFolderName(e.target.value)}
-                placeholder="Enter folder name"
-                className="mt-2"
-                data-testid="folder-name-input"
-              />
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="folderName">Folder Name</Label>
+                <Input 
+                  id="folderName"
+                  value={folderName}
+                  onChange={(e) => setFolderName(e.target.value)}
+                  placeholder="Enter folder name"
+                  data-testid="folder-name-input"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <Label htmlFor="folderPublic" className="flex items-center gap-2">
+                    <Globe className="w-4 h-4" /> Make Public
+                  </Label>
+                  <p className="text-xs text-muted-foreground">Public folders are visible on your public project page</p>
+                </div>
+                <Switch 
+                  id="folderPublic"
+                  checked={folderIsPublic}
+                  onCheckedChange={setFolderIsPublic}
+                  data-testid="folder-public-switch"
+                />
+              </div>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setFolderDialogOpen(false)}>Cancel</Button>
