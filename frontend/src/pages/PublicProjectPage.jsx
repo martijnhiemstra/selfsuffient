@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { APP_NAME } from '../config';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -263,7 +264,7 @@ export const PublicProjectPage = () => {
               <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
                 <Leaf className="w-4 h-4 text-primary-foreground" />
               </div>
-              <span className="font-display font-bold">Self-Sufficient Life</span>
+              <span className="font-display font-bold">{APP_NAME}</span>
             </div>
           </div>
           <Link to="/login">
@@ -481,9 +482,9 @@ export const PublicProjectPage = () => {
             <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
               <Leaf className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-display font-semibold">Self-Sufficient Life</span>
+            <span className="font-display font-semibold">{APP_NAME}</span>
           </div>
-          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} Self-Sufficient Life</p>
+          <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} {APP_NAME}</p>
         </div>
       </footer>
     </div>
