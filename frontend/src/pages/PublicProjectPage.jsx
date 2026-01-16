@@ -222,7 +222,7 @@ export const PublicProjectPage = () => {
                       <CardTitle className="font-display">{entry.title}</CardTitle>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>{format(parseISO(entry.created_at), 'PP')}</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views}</span>
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views} views</span>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -257,7 +257,7 @@ export const PublicProjectPage = () => {
                       <CardTitle className="font-display">{entry.title}</CardTitle>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>{format(parseISO(entry.created_at), 'PP')}</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views}</span>
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views} views</span>
                       </div>
                     </CardHeader>
                     <CardContent>
