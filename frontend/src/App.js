@@ -15,6 +15,10 @@ import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
 import { AdminUsersPage } from "./pages/AdminUsersPage";
 import { SettingsPage } from "./pages/SettingsPage";
+import { DiaryPage } from "./pages/DiaryPage";
+import { GalleryPage } from "./pages/GalleryPage";
+import { BlogPage } from "./pages/BlogPage";
+import { LibraryPage } from "./pages/LibraryPage";
 
 function App() {
   return (
@@ -60,8 +64,60 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Project Features */}
           <Route
-            path="/projects/:projectId/*"
+            path="/projects/:projectId/diary"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <DiaryPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/gallery"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <GalleryPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/blog"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <BlogPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/library"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LibraryPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/tasks"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectDetailPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/projects/:projectId/routines"
             element={
               <ProtectedRoute>
                 <Layout>
