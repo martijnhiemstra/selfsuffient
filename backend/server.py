@@ -579,6 +579,9 @@ async def startup_event():
     await db.users.create_index("id", unique=True)
     await db.password_resets.create_index("token")
     await db.password_resets.create_index("user_id")
+    await db.projects.create_index("id", unique=True)
+    await db.projects.create_index("user_id")
+    await db.projects.create_index("is_public")
     logger.info("Database indexes created")
 
 @app.on_event("shutdown")
