@@ -126,7 +126,7 @@ def get_daily_reminder_email_html(user_name: str, startup_tasks: list, daily_tas
                 {startup_html}
                 {daily_html}
                 {shutdown_html}
-                {f'<p style="text-align: center; color: #666; margin-top: 30px;">No tasks scheduled for today. Enjoy your day!</p>' if not (startup_tasks or daily_tasks or shutdown_tasks) else ''}
+                {'<p style="text-align: center; color: #666; margin-top: 30px;">No tasks scheduled for today. Enjoy your day!</p>' if not (startup_tasks or daily_tasks or shutdown_tasks) else ''}
                 <p style="text-align: center; margin-top: 30px;">
                     <a href="{APP_URL}/dashboard" class="button">Open Dashboard</a>
                 </p>
