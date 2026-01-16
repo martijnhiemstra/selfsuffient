@@ -1,0 +1,14 @@
+# Daily Reminders Cron Job
+# Runs at 7:00 AM every day
+# Configurable via CRON_SCHEDULE environment variable
+
+CRON_SCHEDULE="${CRON_SCHEDULE:-0 7 * * *}"
+
+# Log output
+LOG_FILE=/var/log/cron.log
+
+# Make the API call to send daily reminders
+${CRON_SCHEDULE} /usr/bin/curl -s -X POST http://backend:8001/api/cron/send-daily-reminders >> ${LOG_FILE} 2>&1
+
+# Keep the cron log from growing too large (rotate at 10MB)
+0 0 * * 0 /usr/bin/find /var/log -name "cron.log" -size +10M -exec truncate -s 0 {} \;
