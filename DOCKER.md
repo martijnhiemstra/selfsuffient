@@ -8,7 +8,11 @@
 
 ### Run with Docker Compose
 
-1. **Clone the repository and navigate to the project directory**
+1. **Copy environment file and configure:**
+   ```bash
+   cp .env.example .env
+   # Edit .env with your settings
+   ```
 
 2. **Start all services:**
    ```bash
@@ -29,20 +33,40 @@
    - Email: `admin@selfsufficient.app`
    - Password: `admin123`
 
-### Environment Variables
+## Environment Variables
 
-Create a `.env` file in the root directory for custom configuration:
+Create a `.env` file in the root directory. See `.env.example` for all options.
+
+### Required Configuration
 
 ```env
-# JWT Secret (change in production!)
-JWT_SECRET=your-super-secret-jwt-key-change-in-production
+# App name displayed throughout the application
+APP_NAME=Self-Sufficient Life
 
-# MongoDB (optional - uses defaults if not set)
-MONGO_URL=mongodb://mongodb:27017
-DB_NAME=selfsufficient_db
+# Public URL of your frontend
+APP_URL=http://localhost:3000
+
+# Security - CHANGE IN PRODUCTION!
+JWT_SECRET=your-super-secret-jwt-key-change-in-production
 ```
 
-### Common Commands
+### Email Configuration (SMTP with SSL)
+
+To enable password reset emails, configure SMTP:
+
+```env
+# SMTP server settings (SSL on port 465)
+SMTP_HOST=smtp.example.com
+SMTP_PORT=465
+SMTP_USER=your-email@example.com
+SMTP_PASSWORD=your-email-password
+SMTP_FROM_EMAIL=noreply@example.com
+SMTP_FROM_NAME=Self-Sufficient Life
+```
+
+**Note:** If SMTP is not configured, password reset tokens are logged to the backend console (development mode).
+
+## Common Commands
 
 ```bash
 # Start services
@@ -68,7 +92,7 @@ docker-compose up -d --build
 docker exec -it selfsufficient-mongodb mongosh
 ```
 
-### Development Mode
+## Development Mode
 
 For development with hot-reload:
 
@@ -82,43 +106,42 @@ yarn install
 yarn start
 ```
 
-### Production Deployment
+## Production Deployment
 
-For production, update these settings:
+For production, ensure these settings:
 
-1. Change `JWT_SECRET` to a secure random value
-2. Update `CORS_ORIGINS` to your domain
-3. Use proper SSL/TLS certificates
-4. Consider using Docker Swarm or Kubernetes for scaling
+1. **Change `JWT_SECRET`** to a secure random value (64+ characters)
+2. **Configure `CORS_ORIGINS`** to your domain only
+3. **Configure SMTP** for password reset functionality
+4. **Set `APP_URL`** to your production frontend URL
+5. Use proper SSL/TLS certificates (nginx/traefik)
 
 ```bash
-# Production build
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Generate a secure JWT secret
+openssl rand -hex 64
 ```
 
-### Troubleshooting
+## Troubleshooting
 
 **MongoDB connection issues:**
 ```bash
-# Check if MongoDB is running
 docker-compose ps mongodb
-
-# Check MongoDB logs
 docker-compose logs mongodb
 ```
 
 **Backend not starting:**
 ```bash
-# Check backend logs
 docker-compose logs backend
-
-# Restart backend
 docker-compose restart backend
 ```
 
+**Email not sending:**
+- Check SMTP credentials in `.env`
+- Verify SMTP host and port (should be 465 for SSL)
+- Check backend logs: `docker-compose logs backend | grep -i email`
+
 **Frontend build issues:**
 ```bash
-# Rebuild frontend
 docker-compose build frontend --no-cache
 docker-compose up -d frontend
 ```
