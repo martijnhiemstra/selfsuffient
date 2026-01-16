@@ -462,9 +462,15 @@ async def forgot_password(data: ForgotPasswordRequest):
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     
-    # In a real app, send email here
-    # For now, log the token (dev only)
-    logger.info(f"Password reset token for {data.email}: {reset_token}")
+    # Send password reset email
+    reset_url = f"{APP_URL}/reset-password?token={reset_token}"
+    email_html = get_password_reset_email_html(reset_url, user.get("name", "User"))
+    email_sent = send_email(data.email, f"Reset Your {APP_NAME} Password", email_html)
+    
+    if not email_sent:
+        # Log token for development if email not configured
+        logger.info(f"Password reset token for {data.email}: {reset_token}")
+        logger.info(f"Reset URL: {reset_url}")
     
     return MessageResponse(message="If the email exists, a reset link has been sent")
 
