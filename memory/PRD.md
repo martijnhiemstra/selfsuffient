@@ -62,10 +62,14 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - [x] Library with folders/entries
 
 ### P2 (Medium)
-- [ ] Tasks & Calendar (month/week/day view, drag-drop, recurring)
-- [ ] Startup/Shutdown daily task lists
-- [ ] Public project view with view tracking
+- [x] Tasks & Calendar (month/week/day view, drag-drop, recurring)
+- [x] Startup/Shutdown daily task lists with completion tracking
+- [ ] Public project view with actual view counts on landing
 - [ ] Sorting preferences persistence
+
+### P3 (Low)
+- [x] Rich text editor with image embedding
+- [ ] Email notifications for password reset
 
 ### P2 (Medium)
 - [ ] Tasks & Calendar
