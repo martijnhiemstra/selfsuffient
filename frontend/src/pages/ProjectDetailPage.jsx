@@ -226,15 +226,18 @@ export const ProjectDetailPage = () => {
             <div className="aspect-video bg-muted relative group">
               {project.image ? (
                 <img 
-                  src={`${process.env.REACT_APP_BACKEND_URL}${project.image}`}
+                  src={getImageUrl(project.image)}
                   alt={project.name}
                   className="w-full h-full object-cover"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.nextSibling.style.display = 'flex';
+                  }}
                 />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <FolderOpen className="w-16 h-16 text-muted-foreground/30" />
-                </div>
-              )}
+              ) : null}
+              <div className={`w-full h-full items-center justify-center ${project.image ? 'hidden' : 'flex'}`}>
+                <FolderOpen className="w-16 h-16 text-muted-foreground/30" />
+              </div>
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                 <input
                   ref={fileInputRef}
