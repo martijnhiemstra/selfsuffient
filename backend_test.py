@@ -374,6 +374,283 @@ class SelfSufficientAPITester:
         
         return success1 and success2 and success3
 
+    def test_tasks_crud(self):
+        """Test task CRUD operations"""
+        print("\n=== TASK CRUD TESTS ===")
+        
+        if not self.token:
+            print("❌ No token available for task testing")
+            return False
+        
+        # First create a project for tasks
+        project_data = {
+            "name": f"Task Test Project {datetime.now().strftime('%H%M%S')}",
+            "description": "Project for testing tasks",
+            "is_public": False
+        }
+        
+        success_proj, project_response = self.run_test(
+            "Create Project for Tasks", 
+            "POST", 
+            "projects", 
+            200, 
+            data=project_data
+        )
+        
+        if not success_proj or 'id' not in project_response:
+            print("❌ Failed to create project for task testing")
+            return False
+        
+        project_id = project_response['id']
+        
+        # Test create task
+        task_data = {
+            "title": "Water garden",
+            "description": "Daily watering of vegetables",
+            "task_datetime": "2024-12-20T09:00:00",
+            "is_all_day": False,
+            "recurrence": "daily"
+        }
+        
+        success1, task_response = self.run_test(
+            "Create Task", 
+            "POST", 
+            f"projects/{project_id}/tasks", 
+            200, 
+            data=task_data
+        )
+        
+        task_id = None
+        if success1 and 'id' in task_response:
+            task_id = task_response['id']
+            print(f"   Created task with ID: {task_id}")
+        
+        # Test list tasks
+        success2, tasks_response = self.run_test(
+            "List Tasks", 
+            "GET", 
+            f"projects/{project_id}/tasks", 
+            200
+        )
+        
+        if success2:
+            print(f"   Found {tasks_response.get('total', 0)} tasks")
+        
+        # Test get specific task
+        success3 = True
+        if task_id:
+            success3, _ = self.run_test(
+                "Get Task by ID", 
+                "GET", 
+                f"projects/{project_id}/tasks/{task_id}", 
+                200
+            )
+        
+        # Test update task
+        success4 = True
+        if task_id:
+            update_data = {
+                "title": "Water garden (updated)",
+                "description": "Updated description",
+                "recurrence": "weekly"
+            }
+            success4, _ = self.run_test(
+                "Update Task", 
+                "PUT", 
+                f"projects/{project_id}/tasks/{task_id}", 
+                200, 
+                data=update_data
+            )
+        
+        # Test delete task
+        success5 = True
+        if task_id:
+            success5, _ = self.run_test(
+                "Delete Task", 
+                "DELETE", 
+                f"projects/{project_id}/tasks/{task_id}", 
+                200
+            )
+        
+        # Cleanup project
+        self.run_test("Delete Task Test Project", "DELETE", f"projects/{project_id}", 200)
+        
+        return success1 and success2 and success3 and success4 and success5
+
+    def test_routines_crud(self):
+        """Test routine CRUD operations"""
+        print("\n=== ROUTINE CRUD TESTS ===")
+        
+        if not self.token:
+            print("❌ No token available for routine testing")
+            return False
+        
+        # First create a project for routines
+        project_data = {
+            "name": f"Routine Test Project {datetime.now().strftime('%H%M%S')}",
+            "description": "Project for testing routines",
+            "is_public": False
+        }
+        
+        success_proj, project_response = self.run_test(
+            "Create Project for Routines", 
+            "POST", 
+            "projects", 
+            200, 
+            data=project_data
+        )
+        
+        if not success_proj or 'id' not in project_response:
+            print("❌ Failed to create project for routine testing")
+            return False
+        
+        project_id = project_response['id']
+        
+        # Test create startup routine task
+        startup_task_data = {
+            "title": "Check animals",
+            "description": "Check on chickens and goats",
+            "order": 0
+        }
+        
+        success1, startup_response = self.run_test(
+            "Create Startup Routine Task", 
+            "POST", 
+            f"projects/{project_id}/routines/startup", 
+            200, 
+            data=startup_task_data
+        )
+        
+        startup_task_id = None
+        if success1 and 'id' in startup_response:
+            startup_task_id = startup_response['id']
+            print(f"   Created startup task with ID: {startup_task_id}")
+        
+        # Test create shutdown routine task
+        shutdown_task_data = {
+            "title": "Lock gates",
+            "description": "Secure all gates and doors",
+            "order": 0
+        }
+        
+        success2, shutdown_response = self.run_test(
+            "Create Shutdown Routine Task", 
+            "POST", 
+            f"projects/{project_id}/routines/shutdown", 
+            200, 
+            data=shutdown_task_data
+        )
+        
+        shutdown_task_id = None
+        if success2 and 'id' in shutdown_response:
+            shutdown_task_id = shutdown_response['id']
+            print(f"   Created shutdown task with ID: {shutdown_task_id}")
+        
+        # Test list startup routines
+        success3, startup_list = self.run_test(
+            "List Startup Routines", 
+            "GET", 
+            f"projects/{project_id}/routines/startup", 
+            200
+        )
+        
+        if success3:
+            print(f"   Found {len(startup_list.get('tasks', []))} startup tasks")
+        
+        # Test list shutdown routines
+        success4, shutdown_list = self.run_test(
+            "List Shutdown Routines", 
+            "GET", 
+            f"projects/{project_id}/routines/shutdown", 
+            200
+        )
+        
+        if success4:
+            print(f"   Found {len(shutdown_list.get('tasks', []))} shutdown tasks")
+        
+        # Test toggle completion
+        success5 = True
+        if startup_task_id:
+            success5, _ = self.run_test(
+                "Toggle Startup Task Completion", 
+                "POST", 
+                f"projects/{project_id}/routines/startup/{startup_task_id}/complete", 
+                200
+            )
+        
+        success6 = True
+        if shutdown_task_id:
+            success6, _ = self.run_test(
+                "Toggle Shutdown Task Completion", 
+                "POST", 
+                f"projects/{project_id}/routines/shutdown/{shutdown_task_id}/complete", 
+                200
+            )
+        
+        # Test update routine task
+        success7 = True
+        if startup_task_id:
+            update_data = {
+                "title": "Check animals (updated)",
+                "description": "Updated description"
+            }
+            success7, _ = self.run_test(
+                "Update Startup Routine Task", 
+                "PUT", 
+                f"projects/{project_id}/routines/startup/{startup_task_id}", 
+                200, 
+                data=update_data
+            )
+        
+        # Test delete routine tasks
+        success8 = True
+        if startup_task_id:
+            success8, _ = self.run_test(
+                "Delete Startup Routine Task", 
+                "DELETE", 
+                f"projects/{project_id}/routines/startup/{startup_task_id}", 
+                200
+            )
+        
+        success9 = True
+        if shutdown_task_id:
+            success9, _ = self.run_test(
+                "Delete Shutdown Routine Task", 
+                "DELETE", 
+                f"projects/{project_id}/routines/shutdown/{shutdown_task_id}", 
+                200
+            )
+        
+        # Cleanup project
+        self.run_test("Delete Routine Test Project", "DELETE", f"projects/{project_id}", 200)
+        
+        return success1 and success2 and success3 and success4 and success5 and success6 and success7 and success8 and success9
+
+    def test_dashboard_today(self):
+        """Test dashboard today endpoint"""
+        print("\n=== DASHBOARD TODAY TESTS ===")
+        
+        if not self.token:
+            print("❌ No token available for dashboard testing")
+            return False
+        
+        # Test dashboard/today endpoint
+        success, response = self.run_test(
+            "Get Dashboard Today Data", 
+            "GET", 
+            "dashboard/today", 
+            200
+        )
+        
+        if success:
+            print(f"   Today tasks: {len(response.get('today_tasks', []))}")
+            print(f"   Startup tasks: {len(response.get('startup_tasks', []))}")
+            print(f"   Shutdown tasks: {len(response.get('shutdown_tasks', []))}")
+            print(f"   Startup completions: {len(response.get('startup_completions', []))}")
+            print(f"   Shutdown completions: {len(response.get('shutdown_completions', []))}")
+        
+        return success
+
 def main():
     print("🚀 Starting Self-Sufficient Lifestyle App API Tests")
     print("=" * 60)
