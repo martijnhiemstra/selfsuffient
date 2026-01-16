@@ -1,136 +1,202 @@
-# Self-Sufficient Lifestyle App - PRD
+# Self-Sufficient Life - Product Requirements Document
+
+## Overview
+A full-stack application to help users setup and maintain a self-sufficient lifestyle, with project management, diaries, galleries, blogs, libraries, task management, and daily routines.
 
 ## Original Problem Statement
-Build an application to help users setup a self-sufficient lifestyle with:
-- User authentication (login, forgot password - no registration)
-- Projects (name, description 5000 chars, image, public/private)
-- Diary entries per project (title, datetime, story 10000 chars, search/sort)
-- Gallery with recursive folders and images
-- Blog (public/private entries, public viewing page, view tracking)
-- Library (folders, entries, public/private)
-- Tasks with calendar (month/week/day view, drag-drop, recurring)
-- Startup/Shutdown daily task lists with completion tracking
-- Public landing page with view tracking
-- Rich HTML editor for descriptions
-
-## User Personas
-1. **Homesteader** - Primary user managing self-sufficiency projects
-2. **Admin** - User management, system configuration
-3. **Public Visitor** - Views public projects, blogs, library entries
-
-## Core Requirements (Static)
-- No user registration - admin creates users
-- JWT authentication with bcrypt
-- MongoDB database
-- FastAPI backend, React frontend
-- Responsive design with nature/organic theme
-- Rich text editing (TipTap)
-
-## What's Been Implemented
-
-### Phase 1 - Core Infrastructure ✅
-- [x] JWT Authentication (login, logout, forgot/reset password)
-- [x] Admin user seeding (admin@selfsufficient.app / admin123)
-- [x] Protected routes & Auth context
-- [x] Landing page, Login page, Forgot/Reset password pages
-- [x] Dashboard layout with bento grid
-- [x] Responsive navigation
-- [x] Design system (Playfair Display, DM Sans, earthy colors)
-
-### Phase 2 - Project Management ✅
-- [x] Projects CRUD (name, description, public/private)
-- [x] Project image upload
-- [x] Projects listing with search/sort
-- [x] Project detail page with feature cards
-- [x] Admin user management (create, list, delete)
-- [x] Settings page with password change
-
-### Phase 3 - Content Features ✅
-- [x] Diary entries with rich text (TipTap)
-- [x] Gallery with folders and image uploads
-- [x] Blog (public/private entries)
-- [x] Library with folders and entries
-
-### Phase 4 - Task Management ✅
-- [x] Tasks & Calendar (month/week/day view)
-- [x] Task recurring options (daily, weekly, monthly, yearly)
-- [x] Startup/Shutdown daily task lists with completion tracking
-
-### Phase 5 - Calendar Interactivity & Public URLs (2026-01-16) ✅
-- [x] Click-to-edit tasks on calendar (opens Edit Task dialog)
-- [x] Drag-and-drop to reschedule non-recurring tasks
-- [x] Task deletion with confirmation dialog
-- [x] User-specific public URLs (/public/user/:userId)
-- [x] Public Site nav link opens user's profile in new tab
-
-### Phase 6 - Docker, Email & Advanced Features (2026-01-16) ✅
-- [x] Docker + Docker Compose support with environment configuration
-- [x] SMTP email service (SSL on port 465) for password reset
-- [x] Configurable APP_NAME and APP_URL from environment
-- [x] Recursive folder navigation for Gallery (breadcrumbs, subfolders)
-- [x] Recursive folder navigation for Library (breadcrumbs, subfolders)
-- [x] View counts displayed on Blog and Library entries
-- [x] Enhanced search in descriptions (Blog, Library, Diary)
-- [x] Light green (#f0f7f0) background for authenticated section
-- [x] Custom landing page background image
-
-### Phase 7 - Daily Reminders & UI Improvements (2026-01-16) ✅
-- [x] Renamed "Startup" to "Start of Day Items" throughout the app
-- [x] Renamed "Shutdown" to "End of Day Items" throughout the app
-- [x] Added `daily_reminders` property to user profile
-- [x] Settings page has Daily Reminders toggle with description
-- [x] Daily reminder email template with Start of Day → Tasks → End of Day order
-- [x] Cron integrated into backend container (no separate service)
-- [x] View counts show "0 views" explicitly on public project pages
-
-### Phase 8 - Public Gallery & Search/Sort (2026-01-16) ✅
-- [x] Added `is_public` property to gallery folders
-- [x] Gallery folder creation dialog has "Make Public" toggle
-- [x] Gallery folders display Globe icon badge when public
-- [x] Public project page has Gallery tab showing public folders
-- [x] Public project page Blog tab has search and sort
-- [x] Public project page Library tab has search and sort
-- [x] Public project page Gallery tab has search and sort
-- [x] GET /api/public/projects/{id}/gallery returns only public folders
-
-## Environment Configuration
-See `/app/.env.example` for all options:
-- `APP_NAME` - Application name displayed throughout
-- `APP_URL` - Frontend URL for email links
-- `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASSWORD` - Email settings
-- `SMTP_FROM_EMAIL`, `SMTP_FROM_NAME` - Sender configuration
+Build an application that helps users setup a self-sufficient lifestyle with:
+- User authentication (Login and forgot password, no registration)
+- Projects with name, description, image, public/private settings
+- Diary with searchable/sortable entries per project
+- Gallery with recursive folders and searchable/sortable images
+- Blog with public/private entries and view counts
+- Library with recursive folders and public/private entries
+- HTML editor for all description fields
+- Calendar with month/week/day views, recurrence, and drag-and-drop
+- Daily startup and shutdown task lists
+- Public landing page showing public projects, blogs, and libraries
+- User dashboard showing undone routines and today's tasks
+- Daily reminder emails (opt-in)
+- Docker containerization
 
 ## Tech Stack
-- Backend: FastAPI, Motor (MongoDB async), PyJWT, bcrypt, smtplib (SSL)
-- Frontend: React, TailwindCSS, Shadcn/UI, React Router, TipTap
-- Database: MongoDB
-- Design: Playfair Display + DM Sans fonts, earthy green theme
-- Containerization: Docker, Docker Compose
+- **Frontend**: React, React Router, Axios, Tailwind CSS, Shadcn/UI, TipTap editor
+- **Backend**: FastAPI, MongoDB (motor), Pydantic, JWT authentication
+- **Containerization**: Docker, Docker Compose
+- **Scheduled Tasks**: Cron (inside backend container)
+
+## Code Architecture (After Refactoring - Jan 2026)
+```
+/app/
+├── docker-compose.yml
+├── DOCKER.md
+├── backend/
+│   ├── server.py           # Main FastAPI app entry point (~60 lines)
+│   ├── config.py           # Configuration and database connection
+│   ├── models/             # Pydantic models
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── project.py
+│   │   ├── diary.py
+│   │   ├── gallery.py
+│   │   ├── blog.py
+│   │   ├── library.py
+│   │   ├── task.py
+│   │   ├── routine.py
+│   │   └── public.py
+│   ├── routes/             # API route handlers
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── admin.py
+│   │   ├── projects.py
+│   │   ├── diary.py
+│   │   ├── gallery.py
+│   │   ├── blog.py
+│   │   ├── library.py
+│   │   ├── tasks.py
+│   │   ├── routines.py
+│   │   ├── public.py
+│   │   ├── dashboard.py
+│   │   └── health.py
+│   ├── services/           # Business logic helpers
+│   │   ├── __init__.py
+│   │   ├── auth.py
+│   │   ├── email.py
+│   │   └── project.py
+│   ├── daily_reminders.py  # Cron job script
+│   ├── entrypoint.sh
+│   ├── Dockerfile
+│   └── requirements.txt
+├── frontend/
+│   ├── src/
+│   │   ├── App.js
+│   │   ├── config.js
+│   │   ├── components/
+│   │   ├── context/
+│   │   ├── hooks/
+│   │   └── pages/
+│   ├── public/
+│   ├── Dockerfile
+│   └── package.json
+└── memory/
+    └── PRD.md
+```
+
+## Key Database Collections
+- `users`: id, email, hashed_password, name, is_admin, daily_reminders
+- `projects`: id, user_id, name, description, image, is_public
+- `diary_entries`: id, project_id, title, story, entry_datetime
+- `blog_entries`: id, project_id, title, description, is_public, views
+- `library_folders`: id, project_id, parent_id, name
+- `library_entries`: id, project_id, folder_id, title, description, is_public, views
+- `gallery_folders`: id, project_id, parent_id, name, is_public
+- `gallery_images`: id, project_id, folder_id, filename, url
+- `tasks`: id, project_id, title, description, task_datetime, is_all_day, recurrence
+- `routine_tasks`: id, project_id, routine_type, title, description, order
+- `routine_completions`: id, task_id, completed_date
+- `password_resets`: id, user_id, token, expires_at, used
 
 ## Key API Endpoints
-- `/api/auth/{login, logout, forgot-password, reset-password}`
-- `/api/auth/settings` (PUT) - Update user settings (daily_reminders)
-- `/api/config` - Get app configuration
-- `/api/cron/send-daily-reminders` (POST) - Send daily reminder emails
-- `/api/projects/...` (CRUD)
-- `/api/projects/{project_id}/{diary, blog, library, tasks, routines}`
-- `/api/projects/{project_id}/gallery/folders/{folderId}/path` - Breadcrumb path
-- `/api/projects/{project_id}/library/folders/{folderId}/path` - Breadcrumb path
-- `/api/public/projects` - List all public projects
-- `/api/public/users/{user_id}/profile` - Get user's public profile
-- `/api/public/projects/{project_id}/blog/{entry_id}` - Increments view count
-- `/api/public/projects/{project_id}/library/entries/{entry_id}` - Increments view count
-- `/api/dashboard/today` - Dashboard data
+- **Auth**: `/api/auth/{login, forgot-password, reset-password, me, settings, change-password}`
+- **Admin**: `/api/admin/users` (CRUD)
+- **Projects**: `/api/projects` (CRUD with image upload)
+- **Diary**: `/api/projects/{id}/diary` (CRUD)
+- **Gallery**: `/api/projects/{id}/gallery/{folders, images}` (CRUD)
+- **Blog**: `/api/projects/{id}/blog` (CRUD)
+- **Library**: `/api/projects/{id}/library/{folders, entries}` (CRUD)
+- **Tasks**: `/api/projects/{id}/tasks` (CRUD)
+- **Routines**: `/api/projects/{id}/routines/{startup, shutdown}` (CRUD + complete/uncomplete)
+- **Dashboard**: `/api/dashboard/{data, all-tasks}`
+- **Public**: `/api/public/{projects, users/{id}/profile}`
+- **Health**: `/api/health`
+
+## Completed Features ✅
+All original requirements have been implemented:
+
+1. **Authentication** ✅
+   - JWT-based login/logout
+   - Password reset via SMTP email
+   - User settings management
+
+2. **Projects** ✅
+   - Full CRUD with image upload
+   - Public/private visibility
+   - Search and sort functionality
+
+3. **Diary** ✅
+   - Searchable/sortable entries
+   - Date-based organization
+
+4. **Gallery** ✅
+   - Recursive folder structure
+   - Public folders support
+   - Breadcrumb navigation
+   - Image upload and management
+
+5. **Blog** ✅
+   - Public/private entries
+   - View count tracking
+   - Search and sort
+
+6. **Library** ✅
+   - Recursive folders
+   - Public/private entries
+   - View count tracking
+   - Breadcrumb navigation
+
+7. **Tasks & Calendar** ✅
+   - Month/week/day views
+   - Drag-and-drop support
+   - Click-to-edit functionality
+   - Recurrence options
+
+8. **Daily Routines** ✅
+   - "Start of Day" items
+   - "End of Day" items
+   - Completion tracking per day
+
+9. **Public Site** ✅
+   - Landing page with public projects
+   - User-specific public profiles (`/public/user/:userId`)
+   - Public project pages with Blog, Library, Gallery tabs
+
+10. **User Dashboard** ✅
+    - Today's tasks display
+    - Incomplete routines display
+    - Quick access to projects
+
+11. **Daily Reminders** ✅
+    - Opt-in email notifications
+    - Secure cron job implementation
+
+12. **Docker Containerization** ✅
+    - Docker Compose setup
+    - Auto admin user seeding
+    - Production-ready configuration
+
+## Recent Updates (Jan 16, 2026)
+- **Watermark Removed**: Removed emergent-main.js script from index.html
+- **Backend Refactoring**: Split monolithic server.py (2100+ lines) into modular structure:
+  - Created `config.py` for configuration
+  - Created `models/` folder with separate model files
+  - Created `routes/` folder with separate route files  
+  - Created `services/` folder for business logic
+- **Dashboard API Fix**: Updated frontend to use correct endpoint `/api/dashboard/data`
+- **All Tests Passing**: 33 backend tests + frontend tests all passing
 
 ## Test Credentials
-- Email: admin@selfsufficient.app
-- Password: admin123
+- **Admin Email**: admin@selfsufficient.app
+- **Admin Password**: admin123
 
-## Notes
-- Password reset emails sent via SMTP SSL (port 465) when configured
-- If SMTP not configured, reset tokens logged to console (dev mode)
-- Recursive folders support unlimited nesting depth
-- View counts increment on public page access
+## Future Enhancements (Backlog)
+1. Social sharing features for public content
+2. Export/import functionality for projects
+3. Mobile app version
+4. Analytics dashboard for content views
+5. Multi-language support
+6. Two-factor authentication
+7. Project collaboration features
 
-## All Features Complete ✅
-All original requirements from the problem statement have been implemented.
+## Documentation
+- `/app/DOCKER.md` - Docker setup and deployment guide
+- `/app/.env.example` - Environment variables template
