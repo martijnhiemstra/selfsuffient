@@ -28,10 +28,22 @@ services:
     container_name: selfsufficient-backend
     restart: unless-stopped
     environment:
+      # Database
       - MONGO_URL=mongodb://mongodb:27017
-      - DB_NAME=selfsufficient_db
-      - CORS_ORIGINS=http://localhost:3000,http://localhost
+      - DB_NAME=${DB_NAME:-selfsufficient_db}
+      # Security
       - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:3000,http://localhost}
+      # App Configuration
+      - APP_NAME=${APP_NAME:-Self-Sufficient Life}
+      - APP_URL=${APP_URL:-http://localhost:3000}
+      # Email Configuration (SMTP with SSL on port 465)
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-465}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
+      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
+      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Self-Sufficient Life}
     volumes:
       - ./backend:/app
       - backend_uploads:/app/uploads
@@ -49,7 +61,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_BACKEND_URL=http://localhost:8001
+        - REACT_APP_BACKEND_URL=${REACT_APP_BACKEND_URL:-http://localhost:8001}
     container_name: selfsufficient-frontend
     restart: unless-stopped
     ports:
