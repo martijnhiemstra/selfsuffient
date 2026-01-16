@@ -98,7 +98,7 @@ export const ProjectsPage = () => {
   };
 
   const toggleSort = () => {
-    setSortOrder(sortOrder === 'desc' ? 'asc' : 'desc');
+    toggleSortOrder();
   };
 
   return (
