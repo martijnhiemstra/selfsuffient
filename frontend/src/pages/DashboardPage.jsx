@@ -132,7 +132,7 @@ export const DashboardPage = () => {
                 <Sun className="w-5 h-5 text-amber-600" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-lg font-display">Morning Startup</CardTitle>
+                <CardTitle className="text-lg font-display">Start of Day Items</CardTitle>
                 <CardDescription>
                   {incompleteStartup.length === 0 ? 'All done!' : `${incompleteStartup.length} remaining`}
                 </CardDescription>
@@ -142,7 +142,7 @@ export const DashboardPage = () => {
               {startupTasks.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
                   <Sun className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No startup tasks configured</p>
+                  <p className="text-sm">No start of day items configured</p>
                 </div>
               ) : (
                 <ul className="space-y-2">
@@ -169,7 +169,7 @@ export const DashboardPage = () => {
                 <Moon className="w-5 h-5 text-indigo-600" />
               </div>
               <div className="flex-1">
-                <CardTitle className="text-lg font-display">Evening Shutdown</CardTitle>
+                <CardTitle className="text-lg font-display">End of Day Items</CardTitle>
                 <CardDescription>
                   {incompleteShutdown.length === 0 ? 'All done!' : `${incompleteShutdown.length} remaining`}
                 </CardDescription>
@@ -179,7 +179,7 @@ export const DashboardPage = () => {
               {shutdownTasks.length === 0 ? (
                 <div className="text-center py-6 text-muted-foreground">
                   <Moon className="w-10 h-10 mx-auto mb-2 opacity-30" />
-                  <p className="text-sm">No shutdown tasks configured</p>
+                  <p className="text-sm">No end of day items configured</p>
                 </div>
               ) : (
                 <ul className="space-y-2">
