@@ -238,6 +238,68 @@ class LibraryListResponse(BaseModel):
     folders: List[LibraryFolderResponse]
     entries: List[LibraryEntryResponse]
 
+# ============ TASK MODELS ============
+
+class TaskCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=5000)
+    task_datetime: str
+    is_all_day: bool = False
+    recurrence: Optional[str] = None  # none, daily, weekly, monthly, yearly
+
+class TaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=5000)
+    task_datetime: Optional[str] = None
+    is_all_day: Optional[bool] = None
+    recurrence: Optional[str] = None
+
+class TaskResponse(BaseModel):
+    id: str
+    project_id: str
+    title: str
+    description: str
+    task_datetime: str
+    is_all_day: bool
+    recurrence: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+class TaskListResponse(BaseModel):
+    tasks: List[TaskResponse]
+    total: int
+
+# ============ ROUTINE MODELS ============
+
+class RoutineTaskCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=1000)
+    order: int = 0
+
+class RoutineTaskUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=1000)
+    order: Optional[int] = None
+
+class RoutineTaskResponse(BaseModel):
+    id: str
+    project_id: str
+    routine_type: str  # startup or shutdown
+    title: str
+    description: str
+    order: int
+    created_at: str
+
+class RoutineCompletionResponse(BaseModel):
+    id: str
+    task_id: str
+    completed_date: str
+    created_at: str
+
+class RoutineListResponse(BaseModel):
+    tasks: List[RoutineTaskResponse]
+    completions_today: List[str]  # list of task_ids completed today
+
 # ============ HELPER FUNCTIONS ============
 
 def hash_password(password: str) -> str:
