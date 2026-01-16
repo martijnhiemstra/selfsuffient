@@ -43,8 +43,7 @@ export const ProjectsPage = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [sortBy, setSortBy] = useState('created_at');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const { sortBy, setSortBy, sortOrder, toggleSortOrder } = useSortPreference('projects', 'created_at', 'desc');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [newProject, setNewProject] = useState({
