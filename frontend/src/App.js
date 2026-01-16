@@ -19,6 +19,8 @@ import { DiaryPage } from "./pages/DiaryPage";
 import { GalleryPage } from "./pages/GalleryPage";
 import { BlogPage } from "./pages/BlogPage";
 import { LibraryPage } from "./pages/LibraryPage";
+import { TasksPage } from "./pages/TasksPage";
+import { RoutinesPage } from "./pages/RoutinesPage";
 
 function App() {
   return (
@@ -32,138 +34,30 @@ function App() {
           <Route path="/reset-password" element={<ResetPasswordPage />} />
 
           {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <DashboardPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/dashboard" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
 
           {/* Projects */}
-          <Route
-            path="/projects"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ProjectsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ProjectDetailPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/projects" element={<ProtectedRoute><Layout><ProjectsPage /></Layout></ProtectedRoute>} />
+          <Route path="/projects/:projectId" element={<ProtectedRoute><Layout><ProjectDetailPage /></Layout></ProtectedRoute>} />
 
           {/* Project Features */}
-          <Route
-            path="/projects/:projectId/diary"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <DiaryPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId/gallery"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <GalleryPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId/blog"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <BlogPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId/library"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <LibraryPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId/tasks"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ProjectDetailPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/projects/:projectId/routines"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <ProjectDetailPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/projects/:projectId/diary" element={<ProtectedRoute><Layout><DiaryPage /></Layout></ProtectedRoute>} />
+          <Route path="/projects/:projectId/gallery" element={<ProtectedRoute><Layout><GalleryPage /></Layout></ProtectedRoute>} />
+          <Route path="/projects/:projectId/blog" element={<ProtectedRoute><Layout><BlogPage /></Layout></ProtectedRoute>} />
+          <Route path="/projects/:projectId/library" element={<ProtectedRoute><Layout><LibraryPage /></Layout></ProtectedRoute>} />
+          <Route path="/projects/:projectId/tasks" element={<ProtectedRoute><Layout><TasksPage /></Layout></ProtectedRoute>} />
+          <Route path="/projects/:projectId/routines" element={<ProtectedRoute><Layout><RoutinesPage /></Layout></ProtectedRoute>} />
 
-          {/* Calendar - Placeholder */}
-          <Route
-            path="/calendar"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <DashboardPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          {/* Calendar */}
+          <Route path="/calendar" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
 
           {/* Settings */}
-          <Route
-            path="/settings"
-            element={
-              <ProtectedRoute>
-                <Layout>
-                  <SettingsPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
 
           {/* Admin Routes */}
-          <Route
-            path="/admin/users"
-            element={
-              <ProtectedRoute adminOnly>
-                <Layout>
-                  <AdminUsersPage />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
+          <Route path="/admin/users" element={<ProtectedRoute adminOnly><Layout><AdminUsersPage /></Layout></ProtectedRoute>} />
 
-          {/* Catch all - redirect to landing */}
+          {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
