@@ -1,26 +1,39 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
-# Replace environment variables in cron template
+# Configuration
 CRON_SCHEDULE="${CRON_SCHEDULE:-0 7 * * *}"
-BACKEND_URL="${BACKEND_URL:-http://backend:8001}"
+LOG_FILE="/var/log/cron.log"
 
-# Create the crontab file
-cat > /etc/crontabs/root << EOF
+# Create log file
+touch $LOG_FILE
+
+echo "=============================================="
+echo "Daily Reminders Cron Service"
+echo "=============================================="
+echo "Schedule: $CRON_SCHEDULE"
+echo "Database: $MONGO_URL / $DB_NAME"
+echo "SMTP Host: ${SMTP_HOST:-not configured}"
+echo "Log file: $LOG_FILE"
+echo "=============================================="
+
+# Create crontab
+cat > /etc/cron.d/daily-reminders << EOF
 # Daily Reminders - Send task summary emails
-# Schedule: ${CRON_SCHEDULE} (default: 7:00 AM daily)
-${CRON_SCHEDULE} /usr/bin/curl -sf -X POST ${BACKEND_URL}/api/cron/send-daily-reminders >> /var/log/cron.log 2>&1
+# Schedule: $CRON_SCHEDULE
+$CRON_SCHEDULE root /usr/local/bin/python /app/daily_reminders.py >> $LOG_FILE 2>&1
 
-# Rotate log weekly to prevent growth
-0 0 * * 0 /usr/bin/find /var/log -name "cron.log" -size +10M -exec truncate -s 0 {} \;
+# Empty line required
 EOF
 
-# Create log file if it doesn't exist
-touch /var/log/cron.log
+# Set permissions
+chmod 0644 /etc/cron.d/daily-reminders
 
-echo "Cron service started with schedule: ${CRON_SCHEDULE}"
-echo "Backend URL: ${BACKEND_URL}"
-echo "Logs: /var/log/cron.log"
+# Apply crontab
+crontab /etc/cron.d/daily-reminders
+
+echo "Cron service started. Waiting for scheduled time..."
+echo "To test manually: docker-compose exec cron python /app/daily_reminders.py"
 
 # Start cron in foreground
-exec crond -f -l 2
+exec cron -f

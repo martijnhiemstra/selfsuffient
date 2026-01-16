@@ -1,17 +1,17 @@
-# Lightweight Alpine-based cron container
-FROM alpine:3.19
+# Python-based cron container for scheduled tasks
+FROM python:3.11-slim
 
-# Install curl for making API calls
-RUN apk add --no-cache curl
+# Install pymongo for database access
+RUN pip install --no-cache-dir pymongo
 
-# Copy entrypoint script
+# Copy scripts
+COPY daily_reminders.py /app/daily_reminders.py
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+RUN chmod +x /entrypoint.sh /app/daily_reminders.py
 
 # Create log directory
 RUN mkdir -p /var/log
 
-# Run as root (required for cron)
-USER root
+WORKDIR /app
 
 ENTRYPOINT ["/entrypoint.sh"]
