@@ -218,6 +218,160 @@ class SelfSufficientAPITester:
         
         return success1 and success2
 
+    def test_projects_crud(self):
+        """Test project CRUD operations"""
+        print("\n=== PROJECT CRUD TESTS ===")
+        
+        if not self.token:
+            print("❌ No token available for project testing")
+            return False
+        
+        # Test create project
+        project_data = {
+            "name": f"Test Project {datetime.now().strftime('%H%M%S')}",
+            "description": "This is a test project for automated testing",
+            "is_public": False
+        }
+        
+        success1, project_response = self.run_test(
+            "Create Project", 
+            "POST", 
+            "projects", 
+            200, 
+            data=project_data
+        )
+        
+        project_id = None
+        if success1 and 'id' in project_response:
+            project_id = project_response['id']
+            print(f"   Created project with ID: {project_id}")
+        
+        # Test list projects
+        success2, projects_response = self.run_test("List Projects", "GET", "projects", 200)
+        
+        if success2:
+            print(f"   Found {projects_response.get('total', 0)} projects")
+        
+        # Test get specific project
+        success3 = True
+        if project_id:
+            success3, _ = self.run_test(
+                "Get Project by ID", 
+                "GET", 
+                f"projects/{project_id}", 
+                200
+            )
+        
+        # Test update project
+        success4 = True
+        if project_id:
+            update_data = {
+                "name": f"Updated Test Project {datetime.now().strftime('%H%M%S')}",
+                "description": "Updated description",
+                "is_public": True
+            }
+            success4, _ = self.run_test(
+                "Update Project", 
+                "PUT", 
+                f"projects/{project_id}", 
+                200, 
+                data=update_data
+            )
+        
+        # Test search projects
+        success5, _ = self.run_test(
+            "Search Projects", 
+            "GET", 
+            "projects?search=Test&sort_by=name&sort_order=asc", 
+            200
+        )
+        
+        # Test delete project (cleanup)
+        success6 = True
+        if project_id:
+            success6, _ = self.run_test(
+                "Delete Project", 
+                "DELETE", 
+                f"projects/{project_id}", 
+                200
+            )
+        
+        return success1 and success2 and success3 and success4 and success5 and success6
+
+    def test_public_projects(self):
+        """Test public projects API"""
+        print("\n=== PUBLIC PROJECTS TESTS ===")
+        
+        # Test public projects endpoint (no auth required)
+        original_token = self.token
+        self.token = None
+        
+        success1, response = self.run_test("List Public Projects", "GET", "public/projects", 200)
+        
+        if success1:
+            print(f"   Found {response.get('total', 0)} public projects")
+        
+        # Test public projects with search
+        success2, _ = self.run_test(
+            "Search Public Projects", 
+            "GET", 
+            "public/projects?search=garden&sort_by=created_at&sort_order=desc", 
+            200
+        )
+        
+        # Restore token
+        self.token = original_token
+        
+        return success1 and success2
+
+    def test_change_password(self):
+        """Test change password functionality"""
+        print("\n=== CHANGE PASSWORD TESTS ===")
+        
+        if not self.token:
+            print("❌ No token available for password change testing")
+            return False
+        
+        # Test change password with wrong current password
+        success1, _ = self.run_test(
+            "Change Password - Wrong Current", 
+            "POST", 
+            "auth/change-password", 
+            400,
+            data={
+                "current_password": "wrongpassword",
+                "new_password": "newpassword123"
+            }
+        )
+        
+        # Test change password with correct current password
+        success2, _ = self.run_test(
+            "Change Password - Correct Current", 
+            "POST", 
+            "auth/change-password", 
+            200,
+            data={
+                "current_password": self.admin_password,
+                "new_password": "newpassword123"
+            }
+        )
+        
+        # Change password back to original
+        success3 = True
+        if success2:
+            success3, _ = self.run_test(
+                "Change Password Back", 
+                "POST", 
+                "auth/change-password", 
+                200,
+                data={
+                    "current_password": "newpassword123",
+                    "new_password": self.admin_password
+                }
+            )
+        
+        return success1 and success2 and success3
+
 def main():
     print("🚀 Starting Self-Sufficient Lifestyle App API Tests")
     print("=" * 60)
