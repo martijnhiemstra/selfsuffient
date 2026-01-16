@@ -1,9 +1,17 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
+import { Input } from '../components/ui/input';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { 
   ArrowLeft, 
   Leaf,
@@ -13,7 +21,11 @@ import {
   Eye,
   Calendar,
   Loader2,
-  Globe
+  Globe,
+  Search,
+  ArrowUpDown,
+  Image,
+  Folder
 } from 'lucide-react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
@@ -25,22 +37,35 @@ export const PublicProjectPage = () => {
   const [project, setProject] = useState(null);
   const [blogEntries, setBlogEntries] = useState([]);
   const [libraryEntries, setLibraryEntries] = useState([]);
+  const [galleryFolders, setGalleryFolders] = useState([]);
+  const [galleryImages, setGalleryImages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('blog');
   const [selectedEntry, setSelectedEntry] = useState(null);
+  
+  // Search and sort state
+  const [blogSearch, setBlogSearch] = useState('');
+  const [blogSort, setBlogSort] = useState('created_at-desc');
+  const [librarySearch, setLibrarySearch] = useState('');
+  const [librarySort, setLibrarySort] = useState('created_at-desc');
+  const [gallerySearch, setGallerySearch] = useState('');
+  const [gallerySort, setGallerySort] = useState('created_at-desc');
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [projectRes, blogRes, libraryRes] = await Promise.all([
+        const [projectRes, blogRes, libraryRes, galleryRes] = await Promise.all([
           axios.get(`${API}/public/projects/${projectId}`),
           axios.get(`${API}/public/projects/${projectId}/blog`),
-          axios.get(`${API}/public/projects/${projectId}/library`)
+          axios.get(`${API}/public/projects/${projectId}/library`),
+          axios.get(`${API}/public/projects/${projectId}/gallery`)
         ]);
         
         setProject(projectRes.data);
         setBlogEntries(blogRes.data.entries || []);
         setLibraryEntries(libraryRes.data.entries || []);
+        setGalleryFolders(galleryRes.data.folders || []);
+        setGalleryImages(galleryRes.data.images || []);
       } catch (error) {
         console.error('Error fetching project:', error);
       } finally {
@@ -50,6 +75,77 @@ export const PublicProjectPage = () => {
 
     fetchData();
   }, [projectId]);
+
+  // Filter and sort blog entries
+  const filteredBlogEntries = useMemo(() => {
+    let entries = [...blogEntries];
+    
+    if (blogSearch) {
+      const search = blogSearch.toLowerCase();
+      entries = entries.filter(e => 
+        e.title.toLowerCase().includes(search) || 
+        (e.description && e.description.toLowerCase().includes(search))
+      );
+    }
+    
+    const [sortBy, sortOrder] = blogSort.split('-');
+    entries.sort((a, b) => {
+      let aVal = sortBy === 'title' ? a.title : a.created_at;
+      let bVal = sortBy === 'title' ? b.title : b.created_at;
+      if (sortOrder === 'desc') return bVal > aVal ? 1 : -1;
+      return aVal > bVal ? 1 : -1;
+    });
+    
+    return entries;
+  }, [blogEntries, blogSearch, blogSort]);
+
+  // Filter and sort library entries
+  const filteredLibraryEntries = useMemo(() => {
+    let entries = [...libraryEntries];
+    
+    if (librarySearch) {
+      const search = librarySearch.toLowerCase();
+      entries = entries.filter(e => 
+        e.title.toLowerCase().includes(search) || 
+        (e.description && e.description.toLowerCase().includes(search))
+      );
+    }
+    
+    const [sortBy, sortOrder] = librarySort.split('-');
+    entries.sort((a, b) => {
+      let aVal = sortBy === 'title' ? a.title : a.created_at;
+      let bVal = sortBy === 'title' ? b.title : b.created_at;
+      if (sortOrder === 'desc') return bVal > aVal ? 1 : -1;
+      return aVal > bVal ? 1 : -1;
+    });
+    
+    return entries;
+  }, [libraryEntries, librarySearch, librarySort]);
+
+  // Filter and sort gallery
+  const filteredGallery = useMemo(() => {
+    let folders = [...galleryFolders];
+    let images = [...galleryImages];
+    
+    if (gallerySearch) {
+      const search = gallerySearch.toLowerCase();
+      folders = folders.filter(f => f.name.toLowerCase().includes(search));
+      images = images.filter(i => i.filename.toLowerCase().includes(search));
+    }
+    
+    const [sortBy, sortOrder] = gallerySort.split('-');
+    const sortFn = (a, b) => {
+      let aVal = sortBy === 'name' ? (a.name || a.filename) : a.created_at;
+      let bVal = sortBy === 'name' ? (b.name || b.filename) : b.created_at;
+      if (sortOrder === 'desc') return bVal > aVal ? 1 : -1;
+      return aVal > bVal ? 1 : -1;
+    };
+    
+    folders.sort(sortFn);
+    images.sort(sortFn);
+    
+    return { folders, images };
+  }, [galleryFolders, galleryImages, gallerySearch, gallerySort]);
 
   const viewEntry = async (entry, type) => {
     try {
@@ -128,6 +224,32 @@ export const PublicProjectPage = () => {
     );
   }
 
+  const SearchSortBar = ({ search, setSearch, sort, setSort, placeholder }) => (
+    <div className="flex flex-col sm:flex-row gap-4 mb-6">
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input 
+          placeholder={placeholder}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-10 rounded-full"
+        />
+      </div>
+      <Select value={sort} onValueChange={setSort}>
+        <SelectTrigger className="w-48 rounded-full">
+          <ArrowUpDown className="w-4 h-4 mr-2" />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="created_at-desc">Newest First</SelectItem>
+          <SelectItem value="created_at-asc">Oldest First</SelectItem>
+          <SelectItem value="title-asc">Title A-Z</SelectItem>
+          <SelectItem value="title-desc">Title Z-A</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+
   return (
     <div className="min-h-screen bg-background" data-testid="public-project-page">
       {/* Navigation */}
@@ -200,19 +322,31 @@ export const PublicProjectPage = () => {
             <TabsTrigger value="library" className="gap-2">
               <Library className="w-4 h-4" /> Library ({libraryEntries.length})
             </TabsTrigger>
+            <TabsTrigger value="gallery" className="gap-2">
+              <Image className="w-4 h-4" /> Gallery ({galleryFolders.length + galleryImages.length})
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="blog">
-            {blogEntries.length === 0 ? (
+            <SearchSortBar 
+              search={blogSearch} 
+              setSearch={setBlogSearch}
+              sort={blogSort}
+              setSort={setBlogSort}
+              placeholder="Search blog posts..."
+            />
+            {filteredBlogEntries.length === 0 ? (
               <Card className="border border-border/50">
                 <CardContent className="py-12 text-center">
                   <FileText className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">No public blog posts yet</p>
+                  <p className="text-muted-foreground">
+                    {blogSearch ? 'No blog posts match your search' : 'No public blog posts yet'}
+                  </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-6">
-                {blogEntries.map((entry) => (
+                {filteredBlogEntries.map((entry) => (
                   <Card 
                     key={entry.id} 
                     className="border border-border/50 hover:shadow-md transition-all cursor-pointer"
@@ -222,7 +356,7 @@ export const PublicProjectPage = () => {
                       <CardTitle className="font-display">{entry.title}</CardTitle>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>{format(parseISO(entry.created_at), 'PP')}</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views} views</span>
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views || 0} views</span>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -238,16 +372,25 @@ export const PublicProjectPage = () => {
           </TabsContent>
 
           <TabsContent value="library">
-            {libraryEntries.length === 0 ? (
+            <SearchSortBar 
+              search={librarySearch} 
+              setSearch={setLibrarySearch}
+              sort={librarySort}
+              setSort={setLibrarySort}
+              placeholder="Search library entries..."
+            />
+            {filteredLibraryEntries.length === 0 ? (
               <Card className="border border-border/50">
                 <CardContent className="py-12 text-center">
                   <Library className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-muted-foreground">No public library entries yet</p>
+                  <p className="text-muted-foreground">
+                    {librarySearch ? 'No library entries match your search' : 'No public library entries yet'}
+                  </p>
                 </CardContent>
               </Card>
             ) : (
               <div className="grid gap-6">
-                {libraryEntries.map((entry) => (
+                {filteredLibraryEntries.map((entry) => (
                   <Card 
                     key={entry.id} 
                     className="border border-border/50 hover:shadow-md transition-all cursor-pointer"
@@ -257,7 +400,7 @@ export const PublicProjectPage = () => {
                       <CardTitle className="font-display">{entry.title}</CardTitle>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span>{format(parseISO(entry.created_at), 'PP')}</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views} views</span>
+                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views || 0} views</span>
                       </div>
                     </CardHeader>
                     <CardContent>
@@ -265,6 +408,63 @@ export const PublicProjectPage = () => {
                         className="prose-content text-muted-foreground line-clamp-3"
                         dangerouslySetInnerHTML={{ __html: entry.description?.slice(0, 300) || '' }}
                       />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="gallery">
+            <SearchSortBar 
+              search={gallerySearch} 
+              setSearch={setGallerySearch}
+              sort={gallerySort}
+              setSort={setGallerySort}
+              placeholder="Search gallery..."
+            />
+            {filteredGallery.folders.length === 0 && filteredGallery.images.length === 0 ? (
+              <Card className="border border-border/50">
+                <CardContent className="py-12 text-center">
+                  <Image className="w-12 h-12 mx-auto text-muted-foreground/30 mb-4" />
+                  <p className="text-muted-foreground">
+                    {gallerySearch ? 'No gallery items match your search' : 'No public gallery items yet'}
+                  </p>
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {/* Folders */}
+                {filteredGallery.folders.map((folder) => (
+                  <Card 
+                    key={folder.id} 
+                    className="border border-border/50 hover:shadow-md transition-all"
+                  >
+                    <CardContent className="p-4 text-center">
+                      <Folder className="w-12 h-12 mx-auto text-amber-500 mb-2" />
+                      <p className="text-sm font-medium truncate">{folder.name}</p>
+                      <Badge variant="secondary" className="gap-1 mt-2 text-xs">
+                        <Globe className="w-3 h-3" /> Public
+                      </Badge>
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {/* Images */}
+                {filteredGallery.images.map((image) => (
+                  <Card 
+                    key={image.id} 
+                    className="border border-border/50 overflow-hidden group"
+                  >
+                    <div className="aspect-square relative">
+                      <img 
+                        src={`${process.env.REACT_APP_BACKEND_URL}${image.url}`}
+                        alt={image.filename}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <CardContent className="p-2">
+                      <p className="text-xs truncate text-muted-foreground">{image.filename}</p>
                     </CardContent>
                   </Card>
                 ))}
