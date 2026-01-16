@@ -53,7 +53,10 @@ function App() {
           <Route path="/projects/:projectId/routines" element={<ProtectedRoute><Layout><RoutinesPage /></Layout></ProtectedRoute>} />
 
           {/* Calendar */}
-          <Route path="/calendar" element={<ProtectedRoute><Layout><DashboardPage /></Layout></ProtectedRoute>} />
+          <Route path="/calendar" element={<ProtectedRoute><Layout><CalendarPage /></Layout></ProtectedRoute>} />
+
+          {/* My Public Site */}
+          <Route path="/my-public-site" element={<ProtectedRoute><Layout><MyPublicSitePage /></Layout></ProtectedRoute>} />
 
           {/* Settings */}
           <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
