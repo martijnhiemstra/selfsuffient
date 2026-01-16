@@ -60,7 +60,7 @@ export const GalleryPage = () => {
   const [currentFolderId, setCurrentFolderId] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [search, setSearch] = useState('');
-  const [sortPreference, setSortPreference] = useSortPreference('gallery', { sortBy: 'created_at', sortOrder: 'desc' });
+  const { sortBy, setSortBy, sortOrder, setSortOrder } = useSortPreference('gallery', 'created_at', 'desc');
   
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
