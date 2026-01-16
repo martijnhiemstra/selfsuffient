@@ -47,7 +47,7 @@ services:
       # Cron Schedule for Daily Reminders (default: 7:00 AM)
       - CRON_SCHEDULE=${CRON_SCHEDULE:-0 7 * * *}
     volumes:
-      - ./backend:/app
+      # Only persist uploads, not the entire app directory
       - backend_uploads:/app/uploads
     ports:
       - "8001:8001"
