@@ -1998,68 +1998,6 @@ async def get_library_folder_path(
     
     return {"path": path}
 
-# ============ DAILY REMINDERS ============
-
-@api_router.post("/cron/send-daily-reminders")
-async def send_daily_reminders():
-    """Send daily reminder emails to users who have enabled them.
-    This should be called by a cron job or scheduler each morning."""
-    
-    # Find all users with daily_reminders enabled
-    users = await db.users.find({"daily_reminders": True}, {"_id": 0, "password": 0}).to_list(1000)
-    
-    if not users:
-        return {"message": "No users with daily reminders enabled", "sent": 0}
-    
-    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    sent_count = 0
-    
-    for user in users:
-        try:
-            # Get user's projects
-            projects = await db.projects.find({"user_id": user["id"]}, {"_id": 0}).to_list(100)
-            project_ids = [p["id"] for p in projects]
-            
-            if not project_ids:
-                continue
-            
-            # Get startup tasks
-            startup_tasks = await db.startup_routines.find(
-                {"project_id": {"$in": project_ids}},
-                {"_id": 0}
-            ).to_list(100)
-            
-            # Get shutdown tasks
-            shutdown_tasks = await db.shutdown_routines.find(
-                {"project_id": {"$in": project_ids}},
-                {"_id": 0}
-            ).to_list(100)
-            
-            # Get today's tasks
-            today_start = f"{today}T00:00:00"
-            today_end = f"{today}T23:59:59"
-            daily_tasks = await db.tasks.find({
-                "project_id": {"$in": project_ids},
-                "task_datetime": {"$gte": today_start, "$lte": today_end}
-            }, {"_id": 0}).to_list(100)
-            
-            # Generate and send email
-            email_html = get_daily_reminder_email_html(
-                user.get("name", "User"),
-                startup_tasks,
-                daily_tasks,
-                shutdown_tasks
-            )
-            
-            if send_email(user["email"], f"Your {APP_NAME} Daily Tasks", email_html):
-                sent_count += 1
-                logger.info(f"Daily reminder sent to {user['email']}")
-            
-        except Exception as e:
-            logger.error(f"Failed to send daily reminder to {user.get('email')}: {e}")
-    
-    return {"message": f"Daily reminders processed", "sent": sent_count, "total_users": len(users)}
-
 # Include the router in the main app
 app.include_router(api_router)
 
