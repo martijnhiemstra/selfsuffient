@@ -73,7 +73,7 @@ export const GalleryPage = () => {
 
   const fetchGallery = useCallback(async () => {
     try {
-      let url = `${API}/projects/${projectId}/gallery?sort_by=${sortPreference.sortBy}&sort_order=${sortPreference.sortOrder}`;
+      let url = `${API}/projects/${projectId}/gallery?sort_by=${sortBy}&sort_order=${sortOrder}`;
       if (currentFolderId) url += `&folder_id=${currentFolderId}`;
       if (search) url += `&search=${encodeURIComponent(search)}`;
       
@@ -87,7 +87,7 @@ export const GalleryPage = () => {
     } finally {
       setLoading(false);
     }
-  }, [projectId, token, currentFolderId, search, sortPreference]);
+  }, [projectId, token, currentFolderId, search, sortBy, sortOrder]);
 
   const fetchBreadcrumbs = useCallback(async () => {
     if (!currentFolderId) {
@@ -258,9 +258,10 @@ export const GalleryPage = () => {
             data-testid="search-input"
           />
         </div>
-        <Select value={`${sortPreference.sortBy}-${sortPreference.sortOrder}`} onValueChange={(v) => {
-          const [sortBy, sortOrder] = v.split('-');
-          setSortPreference({ sortBy, sortOrder });
+        <Select value={`${sortBy}-${sortOrder}`} onValueChange={(v) => {
+          const [newSortBy, newSortOrder] = v.split('-');
+          setSortBy(newSortBy);
+          setSortOrder(newSortOrder);
         }}>
           <SelectTrigger className="w-48 rounded-full" data-testid="sort-select">
             <ArrowUpDown className="w-4 h-4 mr-2" />
