@@ -81,6 +81,18 @@ export const AuthProvider = ({ children }) => {
     return response.data;
   };
 
+  const refreshUser = useCallback(async () => {
+    if (!token) return;
+    try {
+      const response = await axios.get(`${API}/auth/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      setUser(response.data);
+    } catch (error) {
+      console.error('Refresh user error:', error);
+    }
+  }, [token]);
+
   const getAuthHeader = () => {
     return token ? { Authorization: `Bearer ${token}` } : {};
   };
@@ -94,6 +106,7 @@ export const AuthProvider = ({ children }) => {
     forgotPassword,
     resetPassword,
     changePassword,
+    refreshUser,
     getAuthHeader,
     isAuthenticated: !!user,
     isAdmin: user?.is_admin || false
