@@ -40,7 +40,7 @@
 | `frontend` | React SPA with Nginx | 3000 |
 | `backend` | FastAPI REST API | 8001 |
 | `mongodb` | MongoDB database | 27017 |
-| `cron` | Scheduled tasks (daily reminders) | - |
+| `cron` | Scheduled tasks (Python script) | - |
 
 ## Environment Variables
 
@@ -200,8 +200,8 @@ docker-compose ps cron
 docker-compose logs cron
 docker-compose exec cron cat /var/log/cron.log
 
-# Test cron endpoint manually
-docker-compose exec cron curl -X POST http://backend:8001/api/cron/send-daily-reminders
+# Test the script manually (runs immediately)
+docker-compose exec cron python /app/daily_reminders.py
 ```
 
 **Frontend build issues:**
