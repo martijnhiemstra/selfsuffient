@@ -236,13 +236,13 @@ export const RoutinesPage = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2 mb-6">
             <TabsTrigger value="startup" className="gap-2" data-testid="startup-tab">
-              <Sun className="w-4 h-4" /> Morning Startup
+              <Sun className="w-4 h-4" /> Start of Day
               <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
                 {getProgress(startupTasks, startupCompletions)}%
               </span>
             </TabsTrigger>
             <TabsTrigger value="shutdown" className="gap-2" data-testid="shutdown-tab">
-              <Moon className="w-4 h-4" /> Evening Shutdown
+              <Moon className="w-4 h-4" /> End of Day
               <span className="ml-2 text-xs bg-muted px-2 py-0.5 rounded-full">
                 {getProgress(shutdownTasks, shutdownCompletions)}%
               </span>
@@ -257,7 +257,7 @@ export const RoutinesPage = () => {
                     <Sun className="w-5 h-5 text-amber-600" />
                   </div>
                   <div>
-                    <CardTitle>Morning Startup</CardTitle>
+                    <CardTitle>Start of Day Items</CardTitle>
                     <CardDescription>Tasks to start your day right</CardDescription>
                   </div>
                 </div>
@@ -282,7 +282,7 @@ export const RoutinesPage = () => {
                     <Moon className="w-5 h-5 text-indigo-600" />
                   </div>
                   <div>
-                    <CardTitle>Evening Shutdown</CardTitle>
+                    <CardTitle>End of Day Items</CardTitle>
                     <CardDescription>Tasks to end your day peacefully</CardDescription>
                   </div>
                 </div>
