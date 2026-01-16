@@ -307,6 +307,11 @@ export const PublicProjectPage = () => {
                     <Badge variant="secondary" className="gap-1">
                       <Globe className="w-3 h-3" /> Public
                     </Badge>
+                    <ShareButton 
+                      title={project.name}
+                      description={project.description}
+                      url={window.location.href}
+                    />
                   </div>
                   <div 
                     className="prose-content text-muted-foreground"
