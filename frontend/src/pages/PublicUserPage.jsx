@@ -15,6 +15,7 @@ import {
   Home
 } from 'lucide-react';
 import axios from 'axios';
+import { getImageUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
