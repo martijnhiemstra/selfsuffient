@@ -20,13 +20,5 @@ if [ -n "$CRON_SCHEDULE" ]; then
     echo "Cron daemon started"
 fi
 
-# Seed admin user on first startup (runs in background after server starts)
-(
-    sleep 10  # Wait for server to be ready
-    curl -sf -X POST http://localhost:8001/api/seed/admin > /dev/null 2>&1 && \
-        echo "Admin user seeded (admin@selfsufficient.app / admin123)" || \
-        echo "Admin user already exists or seeding skipped"
-) &
-
 # Start the FastAPI application
 exec uvicorn server:app --host 0.0.0.0 --port 8001
