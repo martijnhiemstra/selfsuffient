@@ -279,9 +279,12 @@ export const PublicProjectPage = () => {
         {project.image ? (
           <div className="h-64 md:h-80 overflow-hidden">
             <img 
-              src={`${process.env.REACT_APP_BACKEND_URL}${project.image}`}
+              src={getImageUrl(project.image)}
               alt={project.name}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                e.target.parentElement.style.display = 'none';
+              }}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
           </div>
