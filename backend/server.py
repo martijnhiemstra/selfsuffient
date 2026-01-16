@@ -442,6 +442,7 @@ async def login(data: UserLogin):
         email=user["email"],
         name=user["name"],
         is_admin=user.get("is_admin", False),
+        daily_reminders=user.get("daily_reminders", False),
         created_at=user["created_at"]
     )
     
@@ -515,7 +516,26 @@ async def get_me(current_user: dict = Depends(get_current_user)):
         email=current_user["email"],
         name=current_user["name"],
         is_admin=current_user.get("is_admin", False),
+        daily_reminders=current_user.get("daily_reminders", False),
         created_at=current_user["created_at"]
+    )
+
+@api_router.put("/auth/settings", response_model=UserResponse)
+async def update_user_settings(data: UserUpdateSettings, current_user: dict = Depends(get_current_user)):
+    """Update user settings like daily reminders"""
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    if update_data:
+        update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        await db.users.update_one({"id": current_user["id"]}, {"$set": update_data})
+    
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0, "password": 0})
+    return UserResponse(
+        id=user["id"],
+        email=user["email"],
+        name=user["name"],
+        is_admin=user.get("is_admin", False),
+        daily_reminders=user.get("daily_reminders", False),
+        created_at=user["created_at"]
     )
 
 @api_router.post("/auth/change-password", response_model=MessageResponse)
