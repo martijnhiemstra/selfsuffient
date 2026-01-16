@@ -33,6 +33,15 @@
    - Email: `admin@selfsufficient.app`
    - Password: `admin123`
 
+## Services
+
+| Service | Description | Port |
+|---------|-------------|------|
+| `frontend` | React SPA with Nginx | 3000 |
+| `backend` | FastAPI REST API | 8001 |
+| `mongodb` | MongoDB database | 27017 |
+| `cron` | Scheduled tasks (daily reminders) | - |
+
 ## Environment Variables
 
 Create a `.env` file in the root directory. See `.env.example` for all options.
@@ -52,7 +61,7 @@ JWT_SECRET=your-super-secret-jwt-key-change-in-production
 
 ### Email Configuration (SMTP with SSL)
 
-To enable password reset emails, configure SMTP:
+To enable password reset and daily reminder emails, configure SMTP:
 
 ```env
 # SMTP server settings (SSL on port 465)
@@ -64,20 +73,42 @@ SMTP_FROM_EMAIL=noreply@example.com
 SMTP_FROM_NAME=Self-Sufficient Life
 ```
 
-**Note:** If SMTP is not configured, password reset tokens are logged to the backend console (development mode).
+**Note:** If SMTP is not configured, password reset tokens and daily reminders are logged to the backend console (development mode).
+
+### Cron / Scheduled Tasks
+
+Daily reminder emails are sent by the `cron` service:
+
+```env
+# Cron schedule (default: 7:00 AM daily)
+# Format: minute hour day month weekday
+CRON_SCHEDULE=0 7 * * *
+```
+
+**Examples:**
+- `0 7 * * *` - 7:00 AM every day (default)
+- `0 6 * * 1-5` - 6:00 AM on weekdays
+- `30 8 * * *` - 8:30 AM every day
+- `0 */4 * * *` - Every 4 hours
 
 ## Common Commands
 
 ```bash
-# Start services
+# Start all services
 docker-compose up -d
 
-# View logs
+# View logs (all services)
 docker-compose logs -f
 
 # View specific service logs
 docker-compose logs -f backend
-docker-compose logs -f frontend
+docker-compose logs -f cron
+
+# Check cron job logs
+docker-compose exec cron cat /var/log/cron.log
+
+# Manually trigger daily reminders
+docker-compose exec cron curl -X POST http://backend:8001/api/cron/send-daily-reminders
 
 # Stop services
 docker-compose down
@@ -88,6 +119,9 @@ docker-compose down -v
 # Rebuild containers
 docker-compose up -d --build
 
+# Rebuild specific service
+docker-compose up -d --build cron
+
 # Access MongoDB shell
 docker exec -it selfsufficient-mongodb mongosh
 ```
@@ -97,13 +131,29 @@ docker exec -it selfsufficient-mongodb mongosh
 For development with hot-reload:
 
 ```bash
-# Backend only (with volume mount for hot-reload)
-docker-compose up -d mongodb backend
+# Start backend services only
+docker-compose up -d mongodb backend cron
 
-# Run frontend locally
+# Run frontend locally with hot-reload
 cd frontend
 yarn install
 yarn start
+```
+
+## Architecture
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Frontend  │────▶│   Backend   │────▶│   MongoDB   │
+│  (Nginx)    │     │  (FastAPI)  │     │             │
+│  :3000      │     │  :8001      │     │  :27017     │
+└─────────────┘     └──────▲──────┘     └─────────────┘
+                          │
+                   ┌──────┴──────┐
+                   │    Cron     │
+                   │  (Alpine)   │
+                   │  7:00 AM    │
+                   └─────────────┘
 ```
 
 ## Production Deployment
@@ -112,9 +162,10 @@ For production, ensure these settings:
 
 1. **Change `JWT_SECRET`** to a secure random value (64+ characters)
 2. **Configure `CORS_ORIGINS`** to your domain only
-3. **Configure SMTP** for password reset functionality
+3. **Configure SMTP** for email functionality
 4. **Set `APP_URL`** to your production frontend URL
-5. Use proper SSL/TLS certificates (nginx/traefik)
+5. **Adjust `CRON_SCHEDULE`** for your timezone
+6. Use proper SSL/TLS certificates (nginx/traefik)
 
 ```bash
 # Generate a secure JWT secret
@@ -139,6 +190,19 @@ docker-compose restart backend
 - Check SMTP credentials in `.env`
 - Verify SMTP host and port (should be 465 for SSL)
 - Check backend logs: `docker-compose logs backend | grep -i email`
+
+**Cron not running:**
+```bash
+# Check cron container status
+docker-compose ps cron
+
+# View cron logs
+docker-compose logs cron
+docker-compose exec cron cat /var/log/cron.log
+
+# Test cron endpoint manually
+docker-compose exec cron curl -X POST http://backend:8001/api/cron/send-daily-reminders
+```
 
 **Frontend build issues:**
 ```bash
