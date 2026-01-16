@@ -69,18 +69,18 @@ export const LandingPage = () => {
             backgroundPosition: 'center',
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-background/80 via-background/60 to-background" />
+          <div className="absolute inset-0 bg-gradient-to-b from-background/90 via-background/80 to-background" />
         </div>
         
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-24 md:py-32 lg:py-40">
           <div className="max-w-3xl">
-            <p className="label-overline mb-4">Your Digital Homestead</p>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-6">
+            <p className="label-overline mb-4 text-foreground/80">Your Digital Homestead</p>
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-6 text-foreground">
               Document Your<br />
               <span className="text-primary">Self-Sufficient</span><br />
               Journey
             </h1>
-            <p className="text-lg md:text-xl text-muted-foreground mb-8 leading-relaxed max-w-xl">
+            <p className="text-lg md:text-xl text-foreground/80 mb-8 leading-relaxed max-w-xl font-medium">
               Track projects, maintain diaries, organize galleries, and share your homesteading knowledge with the world.
             </p>
             <div className="flex flex-wrap gap-4">
