@@ -11,6 +11,10 @@ import { ForgotPasswordPage } from "./pages/ForgotPasswordPage";
 import { ResetPasswordPage } from "./pages/ResetPasswordPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LandingPage } from "./pages/LandingPage";
+import { ProjectsPage } from "./pages/ProjectsPage";
+import { ProjectDetailPage } from "./pages/ProjectDetailPage";
+import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { SettingsPage } from "./pages/SettingsPage";
 
 function App() {
   return (
@@ -35,27 +39,39 @@ function App() {
             }
           />
 
-          {/* Placeholder routes - will be implemented */}
+          {/* Projects */}
           <Route
             path="/projects"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <DashboardPage />
+                  <ProjectsPage />
                 </Layout>
               </ProtectedRoute>
             }
           />
           <Route
-            path="/projects/*"
+            path="/projects/:projectId"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <DashboardPage />
+                  <ProjectDetailPage />
                 </Layout>
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/projects/:projectId/*"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProjectDetailPage />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+
+          {/* Calendar - Placeholder */}
           <Route
             path="/calendar"
             element={
@@ -66,22 +82,26 @@ function App() {
               </ProtectedRoute>
             }
           />
+
+          {/* Settings */}
           <Route
             path="/settings"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <DashboardPage />
+                  <SettingsPage />
                 </Layout>
               </ProtectedRoute>
             }
           />
+
+          {/* Admin Routes */}
           <Route
-            path="/admin/*"
+            path="/admin/users"
             element={
               <ProtectedRoute adminOnly>
                 <Layout>
-                  <DashboardPage />
+                  <AdminUsersPage />
                 </Layout>
               </ProtectedRoute>
             }
