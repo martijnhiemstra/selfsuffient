@@ -55,8 +55,10 @@ export const LandingPage = () => {
             </div>
             <span className="font-display font-bold text-lg">{APP_NAME}</span>
           </div>
-          <Link to="/login">
-            <Button className="rounded-full" data-testid="login-button">Sign In</Button>
+          <Link to={isAuthenticated ? "/dashboard" : "/login"}>
+            <Button className="rounded-full" data-testid="login-button">
+              {isAuthenticated ? "My Account" : "Sign In"}
+            </Button>
           </Link>
         </div>
       </nav>
