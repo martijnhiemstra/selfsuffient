@@ -88,9 +88,9 @@ export const LandingPage = () => {
               Track projects, maintain diaries, organize galleries, and share your homesteading knowledge with the world.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link to="/login">
+              <Link to={isAuthenticated ? "/dashboard" : "/login"}>
                 <Button size="lg" className="rounded-full gap-2" data-testid="get-started-button">
-                  Get Started <ArrowRight className="w-4 h-4" />
+                  {isAuthenticated ? "Go to Dashboard" : "Get Started"} <ArrowRight className="w-4 h-4" />
                 </Button>
               </Link>
               <a href="#projects">
