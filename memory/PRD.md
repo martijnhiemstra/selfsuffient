@@ -28,19 +28,16 @@ Build an application to help users setup a self-sufficient lifestyle with:
 
 ## What's Been Implemented
 
-### Phase 1 - Core Infrastructure (2026-01-16) ✅
+### Phase 1 - Core Infrastructure ✅
 - [x] JWT Authentication (login, logout, forgot/reset password)
 - [x] Admin user seeding (admin@selfsufficient.app / admin123)
-- [x] Protected routes
-- [x] Auth context
-- [x] Landing page (public)
-- [x] Login page
-- [x] Forgot/Reset password pages
+- [x] Protected routes & Auth context
+- [x] Landing page, Login page, Forgot/Reset password pages
 - [x] Dashboard layout with bento grid
 - [x] Responsive navigation
 - [x] Design system (Playfair Display, DM Sans, earthy colors)
 
-### Phase 2 - Project Management (2026-01-16) ✅
+### Phase 2 - Project Management ✅
 - [x] Projects CRUD (name, description, public/private)
 - [x] Project image upload
 - [x] Projects listing with search/sort
@@ -48,48 +45,60 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - [x] Admin user management (create, list, delete)
 - [x] Settings page with password change
 
+### Phase 3 - Content Features ✅
+- [x] Diary entries with rich text (TipTap)
+- [x] Gallery with folders and image uploads
+- [x] Blog (public/private entries)
+- [x] Library with folders and entries
+
+### Phase 4 - Task Management ✅
+- [x] Tasks & Calendar (month/week/day view)
+- [x] Task recurring options (daily, weekly, monthly, yearly)
+- [x] Startup/Shutdown daily task lists with completion tracking
+
+### Phase 5 - Calendar Interactivity & Public URLs (2026-01-16) ✅
+- [x] Click-to-edit tasks on calendar (opens Edit Task dialog)
+- [x] Drag-and-drop to reschedule non-recurring tasks
+- [x] Task deletion with confirmation dialog
+- [x] User-specific public URLs (/public/user/:userId)
+- [x] Public Site nav link opens user's profile in new tab
+
 ## Prioritized Backlog
 
-### P0 (Critical)
-- [x] Projects CRUD
-- [x] Project image upload
-- [x] Admin user management
+### P0 (Critical) - DONE
+- [x] All core features implemented
 
-### P1 (High)
-- [x] Diary entries with rich text
-- [x] Gallery with recursive folders
-- [x] Blog (public/private)
-- [x] Library with folders/entries
+### P1 (High) - IN PROGRESS
+- [ ] Recursive folder structure for Gallery and Library (folders can contain sub-folders)
+- [ ] Real password reset with email service integration
 
 ### P2 (Medium)
-- [x] Tasks & Calendar (month/week/day view, drag-drop, recurring)
-- [x] Startup/Shutdown daily task lists with completion tracking
-- [ ] Public project view with actual view counts on landing
-- [ ] Sorting preferences persistence
+- [ ] View counts displayed on public blog/library entries
+- [ ] Enhanced search (search within description fields, not just titles)
+- [ ] Multi-image upload for gallery
 
 ### P3 (Low)
-- [x] Rich text editor with image embedding
 - [ ] Email notifications for password reset
-
-### P2 (Medium)
-- [ ] Tasks & Calendar
-- [ ] Startup/Shutdown lists
-- [ ] Public project view
-- [ ] View tracking
-
-### P3 (Low)
-- [ ] Rich text editor integration
-- [ ] Email notifications for password reset
-- [ ] Sorting preferences persistence
+- [ ] Sorting preferences persistence across sessions
 
 ## Tech Stack
 - Backend: FastAPI, Motor (MongoDB async), PyJWT, bcrypt
-- Frontend: React, TailwindCSS, Shadcn/UI, React Router
+- Frontend: React, TailwindCSS, Shadcn/UI, React Router, TipTap
 - Database: MongoDB
 - Design: Playfair Display + DM Sans fonts, earthy green theme
 
-## Next Tasks
-1. Create Project model and CRUD endpoints
-2. Implement image upload for projects
-3. Build ProjectsListPage and ProjectDetailPage
-4. Add admin user management panel
+## Key API Endpoints
+- `/api/auth/{login, logout, forgot-password, reset-password}`
+- `/api/projects/...` (CRUD)
+- `/api/projects/{project_id}/{diary, blog, library, tasks, routines}`
+- `/api/public/projects` - List all public projects
+- `/api/public/users/{user_id}/profile` - Get user's public profile
+- `/api/dashboard/today` - Dashboard data
+
+## Test Credentials
+- Email: admin@selfsufficient.app
+- Password: admin123
+
+## Notes
+- Password recovery is currently MOCKED (generates token but doesn't send email)
+- Recursive folders exist in schema but UI navigation needs enhancement
