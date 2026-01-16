@@ -195,22 +195,25 @@ export const LandingPage = () => {
                     <div className="h-48 bg-muted overflow-hidden">
                       {project.image ? (
                         <img 
-                          src={`${process.env.REACT_APP_BACKEND_URL}${project.image}`}
+                          src={getImageUrl(project.image)}
                           alt={project.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          onError={(e) => {
+                            e.target.style.display = 'none';
+                            e.target.nextSibling.style.display = 'flex';
+                          }}
                         />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
-                        </div>
-                      )}
+                      ) : null}
+                      <div className={`w-full h-full items-center justify-center ${project.image ? 'hidden' : 'flex'}`}>
+                        <FolderOpen className="w-12 h-12 text-muted-foreground/30" />
+                      </div>
                     </div>
                     <CardContent className="pt-4">
                       <h3 className="font-display font-semibold text-lg mb-1 group-hover:text-primary transition-colors">
                         {project.name}
                       </h3>
                       <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
-                        {project.description?.replace(/<[^>]*>/g, '').slice(0, 100) || 'No description'}
+                        {truncateText(stripHtml(project.description), 100) || 'No description'}
                       </p>
                       <div className="flex items-center gap-4 text-sm text-muted-foreground">
                         <span className="flex items-center gap-1">
