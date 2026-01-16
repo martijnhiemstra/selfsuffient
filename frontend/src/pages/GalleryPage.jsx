@@ -67,6 +67,7 @@ export const GalleryPage = () => {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [folderName, setFolderName] = useState('');
+  const [folderIsPublic, setFolderIsPublic] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [uploading, setUploading] = useState(false);
@@ -121,12 +122,13 @@ export const GalleryPage = () => {
     try {
       await axios.post(
         `${API}/projects/${projectId}/gallery/folders`,
-        { name: folderName, parent_id: currentFolderId },
+        { name: folderName, parent_id: currentFolderId, is_public: folderIsPublic },
         { headers: { Authorization: `Bearer ${token}` } }
       );
       toast.success('Folder created!');
       setFolderDialogOpen(false);
       setFolderName('');
+      setFolderIsPublic(false);
       fetchGallery();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create folder');
