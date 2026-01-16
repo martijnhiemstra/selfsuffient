@@ -29,9 +29,13 @@ export const DashboardPage = () => {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        // For now, we'll use placeholder data since projects/tasks aren't implemented yet
-        // These will be replaced with real API calls once those features are built
-        setProjects([]);
+        // Fetch projects
+        const projectsRes = await axios.get(`${API}/projects`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setProjects(projectsRes.data.projects || []);
+        
+        // Startup/shutdown tasks and today's tasks will be fetched once those features are implemented
         setTodayTasks([]);
         setStartupTasks([]);
         setShutdownTasks([]);
