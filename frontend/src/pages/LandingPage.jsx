@@ -63,7 +63,7 @@ export const LandingPage = () => {
         <div 
           className="absolute inset-0 z-0"
           style={{
-            backgroundImage: 'url(https://images.unsplash.com/photo-1666228347956-eec27310e2d2?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxODh8MHwxfHNlYXJjaHwxfHxuYXR1cmUlMjBsYW5kc2NhcGUlMjBmb3Jlc3QlMjBnYXJkZW58ZW58MHx8fHwxNzY4NTQzNjA0fDA&ixlib=rb-4.1.0&q=85)',
+            backgroundImage: 'url(https://customer-assets.emergentagent.com/job_homestead-hub-2/artifacts/21tig9uc_ChatGPT%20Image%20Jan%2015%2C%202026%2C%2002_39_52%20PM.png)',
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}

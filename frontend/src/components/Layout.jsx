@@ -72,12 +72,14 @@ export const Layout = ({ children }) => {
                 </Button>
               </Link>
             ))}
-            <Link to={user?.id ? `/public/user/${user.id}` : '/my-public-site'} target="_blank">
-              <Button variant="ghost" className="gap-2" data-testid="nav-public">
-                <Globe className="w-4 h-4" />
-                Public Site
-              </Button>
-            </Link>
+            {user?.id && (
+              <Link to={`/public/user/${user.id}`} target="_blank">
+                <Button variant="ghost" className="gap-2" data-testid="nav-public">
+                  <Globe className="w-4 h-4" />
+                  Public Site
+                </Button>
+              </Link>
+            )}
           </div>
 
           {/* User Menu */}
@@ -163,12 +165,14 @@ export const Layout = ({ children }) => {
                   </Button>
                 </Link>
               ))}
-              <Link to={user?.id ? `/public/user/${user.id}` : '/my-public-site'} target="_blank" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" className="w-full justify-start gap-2">
-                  <Globe className="w-4 h-4" />
-                  Public Site
-                </Button>
-              </Link>
+              {user?.id && (
+                <Link to={`/public/user/${user.id}`} target="_blank" onClick={() => setMobileMenuOpen(false)}>
+                  <Button variant="ghost" className="w-full justify-start gap-2">
+                    <Globe className="w-4 h-4" />
+                    Public Site
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         )}
