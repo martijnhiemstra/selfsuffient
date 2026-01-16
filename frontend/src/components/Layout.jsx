@@ -55,7 +55,7 @@ export const Layout = ({ children }) => {
               <Leaf className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="font-display font-bold text-lg hidden sm:inline">
-              Self-Sufficient Life
+              {APP_NAME}
             </span>
           </Link>
 
