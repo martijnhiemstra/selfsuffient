@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 5
 
-  # Backend API
+  # Backend API (includes cron for daily reminders)
   backend:
     build:
       context: ./backend
@@ -44,6 +44,8 @@ services:
       - SMTP_PASSWORD=${SMTP_PASSWORD:-}
       - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
       - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Self-Sufficient Life}
+      # Cron Schedule for Daily Reminders (default: 7:00 AM)
+      - CRON_SCHEDULE=${CRON_SCHEDULE:-0 7 * * *}
     volumes:
       - ./backend:/app
       - backend_uploads:/app/uploads
@@ -71,41 +73,9 @@ services:
     networks:
       - app-network
 
-  # Cron Service - Daily Reminders (Python script with direct DB access)
-  cron:
-    build:
-      context: ./cron
-      dockerfile: Dockerfile
-    container_name: selfsufficient-cron
-    restart: unless-stopped
-    environment:
-      # Cron schedule for daily reminders (default: 7:00 AM)
-      - CRON_SCHEDULE=${CRON_SCHEDULE:-0 7 * * *}
-      # Database (same as backend)
-      - MONGO_URL=mongodb://mongodb:27017
-      - DB_NAME=${DB_NAME:-selfsufficient_db}
-      # App Configuration
-      - APP_NAME=${APP_NAME:-Self-Sufficient Life}
-      - APP_URL=${APP_URL:-http://localhost:3000}
-      # Email Configuration (same as backend)
-      - SMTP_HOST=${SMTP_HOST:-}
-      - SMTP_PORT=${SMTP_PORT:-465}
-      - SMTP_USER=${SMTP_USER:-}
-      - SMTP_PASSWORD=${SMTP_PASSWORD:-}
-      - SMTP_FROM_EMAIL=${SMTP_FROM_EMAIL:-}
-      - SMTP_FROM_NAME=${SMTP_FROM_NAME:-Self-Sufficient Life}
-    depends_on:
-      mongodb:
-        condition: service_healthy
-    networks:
-      - app-network
-    volumes:
-      - cron_logs:/var/log
-
 volumes:
   mongodb_data:
   backend_uploads:
-  cron_logs:
 
 networks:
   app-network:
