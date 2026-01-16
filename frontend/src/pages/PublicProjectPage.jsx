@@ -361,17 +361,25 @@ export const PublicProjectPage = () => {
                 {filteredBlogEntries.map((entry) => (
                   <Card 
                     key={entry.id} 
-                    className="border border-border/50 hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => viewEntry(entry, 'blog')}
+                    className="border border-border/50 hover:shadow-md transition-all"
                   >
                     <CardHeader>
-                      <CardTitle className="font-display">{entry.title}</CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{format(parseISO(entry.created_at), 'PP')}</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views || 0} views</span>
+                      <div className="flex items-start justify-between">
+                        <div className="cursor-pointer flex-1" onClick={() => viewEntry(entry, 'blog')}>
+                          <CardTitle className="font-display">{entry.title}</CardTitle>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            <span>{format(parseISO(entry.created_at), 'PP')}</span>
+                            <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views || 0} views</span>
+                          </div>
+                        </div>
+                        <ShareIcons 
+                          title={entry.title}
+                          description={entry.description}
+                          url={`${window.location.origin}/public/project/${projectId}?entry=${entry.id}`}
+                        />
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="cursor-pointer" onClick={() => viewEntry(entry, 'blog')}>
                       <div 
                         className="prose-content text-muted-foreground line-clamp-3"
                         dangerouslySetInnerHTML={{ __html: entry.description?.slice(0, 300) || '' }}
@@ -405,17 +413,25 @@ export const PublicProjectPage = () => {
                 {filteredLibraryEntries.map((entry) => (
                   <Card 
                     key={entry.id} 
-                    className="border border-border/50 hover:shadow-md transition-all cursor-pointer"
-                    onClick={() => viewEntry(entry, 'library')}
+                    className="border border-border/50 hover:shadow-md transition-all"
                   >
                     <CardHeader>
-                      <CardTitle className="font-display">{entry.title}</CardTitle>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span>{format(parseISO(entry.created_at), 'PP')}</span>
-                        <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views || 0} views</span>
+                      <div className="flex items-start justify-between">
+                        <div className="cursor-pointer flex-1" onClick={() => viewEntry(entry, 'library')}>
+                          <CardTitle className="font-display">{entry.title}</CardTitle>
+                          <div className="flex items-center gap-4 text-sm text-muted-foreground mt-1">
+                            <span>{format(parseISO(entry.created_at), 'PP')}</span>
+                            <span className="flex items-center gap-1"><Eye className="w-3 h-3" /> {entry.views || 0} views</span>
+                          </div>
+                        </div>
+                        <ShareIcons 
+                          title={entry.title}
+                          description={entry.description}
+                          url={`${window.location.origin}/public/project/${projectId}?entry=${entry.id}`}
+                        />
                       </div>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="cursor-pointer" onClick={() => viewEntry(entry, 'library')}>
                       <div 
                         className="prose-content text-muted-foreground line-clamp-3"
                         dangerouslySetInnerHTML={{ __html: entry.description?.slice(0, 300) || '' }}
