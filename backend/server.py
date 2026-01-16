@@ -1371,6 +1371,364 @@ async def get_public_library_entry(project_id: str, entry_id: str):
     
     return LibraryEntryResponse(**entry)
 
+# ============ TASK ROUTES ============
+
+@api_router.post("/projects/{project_id}/tasks", response_model=TaskResponse)
+async def create_task(
+    project_id: str,
+    data: TaskCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    await verify_project_access(project_id, current_user["id"])
+    
+    task_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    task_doc = {
+        "id": task_id,
+        "project_id": project_id,
+        "title": data.title,
+        "description": data.description,
+        "task_datetime": data.task_datetime,
+        "is_all_day": data.is_all_day,
+        "recurrence": data.recurrence,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.tasks.insert_one(task_doc)
+    return TaskResponse(**{k: v for k, v in task_doc.items() if k != "_id"})
+
+@api_router.get("/projects/{project_id}/tasks", response_model=TaskListResponse)
+async def list_tasks(
+    project_id: str,
+    start_date: Optional[str] = None,
+    end_date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    await verify_project_access(project_id, current_user["id"])
+    
+    query = {"project_id": project_id}
+    
+    if start_date and end_date:
+        query["task_datetime"] = {"$gte": start_date, "$lte": end_date}
+    
+    total = await db.tasks.count_documents(query)
+    tasks = await db.tasks.find(query, {"_id": 0}).sort("task_datetime", 1).to_list(1000)
+    
+    return TaskListResponse(tasks=[TaskResponse(**t) for t in tasks], total=total)
+
+@api_router.get("/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
+async def get_task(
+    project_id: str,
+    task_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    await verify_project_access(project_id, current_user["id"])
+    
+    task = await db.tasks.find_one({"id": task_id, "project_id": project_id}, {"_id": 0})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return TaskResponse(**task)
+
+@api_router.put("/projects/{project_id}/tasks/{task_id}", response_model=TaskResponse)
+async def update_task(
+    project_id: str,
+    task_id: str,
+    data: TaskUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    await verify_project_access(project_id, current_user["id"])
+    
+    task = await db.tasks.find_one({"id": task_id, "project_id": project_id})
+    if not task:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.tasks.update_one({"id": task_id}, {"$set": update_data})
+    updated = await db.tasks.find_one({"id": task_id}, {"_id": 0})
+    return TaskResponse(**updated)
+
+@api_router.delete("/projects/{project_id}/tasks/{task_id}", response_model=MessageResponse)
+async def delete_task(
+    project_id: str,
+    task_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    await verify_project_access(project_id, current_user["id"])
+    
+    result = await db.tasks.delete_one({"id": task_id, "project_id": project_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Task not found")
+    
+    return MessageResponse(message="Task deleted")
+
+# ============ ROUTINE ROUTES ============
+
+@api_router.post("/projects/{project_id}/routines/{routine_type}", response_model=RoutineTaskResponse)
+async def create_routine_task(
+    project_id: str,
+    routine_type: str,
+    data: RoutineTaskCreate,
+    current_user: dict = Depends(get_current_user)
+):
+    if routine_type not in ["startup", "shutdown"]:
+        raise HTTPException(status_code=400, detail="Invalid routine type")
+    
+    await verify_project_access(project_id, current_user["id"])
+    
+    task_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    # Get max order
+    max_order_doc = await db.routine_tasks.find_one(
+        {"project_id": project_id, "routine_type": routine_type},
+        sort=[("order", -1)]
+    )
+    max_order = max_order_doc["order"] + 1 if max_order_doc else 0
+    
+    task_doc = {
+        "id": task_id,
+        "project_id": project_id,
+        "routine_type": routine_type,
+        "title": data.title,
+        "description": data.description,
+        "order": data.order if data.order > 0 else max_order,
+        "created_at": now
+    }
+    
+    await db.routine_tasks.insert_one(task_doc)
+    return RoutineTaskResponse(**{k: v for k, v in task_doc.items() if k != "_id"})
+
+@api_router.get("/projects/{project_id}/routines/{routine_type}", response_model=RoutineListResponse)
+async def list_routine_tasks(
+    project_id: str,
+    routine_type: str,
+    date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if routine_type not in ["startup", "shutdown"]:
+        raise HTTPException(status_code=400, detail="Invalid routine type")
+    
+    await verify_project_access(project_id, current_user["id"])
+    
+    tasks = await db.routine_tasks.find(
+        {"project_id": project_id, "routine_type": routine_type},
+        {"_id": 0}
+    ).sort("order", 1).to_list(1000)
+    
+    # Get completions for today (or specified date)
+    check_date = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    completions = await db.routine_completions.find(
+        {"project_id": project_id, "routine_type": routine_type, "completed_date": check_date},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    completed_task_ids = [c["task_id"] for c in completions]
+    
+    return RoutineListResponse(
+        tasks=[RoutineTaskResponse(**t) for t in tasks],
+        completions_today=completed_task_ids
+    )
+
+@api_router.put("/projects/{project_id}/routines/{routine_type}/{task_id}", response_model=RoutineTaskResponse)
+async def update_routine_task(
+    project_id: str,
+    routine_type: str,
+    task_id: str,
+    data: RoutineTaskUpdate,
+    current_user: dict = Depends(get_current_user)
+):
+    if routine_type not in ["startup", "shutdown"]:
+        raise HTTPException(status_code=400, detail="Invalid routine type")
+    
+    await verify_project_access(project_id, current_user["id"])
+    
+    task = await db.routine_tasks.find_one({"id": task_id, "project_id": project_id, "routine_type": routine_type})
+    if not task:
+        raise HTTPException(status_code=404, detail="Routine task not found")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    
+    await db.routine_tasks.update_one({"id": task_id}, {"$set": update_data})
+    updated = await db.routine_tasks.find_one({"id": task_id}, {"_id": 0})
+    return RoutineTaskResponse(**updated)
+
+@api_router.delete("/projects/{project_id}/routines/{routine_type}/{task_id}", response_model=MessageResponse)
+async def delete_routine_task(
+    project_id: str,
+    routine_type: str,
+    task_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    if routine_type not in ["startup", "shutdown"]:
+        raise HTTPException(status_code=400, detail="Invalid routine type")
+    
+    await verify_project_access(project_id, current_user["id"])
+    
+    result = await db.routine_tasks.delete_one({"id": task_id, "project_id": project_id, "routine_type": routine_type})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Routine task not found")
+    
+    # Also delete completions for this task
+    await db.routine_completions.delete_many({"task_id": task_id})
+    
+    return MessageResponse(message="Routine task deleted")
+
+@api_router.post("/projects/{project_id}/routines/{routine_type}/{task_id}/complete", response_model=MessageResponse)
+async def toggle_routine_completion(
+    project_id: str,
+    routine_type: str,
+    task_id: str,
+    date: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    if routine_type not in ["startup", "shutdown"]:
+        raise HTTPException(status_code=400, detail="Invalid routine type")
+    
+    await verify_project_access(project_id, current_user["id"])
+    
+    task = await db.routine_tasks.find_one({"id": task_id, "project_id": project_id, "routine_type": routine_type})
+    if not task:
+        raise HTTPException(status_code=404, detail="Routine task not found")
+    
+    check_date = date or datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    
+    # Check if already completed
+    existing = await db.routine_completions.find_one({
+        "task_id": task_id,
+        "project_id": project_id,
+        "routine_type": routine_type,
+        "completed_date": check_date
+    })
+    
+    if existing:
+        # Un-complete
+        await db.routine_completions.delete_one({"id": existing["id"]})
+        return MessageResponse(message="Task marked as incomplete")
+    else:
+        # Complete
+        completion_id = str(uuid.uuid4())
+        now = datetime.now(timezone.utc).isoformat()
+        
+        completion_doc = {
+            "id": completion_id,
+            "task_id": task_id,
+            "project_id": project_id,
+            "routine_type": routine_type,
+            "completed_date": check_date,
+            "created_at": now
+        }
+        
+        await db.routine_completions.insert_one(completion_doc)
+        return MessageResponse(message="Task marked as complete")
+
+@api_router.put("/projects/{project_id}/routines/{routine_type}/reorder", response_model=MessageResponse)
+async def reorder_routine_tasks(
+    project_id: str,
+    routine_type: str,
+    task_ids: List[str],
+    current_user: dict = Depends(get_current_user)
+):
+    if routine_type not in ["startup", "shutdown"]:
+        raise HTTPException(status_code=400, detail="Invalid routine type")
+    
+    await verify_project_access(project_id, current_user["id"])
+    
+    for index, task_id in enumerate(task_ids):
+        await db.routine_tasks.update_one(
+            {"id": task_id, "project_id": project_id, "routine_type": routine_type},
+            {"$set": {"order": index}}
+        )
+    
+    return MessageResponse(message="Tasks reordered")
+
+# ============ DASHBOARD DATA ============
+
+@api_router.get("/dashboard/today")
+async def get_dashboard_today(current_user: dict = Depends(get_current_user)):
+    """Get today's tasks, startup and shutdown routines for dashboard"""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    today_start = f"{today}T00:00:00"
+    today_end = f"{today}T23:59:59"
+    
+    # Get all user's projects
+    projects = await db.projects.find({"user_id": current_user["id"]}, {"_id": 0}).to_list(1000)
+    project_ids = [p["id"] for p in projects]
+    
+    if not project_ids:
+        return {
+            "today_tasks": [],
+            "startup_tasks": [],
+            "shutdown_tasks": [],
+            "startup_completions": [],
+            "shutdown_completions": []
+        }
+    
+    # Get today's tasks (including recurring)
+    tasks_query = {
+        "project_id": {"$in": project_ids},
+        "$or": [
+            {"task_datetime": {"$gte": today_start, "$lte": today_end}},
+            {"recurrence": {"$ne": None}}
+        ]
+    }
+    tasks = await db.tasks.find(tasks_query, {"_id": 0}).to_list(1000)
+    
+    # Filter recurring tasks that apply to today
+    today_tasks = []
+    today_date = datetime.now(timezone.utc)
+    day_of_week = today_date.weekday()
+    day_of_month = today_date.day
+    day_of_year = today_date.timetuple().tm_yday
+    
+    for task in tasks:
+        task_dt = datetime.fromisoformat(task["task_datetime"].replace("Z", "+00:00"))
+        
+        if task["recurrence"] == "daily":
+            today_tasks.append(task)
+        elif task["recurrence"] == "weekly" and task_dt.weekday() == day_of_week:
+            today_tasks.append(task)
+        elif task["recurrence"] == "monthly" and task_dt.day == day_of_month:
+            today_tasks.append(task)
+        elif task["recurrence"] == "yearly" and task_dt.timetuple().tm_yday == day_of_year:
+            today_tasks.append(task)
+        elif task["recurrence"] is None and today_start <= task["task_datetime"] <= today_end:
+            today_tasks.append(task)
+    
+    # Get routine tasks
+    startup_tasks = await db.routine_tasks.find(
+        {"project_id": {"$in": project_ids}, "routine_type": "startup"},
+        {"_id": 0}
+    ).sort("order", 1).to_list(1000)
+    
+    shutdown_tasks = await db.routine_tasks.find(
+        {"project_id": {"$in": project_ids}, "routine_type": "shutdown"},
+        {"_id": 0}
+    ).sort("order", 1).to_list(1000)
+    
+    # Get completions for today
+    startup_completions = await db.routine_completions.find(
+        {"project_id": {"$in": project_ids}, "routine_type": "startup", "completed_date": today},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    shutdown_completions = await db.routine_completions.find(
+        {"project_id": {"$in": project_ids}, "routine_type": "shutdown", "completed_date": today},
+        {"_id": 0}
+    ).to_list(1000)
+    
+    return {
+        "today_tasks": today_tasks,
+        "startup_tasks": startup_tasks,
+        "shutdown_tasks": shutdown_tasks,
+        "startup_completions": [c["task_id"] for c in startup_completions],
+        "shutdown_completions": [c["task_id"] for c in shutdown_completions]
+    }
+
 # ============ HEALTH CHECK ============
 
 @api_router.get("/")
