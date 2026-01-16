@@ -40,12 +40,20 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - [x] Responsive navigation
 - [x] Design system (Playfair Display, DM Sans, earthy colors)
 
+### Phase 2 - Project Management (2026-01-16) ✅
+- [x] Projects CRUD (name, description, public/private)
+- [x] Project image upload
+- [x] Projects listing with search/sort
+- [x] Project detail page with feature cards
+- [x] Admin user management (create, list, delete)
+- [x] Settings page with password change
+
 ## Prioritized Backlog
 
 ### P0 (Critical)
-- [ ] Projects CRUD
-- [ ] Project image upload
-- [ ] Admin user management
+- [x] Projects CRUD
+- [x] Project image upload
+- [x] Admin user management
 
 ### P1 (High)
 - [ ] Diary entries
