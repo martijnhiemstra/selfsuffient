@@ -275,7 +275,7 @@ export const DashboardPage = () => {
                       <div className="p-4 bg-muted/30 rounded-xl hover:bg-muted/50 transition-colors">
                         <div className="w-full h-20 rounded-lg bg-muted mb-3 overflow-hidden">
                           {project.image && (
-                            <img src={`${process.env.REACT_APP_BACKEND_URL}${project.image}`} alt={project.name} className="w-full h-full object-cover" />
+                            <img src={getImageUrl(project.image)} alt={project.name} className="w-full h-full object-cover" />
                           )}
                         </div>
                         <h3 className="font-medium truncate">{project.name}</h3>
