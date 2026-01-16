@@ -4,10 +4,13 @@ Self-Sufficient Life - Main Application Entry Point
 A full-stack application for managing self-sufficient lifestyle projects,
 including diary entries, galleries, blogs, libraries, tasks, and daily routines.
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
 import os
+import mimetypes
 
 from config import APP_NAME, UPLOADS_DIR, db, logger
 from routes import api_router
@@ -16,6 +19,22 @@ from services import hash_password
 
 # Create the main app
 app = FastAPI(title=APP_NAME)
+
+
+# Custom middleware to add CORS headers to all responses including static files
+class CORSStaticFilesMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+        if request.url.path.startswith("/uploads"):
+            response.headers["Access-Control-Allow-Origin"] = "*"
+            response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+            response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+        return response
+
+
+# Add custom middleware first (runs last in middleware stack)
+app.add_middleware(CORSStaticFilesMiddleware)
 
 # CORS middleware
 app.add_middleware(
