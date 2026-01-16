@@ -112,6 +112,132 @@ class ProjectListResponse(BaseModel):
     projects: List[ProjectResponse]
     total: int
 
+# ============ DIARY MODELS ============
+
+class DiaryEntryCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    story: str = Field(default="", max_length=10000)
+    entry_datetime: Optional[str] = None
+
+class DiaryEntryUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    story: Optional[str] = Field(None, max_length=10000)
+    entry_datetime: Optional[str] = None
+
+class DiaryEntryResponse(BaseModel):
+    id: str
+    project_id: str
+    title: str
+    story: str
+    entry_datetime: str
+    created_at: str
+    updated_at: str
+
+class DiaryListResponse(BaseModel):
+    entries: List[DiaryEntryResponse]
+    total: int
+
+# ============ GALLERY MODELS ============
+
+class GalleryFolderCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    parent_id: Optional[str] = None
+
+class GalleryFolderUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    parent_id: Optional[str] = None
+
+class GalleryFolderResponse(BaseModel):
+    id: str
+    project_id: str
+    name: str
+    parent_id: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+class GalleryImageResponse(BaseModel):
+    id: str
+    project_id: str
+    folder_id: Optional[str] = None
+    filename: str
+    url: str
+    created_at: str
+
+class GalleryListResponse(BaseModel):
+    folders: List[GalleryFolderResponse]
+    images: List[GalleryImageResponse]
+
+# ============ BLOG MODELS ============
+
+class BlogEntryCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=10000)
+    is_public: bool = False
+
+class BlogEntryUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=10000)
+    is_public: Optional[bool] = None
+
+class BlogEntryResponse(BaseModel):
+    id: str
+    project_id: str
+    title: str
+    description: str
+    is_public: bool
+    views: int = 0
+    created_at: str
+    updated_at: str
+
+class BlogListResponse(BaseModel):
+    entries: List[BlogEntryResponse]
+    total: int
+
+# ============ LIBRARY MODELS ============
+
+class LibraryFolderCreate(BaseModel):
+    name: str = Field(..., min_length=1, max_length=200)
+    parent_id: Optional[str] = None
+
+class LibraryFolderUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=200)
+    parent_id: Optional[str] = None
+
+class LibraryFolderResponse(BaseModel):
+    id: str
+    project_id: str
+    name: str
+    parent_id: Optional[str] = None
+    created_at: str
+    updated_at: str
+
+class LibraryEntryCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    description: str = Field(default="", max_length=10000)
+    folder_id: Optional[str] = None
+    is_public: bool = False
+
+class LibraryEntryUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=200)
+    description: Optional[str] = Field(None, max_length=10000)
+    folder_id: Optional[str] = None
+    is_public: Optional[bool] = None
+
+class LibraryEntryResponse(BaseModel):
+    id: str
+    project_id: str
+    folder_id: Optional[str] = None
+    title: str
+    description: str
+    is_public: bool
+    views: int = 0
+    created_at: str
+    updated_at: str
+
+class LibraryListResponse(BaseModel):
+    folders: List[LibraryFolderResponse]
+    entries: List[LibraryEntryResponse]
+
 # ============ HELPER FUNCTIONS ============
 
 def hash_password(password: str) -> str:
