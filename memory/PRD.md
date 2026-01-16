@@ -80,8 +80,18 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - [x] Added `daily_reminders` property to user profile
 - [x] Settings page has Daily Reminders toggle with description
 - [x] Daily reminder email template with Start of Day → Tasks → End of Day order
-- [x] Cron endpoint `/api/cron/send-daily-reminders` for scheduled emails
+- [x] Cron integrated into backend container (no separate service)
 - [x] View counts show "0 views" explicitly on public project pages
+
+### Phase 8 - Public Gallery & Search/Sort (2026-01-16) ✅
+- [x] Added `is_public` property to gallery folders
+- [x] Gallery folder creation dialog has "Make Public" toggle
+- [x] Gallery folders display Globe icon badge when public
+- [x] Public project page has Gallery tab showing public folders
+- [x] Public project page Blog tab has search and sort
+- [x] Public project page Library tab has search and sort
+- [x] Public project page Gallery tab has search and sort
+- [x] GET /api/public/projects/{id}/gallery returns only public folders
 
 ## Environment Configuration
 See `/app/.env.example` for all options:
