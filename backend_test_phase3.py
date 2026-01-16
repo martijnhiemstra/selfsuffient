@@ -55,12 +55,6 @@ class Phase3APITester:
             success = response.status_code == expected_status
             details = f"Status: {response.status_code}"
             
-            if success and response.content:
-                try:
-                    return success, response.json()
-                except:
-                    return success, {}
-            
             if not success:
                 try:
                     error_detail = response.json().get('detail', 'Unknown error')
@@ -69,6 +63,13 @@ class Phase3APITester:
                     details += f", Response: {response.text[:100]}"
             
             self.log_test(name, success, details)
+            
+            if success and response.content:
+                try:
+                    return success, response.json()
+                except:
+                    return success, {}
+            
             return success, response.json() if success and response.content else {}
 
         except Exception as e:
