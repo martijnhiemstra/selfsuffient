@@ -76,6 +76,10 @@ export const GalleryPage = () => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [itemToDelete, setItemToDelete] = useState(null);
   const [uploading, setUploading] = useState(false);
+  
+  // Image modal state
+  const [viewingImage, setViewingImage] = useState(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
   const fetchGallery = useCallback(async () => {
     try {
