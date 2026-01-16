@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { APP_NAME } from '../config';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
@@ -75,7 +76,7 @@ export const PublicUserPage = () => {
               <Leaf className="w-5 h-5 text-primary-foreground" />
             </div>
             <span className="font-display font-bold text-lg hidden sm:inline">
-              Self-Sufficient Life
+              {APP_NAME}
             </span>
           </Link>
           <Link to="/">
@@ -171,7 +172,7 @@ export const PublicUserPage = () => {
       {/* Footer */}
       <footer className="border-t border-border/40 py-8 px-6 mt-auto">
         <div className="max-w-7xl mx-auto text-center text-sm text-muted-foreground">
-          <p>Powered by Self-Sufficient Life</p>
+          <p>Powered by {APP_NAME}</p>
           <Link to="/" className="text-primary hover:underline mt-2 inline-block">
             Start your own journey
           </Link>
