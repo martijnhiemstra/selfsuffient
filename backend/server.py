@@ -1575,6 +1575,65 @@ async def get_public_library_entry(project_id: str, entry_id: str):
     
     return LibraryEntryResponse(**entry)
 
+# ============ PUBLIC GALLERY ROUTES ============
+
+class PublicGalleryResponse(BaseModel):
+    folders: List[GalleryFolderResponse]
+    images: List[GalleryImageResponse]
+
+@api_router.get("/public/projects/{project_id}/gallery", response_model=PublicGalleryResponse)
+async def list_public_gallery(
+    project_id: str,
+    folder_id: Optional[str] = None,
+    search: Optional[str] = None,
+    sort_by: str = "created_at",
+    sort_order: str = "desc"
+):
+    """Get public gallery folders and their images for a public project"""
+    project = await db.projects.find_one({"id": project_id, "is_public": True})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    sort_direction = -1 if sort_order == "desc" else 1
+    
+    # Query for public folders only
+    folder_query = {"project_id": project_id, "is_public": True}
+    if folder_id:
+        folder_query["parent_id"] = folder_id
+    else:
+        folder_query["parent_id"] = None
+    
+    if search:
+        folder_query["name"] = {"$regex": search, "$options": "i"}
+    
+    folders = await db.gallery_folders.find(folder_query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
+    
+    # Get images from public folders only
+    public_folder_ids = [f["id"] for f in await db.gallery_folders.find({"project_id": project_id, "is_public": True}, {"_id": 0, "id": 1}).to_list(1000)]
+    
+    image_query = {"project_id": project_id}
+    if folder_id:
+        # If viewing a specific folder, only show images if that folder is public
+        if folder_id not in public_folder_ids:
+            return PublicGalleryResponse(folders=[], images=[])
+        image_query["folder_id"] = folder_id
+    else:
+        # At root, show images from any public folder or root images of public folders
+        image_query["$or"] = [
+            {"folder_id": {"$in": public_folder_ids}},
+            {"folder_id": None}  # Root images (if project has any public folders)
+        ]
+    
+    if search:
+        image_query["filename"] = {"$regex": search, "$options": "i"}
+    
+    images = await db.gallery_images.find(image_query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
+    
+    return PublicGalleryResponse(
+        folders=[GalleryFolderResponse(**{**f, "is_public": f.get("is_public", False)}) for f in folders],
+        images=[GalleryImageResponse(**i) for i in images]
+    )
+
 # ============ TASK ROUTES ============
 
 @api_router.post("/projects/{project_id}/tasks", response_model=TaskResponse)
