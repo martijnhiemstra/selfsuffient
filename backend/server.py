@@ -2077,6 +2077,8 @@ app.add_middleware(
 
 @app.on_event("startup")
 async def startup_event():
+    logger.info("Starting application...")
+    
     # Create indexes
     await db.users.create_index("email", unique=True)
     await db.users.create_index("id", unique=True)
@@ -2088,26 +2090,33 @@ async def startup_event():
     logger.info("Database indexes created")
     
     # Auto-seed admin user if no users exist
-    user_count = await db.users.count_documents({})
-    if user_count == 0:
-        admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
-        admin_email = os.environ.get('ADMIN_EMAIL', 'admin@selfsufficient.app')
-        admin_name = os.environ.get('ADMIN_NAME', 'Admin')
+    try:
+        user_count = await db.users.count_documents({})
+        logger.info(f"Current user count: {user_count}")
         
-        hashed = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
-        now = datetime.now(timezone.utc).isoformat()
-        
-        await db.users.insert_one({
-            "id": str(uuid.uuid4()),
-            "email": admin_email,
-            "password": hashed.decode('utf-8'),
-            "name": admin_name,
-            "is_admin": True,
-            "daily_reminders": False,
-            "created_at": now,
-            "updated_at": now
-        })
-        logger.info(f"Admin user created: {admin_email}")
+        if user_count == 0:
+            admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+            admin_email = os.environ.get('ADMIN_EMAIL', 'admin@selfsufficient.app')
+            admin_name = os.environ.get('ADMIN_NAME', 'Admin')
+            
+            hashed = bcrypt.hashpw(admin_password.encode('utf-8'), bcrypt.gensalt())
+            now = datetime.now(timezone.utc).isoformat()
+            
+            result = await db.users.insert_one({
+                "id": str(uuid.uuid4()),
+                "email": admin_email,
+                "password": hashed.decode('utf-8'),
+                "name": admin_name,
+                "is_admin": True,
+                "daily_reminders": False,
+                "created_at": now,
+                "updated_at": now
+            })
+            logger.info(f"Admin user created: {admin_email} (inserted_id: {result.inserted_id})")
+        else:
+            logger.info(f"Skipping admin seed - {user_count} user(s) already exist")
+    except Exception as e:
+        logger.error(f"Error during admin seeding: {e}")
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
