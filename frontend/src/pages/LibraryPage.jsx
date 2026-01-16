@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Card, CardContent } from '../components/ui/card';
+import { useSortPreference } from '../hooks/useSortPreference';
+import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
-import { Badge } from '../components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -14,7 +14,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '../components/ui/dialog';
 import {
   AlertDialog,
@@ -25,36 +24,35 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from '../components/ui/alert-dialog';
 import {
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from '../components/ui/breadcrumb';
-import { RichTextEditor } from '../components/RichTextEditor';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import { Badge } from '../components/ui/badge';
 import { 
-  ArrowLeft, 
   Plus, 
-  Search, 
-  Library as LibraryIcon,
-  Folder,
   FolderPlus,
+  Folder,
+  FolderOpen,
   FileText,
-  Edit,
-  Trash2,
+  Search,
   ArrowUpDown,
+  Trash2,
+  Edit,
   Loader2,
-  Eye,
+  ChevronRight,
+  Home,
   Globe,
-  Lock
+  Lock,
+  Eye
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { format, parseISO } from 'date-fns';
+import RichTextEditor from '../components/RichTextEditor';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -65,71 +63,82 @@ export const LibraryPage = () => {
   const [folders, setFolders] = useState([]);
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [currentFolder, setCurrentFolder] = useState(null);
+  const [currentFolderId, setCurrentFolderId] = useState(null);
   const [breadcrumbs, setBreadcrumbs] = useState([]);
   const [search, setSearch] = useState('');
-  const [sortOrder, setSortOrder] = useState('desc');
+  const [sortPreference, setSortPreference] = useSortPreference('library', { sortBy: 'created_at', sortOrder: 'desc' });
   
   const [folderDialogOpen, setFolderDialogOpen] = useState(false);
   const [entryDialogOpen, setEntryDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [folderName, setFolderName] = useState('');
+  const [itemToDelete, setItemToDelete] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
-  const [viewingEntry, setViewingEntry] = useState(null);
   
-  const [newFolderName, setNewFolderName] = useState('');
-  const [formData, setFormData] = useState({
+  const [entryForm, setEntryForm] = useState({
     title: '',
     description: '',
     is_public: false
   });
-  const [saving, setSaving] = useState(false);
 
-  const fetchContents = useCallback(async () => {
+  const fetchLibrary = useCallback(async () => {
     try {
-      const params = new URLSearchParams();
-      if (currentFolder) params.append('folder_id', currentFolder);
-      if (search) params.append('search', search);
-      params.append('sort_order', sortOrder);
-
-      const response = await axios.get(`${API}/projects/${projectId}/library?${params}`, {
+      let url = `${API}/projects/${projectId}/library?sort_by=${sortPreference.sortBy}&sort_order=${sortPreference.sortOrder}`;
+      if (currentFolderId) url += `&folder_id=${currentFolderId}`;
+      if (search) url += `&search=${encodeURIComponent(search)}`;
+      
+      const response = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setFolders(response.data.folders);
-      setEntries(response.data.entries);
+      setFolders(response.data.folders || []);
+      setEntries(response.data.entries || []);
     } catch (error) {
       toast.error('Failed to load library');
     } finally {
       setLoading(false);
     }
-  }, [projectId, token, currentFolder, search, sortOrder]);
+  }, [projectId, token, currentFolderId, search, sortPreference]);
+
+  const fetchBreadcrumbs = useCallback(async () => {
+    if (!currentFolderId) {
+      setBreadcrumbs([]);
+      return;
+    }
+    try {
+      const response = await axios.get(
+        `${API}/projects/${projectId}/library/folders/${currentFolderId}/path`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      setBreadcrumbs(response.data.path || []);
+    } catch (error) {
+      console.error('Failed to load breadcrumbs');
+    }
+  }, [projectId, token, currentFolderId]);
 
   useEffect(() => {
-    fetchContents();
-  }, [fetchContents]);
+    fetchLibrary();
+  }, [fetchLibrary]);
 
-  const navigateToFolder = (folderId) => {
-    setCurrentFolder(folderId);
-    setLoading(true);
-  };
+  useEffect(() => {
+    fetchBreadcrumbs();
+  }, [fetchBreadcrumbs]);
 
   const handleCreateFolder = async (e) => {
     e.preventDefault();
-    if (!newFolderName.trim()) {
-      toast.error('Folder name is required');
-      return;
-    }
-
+    if (!folderName.trim()) return;
+    
     setSaving(true);
     try {
-      await axios.post(`${API}/projects/${projectId}/library/folders`, {
-        name: newFolderName,
-        parent_id: currentFolder
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await axios.post(
+        `${API}/projects/${projectId}/library/folders`,
+        { name: folderName, parent_id: currentFolderId },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
       toast.success('Folder created!');
       setFolderDialogOpen(false);
-      setNewFolderName('');
-      fetchContents();
+      setFolderName('');
+      fetchLibrary();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to create folder');
     } finally {
@@ -137,44 +146,36 @@ export const LibraryPage = () => {
     }
   };
 
-  const handleDeleteFolder = async (folderId) => {
-    try {
-      await axios.delete(`${API}/projects/${projectId}/library/folders/${folderId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Folder deleted');
-      fetchContents();
-    } catch (error) {
-      toast.error('Failed to delete folder');
-    }
-  };
-
-  const handleSubmitEntry = async (e) => {
+  const handleSaveEntry = async (e) => {
     e.preventDefault();
-    if (!formData.title.trim()) {
-      toast.error('Title is required');
-      return;
-    }
-
+    if (!entryForm.title.trim()) return;
+    
     setSaving(true);
     try {
+      const payload = {
+        ...entryForm,
+        folder_id: currentFolderId
+      };
+      
       if (editingEntry) {
-        await axios.put(`${API}/projects/${projectId}/library/entries/${editingEntry.id}`, formData, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.put(
+          `${API}/projects/${projectId}/library/entries/${editingEntry.id}`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         toast.success('Entry updated!');
       } else {
-        await axios.post(`${API}/projects/${projectId}/library/entries`, {
-          ...formData,
-          folder_id: currentFolder
-        }, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
+        await axios.post(
+          `${API}/projects/${projectId}/library/entries`,
+          payload,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
         toast.success('Entry created!');
       }
+      
       setEntryDialogOpen(false);
       resetEntryForm();
-      fetchContents();
+      fetchLibrary();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to save entry');
     } finally {
@@ -182,323 +183,352 @@ export const LibraryPage = () => {
     }
   };
 
-  const handleDeleteEntry = async (entryId) => {
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    
+    setSaving(true);
     try {
-      await axios.delete(`${API}/projects/${projectId}/library/entries/${entryId}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      toast.success('Entry deleted');
-      setEntries(entries.filter(e => e.id !== entryId));
+      if (itemToDelete.type === 'folder') {
+        await axios.delete(
+          `${API}/projects/${projectId}/library/folders/${itemToDelete.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success('Folder deleted!');
+      } else {
+        await axios.delete(
+          `${API}/projects/${projectId}/library/entries/${itemToDelete.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        toast.success('Entry deleted!');
+      }
+      setDeleteDialogOpen(false);
+      setItemToDelete(null);
+      fetchLibrary();
     } catch (error) {
-      toast.error('Failed to delete entry');
+      toast.error(error.response?.data?.detail || 'Failed to delete');
+    } finally {
+      setSaving(false);
     }
   };
 
   const openEditDialog = (entry) => {
     setEditingEntry(entry);
-    setFormData({
+    setEntryForm({
       title: entry.title,
-      description: entry.description,
+      description: entry.description || '',
       is_public: entry.is_public
     });
     setEntryDialogOpen(true);
   };
 
   const resetEntryForm = () => {
+    setEntryForm({ title: '', description: '', is_public: false });
     setEditingEntry(null);
-    setFormData({ title: '', description: '', is_public: false });
+  };
+
+  const navigateToFolder = (folderId) => {
+    setCurrentFolderId(folderId);
+    setLoading(true);
+  };
+
+  const navigateUp = () => {
+    if (breadcrumbs.length > 1) {
+      setCurrentFolderId(breadcrumbs[breadcrumbs.length - 2].id);
+    } else {
+      setCurrentFolderId(null);
+    }
+    setLoading(true);
   };
 
   return (
     <div className="p-6 md:p-12 lg:p-16" data-testid="library-page">
-      {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
-        <Link to={`/projects/${projectId}`}>
-          <Button variant="ghost" size="icon">
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-        </Link>
-        <div className="flex-1">
+      <div className="flex items-center justify-between mb-6">
+        <div>
           <h1 className="text-3xl font-display font-bold tracking-tight">Library</h1>
-          <p className="text-muted-foreground">Store your experiences and knowledge</p>
+          <p className="text-muted-foreground">Manage your project knowledge base</p>
         </div>
         <div className="flex gap-2">
-          <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2" data-testid="create-library-folder">
-                <FolderPlus className="w-4 h-4" />
-                New Folder
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <form onSubmit={handleCreateFolder}>
-                <DialogHeader>
-                  <DialogTitle>Create Folder</DialogTitle>
-                </DialogHeader>
-                <div className="py-4">
-                  <Label htmlFor="folderName">Folder Name</Label>
-                  <Input
-                    id="folderName"
-                    value={newFolderName}
-                    onChange={(e) => setNewFolderName(e.target.value)}
-                    placeholder="Enter folder name"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setFolderDialogOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={saving}>
-                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                    Create
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-          
-          <Dialog open={entryDialogOpen} onOpenChange={(open) => { setEntryDialogOpen(open); if (!open) resetEntryForm(); }}>
-            <DialogTrigger asChild>
-              <Button className="rounded-full gap-2" data-testid="create-library-entry">
-                <Plus className="w-4 h-4" />
-                New Entry
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-              <form onSubmit={handleSubmitEntry}>
-                <DialogHeader>
-                  <DialogTitle className="font-display">
-                    {editingEntry ? 'Edit Entry' : 'New Library Entry'}
-                  </DialogTitle>
-                  <DialogDescription>Document your experiences</DialogDescription>
-                </DialogHeader>
-                <div className="space-y-4 py-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="title">Title</Label>
-                    <Input
-                      id="title"
-                      value={formData.title}
-                      onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                      placeholder="Entry title"
-                      data-testid="library-title-input"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Description</Label>
-                    <RichTextEditor
-                      content={formData.description}
-                      onChange={(html) => setFormData({ ...formData, description: html })}
-                      placeholder="Write your experience..."
-                    />
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <Label htmlFor="public">Make Public</Label>
-                      <p className="text-sm text-muted-foreground">Visible to others</p>
-                    </div>
-                    <Switch
-                      id="public"
-                      checked={formData.is_public}
-                      onCheckedChange={(checked) => setFormData({ ...formData, is_public: checked })}
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <Button type="button" variant="outline" onClick={() => setEntryDialogOpen(false)}>Cancel</Button>
-                  <Button type="submit" disabled={saving} data-testid="save-library-entry">
-                    {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                    {editingEntry ? 'Save Changes' : 'Create Entry'}
-                  </Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
+          <Button variant="outline" className="rounded-full gap-2" onClick={() => setFolderDialogOpen(true)} data-testid="create-folder-btn">
+            <FolderPlus className="w-4 h-4" /> New Folder
+          </Button>
+          <Button className="rounded-full gap-2" onClick={() => { resetEntryForm(); setEntryDialogOpen(true); }} data-testid="create-entry-btn">
+            <Plus className="w-4 h-4" /> New Entry
+          </Button>
         </div>
       </div>
 
       {/* Breadcrumbs */}
-      {currentFolder && (
-        <Breadcrumb className="mb-4">
-          <BreadcrumbList>
-            <BreadcrumbItem>
-              <BreadcrumbLink 
-                onClick={() => navigateToFolder(null)} 
-                className="cursor-pointer hover:text-primary"
-              >
-                Library
-              </BreadcrumbLink>
-            </BreadcrumbItem>
-            <BreadcrumbSeparator />
-            <BreadcrumbItem>
-              <BreadcrumbPage>Current Folder</BreadcrumbPage>
-            </BreadcrumbItem>
-          </BreadcrumbList>
-        </Breadcrumb>
-      )}
+      <div className="flex items-center gap-2 mb-4 p-3 bg-muted/50 rounded-lg overflow-x-auto" data-testid="breadcrumbs">
+        <Button 
+          variant="ghost" 
+          size="sm" 
+          className="gap-1 flex-shrink-0"
+          onClick={() => { setCurrentFolderId(null); setLoading(true); }}
+          data-testid="breadcrumb-root"
+        >
+          <Home className="w-4 h-4" /> Root
+        </Button>
+        {breadcrumbs.map((folder, idx) => (
+          <div key={folder.id} className="flex items-center gap-2 flex-shrink-0">
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
+            <Button
+              variant={idx === breadcrumbs.length - 1 ? "secondary" : "ghost"}
+              size="sm"
+              onClick={() => navigateToFolder(folder.id)}
+              data-testid={`breadcrumb-${folder.id}`}
+            >
+              {folder.name}
+            </Button>
+          </div>
+        ))}
+      </div>
 
-      {/* Search */}
+      {/* Search and Sort */}
       <div className="flex flex-col sm:flex-row gap-4 mb-6">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
+          <Input 
+            placeholder="Search entries and folders..." 
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-10"
+            className="pl-10 rounded-full"
+            data-testid="search-input"
           />
         </div>
-        <Button variant="outline" size="icon" onClick={() => setSortOrder(s => s === 'desc' ? 'asc' : 'desc')}>
-          <ArrowUpDown className="w-4 h-4" />
-        </Button>
+        <Select value={`${sortPreference.sortBy}-${sortPreference.sortOrder}`} onValueChange={(v) => {
+          const [sortBy, sortOrder] = v.split('-');
+          setSortPreference({ sortBy, sortOrder });
+        }}>
+          <SelectTrigger className="w-48 rounded-full" data-testid="sort-select">
+            <ArrowUpDown className="w-4 h-4 mr-2" />
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="created_at-desc">Newest First</SelectItem>
+            <SelectItem value="created_at-asc">Oldest First</SelectItem>
+            <SelectItem value="title-asc">Title A-Z</SelectItem>
+            <SelectItem value="title-desc">Title Z-A</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
-      {/* Content */}
       {loading ? (
-        <div className="flex justify-center py-12">
-          <Loader2 className="w-8 h-8 animate-spin text-primary" />
-        </div>
+        <div className="flex justify-center py-12"><Loader2 className="w-8 h-8 animate-spin text-primary" /></div>
       ) : folders.length === 0 && entries.length === 0 ? (
         <Card className="border border-border/50">
           <CardContent className="py-12 text-center">
-            <LibraryIcon className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
-            <h3 className="text-xl font-display font-semibold mb-2">Empty Library</h3>
-            <p className="text-muted-foreground mb-6">Start building your knowledge base</p>
+            <FileText className="w-16 h-16 mx-auto text-muted-foreground/30 mb-4" />
+            <h3 className="text-xl font-display font-semibold mb-2">
+              {currentFolderId ? 'This folder is empty' : 'No entries yet'}
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              {currentFolderId ? 'Create entries or subfolders' : 'Start building your knowledge base'}
+            </p>
+            <div className="flex justify-center gap-2">
+              <Button variant="outline" onClick={() => setFolderDialogOpen(true)}>
+                <FolderPlus className="w-4 h-4 mr-2" /> New Folder
+              </Button>
+              <Button onClick={() => { resetEntryForm(); setEntryDialogOpen(true); }}>
+                <Plus className="w-4 h-4 mr-2" /> New Entry
+              </Button>
+            </div>
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-6">
           {/* Folders */}
-          {folders.length > 0 && (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-6">
+          {(currentFolderId || folders.length > 0) && (
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-4">
+              {currentFolderId && (
+                <Card 
+                  className="border border-border/50 cursor-pointer hover:shadow-md transition-all group"
+                  onClick={navigateUp}
+                  data-testid="folder-back"
+                >
+                  <CardContent className="p-4 text-center">
+                    <FolderOpen className="w-10 h-10 mx-auto text-primary/60 mb-2" />
+                    <p className="text-sm font-medium">..</p>
+                  </CardContent>
+                </Card>
+              )}
               {folders.map((folder) => (
                 <Card 
-                  key={folder.id}
+                  key={folder.id} 
                   className="border border-border/50 cursor-pointer hover:shadow-md transition-all group"
-                  onClick={() => navigateToFolder(folder.id)}
-                  data-testid={`library-folder-${folder.id}`}
+                  data-testid={`folder-${folder.id}`}
                 >
                   <CardContent className="p-4 text-center relative">
-                    <Folder className="w-10 h-10 mx-auto text-primary mb-2" />
-                    <p className="font-medium truncate text-sm">{folder.name}</p>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon"
-                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 h-6 w-6"
-                          onClick={(e) => e.stopPropagation()}
-                        >
-                          <Trash2 className="w-3 h-3 text-destructive" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Folder?</AlertDialogTitle>
-                          <AlertDialogDescription>This will delete the folder and all contents.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteFolder(folder.id)} className="bg-destructive">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-6 w-6"
+                      onClick={(e) => { e.stopPropagation(); setItemToDelete({ type: 'folder', id: folder.id, name: folder.name }); setDeleteDialogOpen(true); }}
+                    >
+                      <Trash2 className="w-3 h-3 text-destructive" />
+                    </Button>
+                    <div onClick={() => navigateToFolder(folder.id)}>
+                      <Folder className="w-10 h-10 mx-auto text-amber-500 mb-2" />
+                      <p className="text-sm font-medium truncate">{folder.name}</p>
+                    </div>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
-
+          
           {/* Entries */}
-          {entries.map((entry) => (
-            <Card 
-              key={entry.id} 
-              className="border border-border/50 hover:shadow-md transition-all"
-              data-testid={`library-entry-${entry.id}`}
-            >
-              <CardContent className="p-4">
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <FileText className="w-4 h-4 text-primary" />
-                      <h3 className="font-display font-semibold">{entry.title}</h3>
-                      {entry.is_public ? (
-                        <Badge variant="default" className="gap-1 text-xs">
-                          <Globe className="w-3 h-3" /> Public
-                        </Badge>
-                      ) : (
-                        <Badge variant="secondary" className="gap-1 text-xs">
-                          <Lock className="w-3 h-3" /> Private
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground font-mono-data mb-2">
-                      {format(parseISO(entry.created_at), 'PP')} • {entry.views} views
-                    </p>
-                    <div 
-                      className="prose-content text-muted-foreground text-sm line-clamp-2"
-                      dangerouslySetInnerHTML={{ __html: entry.description || '<p>No content</p>' }}
-                    />
-                  </div>
-                  <div className="flex gap-1 ml-4">
-                    <Button variant="ghost" size="icon" onClick={() => setViewingEntry(entry)}>
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(entry)}>
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive">
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
-                          <AlertDialogDescription>This will permanently delete this entry.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction onClick={() => handleDeleteEntry(entry.id)} className="bg-destructive">
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {entries.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-medium text-muted-foreground">Entries</h3>
+              <div className="grid gap-4">
+                {entries.map((entry) => (
+                  <Card 
+                    key={entry.id} 
+                    className="border border-border/50 hover:shadow-md transition-all"
+                    data-testid={`entry-${entry.id}`}
+                  >
+                    <CardHeader className="pb-2">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-5 h-5 text-primary" />
+                          <CardTitle className="font-display text-lg">{entry.title}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant={entry.is_public ? "default" : "secondary"} className="gap-1">
+                            {entry.is_public ? <Globe className="w-3 h-3" /> : <Lock className="w-3 h-3" />}
+                            {entry.is_public ? 'Public' : 'Private'}
+                          </Badge>
+                          {entry.views > 0 && (
+                            <Badge variant="outline" className="gap-1">
+                              <Eye className="w-3 h-3" />
+                              {entry.views}
+                            </Badge>
+                          )}
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditDialog(entry)}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8"
+                            onClick={() => { setItemToDelete({ type: 'entry', id: entry.id, name: entry.title }); setDeleteDialogOpen(true); }}
+                          >
+                            <Trash2 className="w-4 h-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div 
+                        className="prose-content text-sm text-muted-foreground line-clamp-2"
+                        dangerouslySetInnerHTML={{ __html: entry.description?.slice(0, 200) || 'No description' }}
+                      />
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
-      {/* View Entry Dialog */}
-      <Dialog open={!!viewingEntry} onOpenChange={(open) => !open && setViewingEntry(null)}>
-        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-          {viewingEntry && (
-            <>
-              <DialogHeader>
-                <div className="flex items-center gap-2">
-                  <DialogTitle className="font-display text-2xl">{viewingEntry.title}</DialogTitle>
-                  {viewingEntry.is_public ? (
-                    <Badge variant="default"><Globe className="w-3 h-3 mr-1" /> Public</Badge>
-                  ) : (
-                    <Badge variant="secondary"><Lock className="w-3 h-3 mr-1" /> Private</Badge>
-                  )}
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  {format(parseISO(viewingEntry.created_at), 'PPPp')} • {viewingEntry.views} views
-                </p>
-              </DialogHeader>
-              <div 
-                className="prose-content py-4"
-                dangerouslySetInnerHTML={{ __html: viewingEntry.description || '<p>No content</p>' }}
+      {/* Create Folder Dialog */}
+      <Dialog open={folderDialogOpen} onOpenChange={setFolderDialogOpen}>
+        <DialogContent>
+          <form onSubmit={handleCreateFolder}>
+            <DialogHeader>
+              <DialogTitle className="font-display">New Folder</DialogTitle>
+              <DialogDescription>Create a new folder {currentFolderId ? 'in this location' : 'in the root'}</DialogDescription>
+            </DialogHeader>
+            <div className="py-4">
+              <Label htmlFor="folderName">Folder Name</Label>
+              <Input 
+                id="folderName"
+                value={folderName}
+                onChange={(e) => setFolderName(e.target.value)}
+                placeholder="Enter folder name"
+                className="mt-2"
+                data-testid="folder-name-input"
               />
-            </>
-          )}
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setFolderDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={saving || !folderName.trim()} data-testid="save-folder-btn">
+                {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Create Folder
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
+
+      {/* Create/Edit Entry Dialog */}
+      <Dialog open={entryDialogOpen} onOpenChange={(open) => { setEntryDialogOpen(open); if (!open) resetEntryForm(); }}>
+        <DialogContent className="sm:max-w-2xl">
+          <form onSubmit={handleSaveEntry}>
+            <DialogHeader>
+              <DialogTitle className="font-display">{editingEntry ? 'Edit Entry' : 'New Entry'}</DialogTitle>
+              <DialogDescription>{editingEntry ? 'Update your library entry' : 'Create a new knowledge base entry'}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="entryTitle">Title</Label>
+                <Input 
+                  id="entryTitle"
+                  value={entryForm.title}
+                  onChange={(e) => setEntryForm({ ...entryForm, title: e.target.value })}
+                  placeholder="Entry title"
+                  data-testid="entry-title-input"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="entryDescription">Content</Label>
+                <RichTextEditor 
+                  content={entryForm.description}
+                  onChange={(html) => setEntryForm({ ...entryForm, description: html })}
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="entryPublic">Make Public</Label>
+                <Switch 
+                  id="entryPublic"
+                  checked={entryForm.is_public}
+                  onCheckedChange={(c) => setEntryForm({ ...entryForm, is_public: c })}
+                  data-testid="entry-public-switch"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => { setEntryDialogOpen(false); resetEntryForm(); }}>Cancel</Button>
+              <Button type="submit" disabled={saving || !entryForm.title.trim()} data-testid="save-entry-btn">
+                {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                {editingEntry ? 'Update Entry' : 'Create Entry'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {itemToDelete?.type === 'folder' ? 'Folder' : 'Entry'}</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{itemToDelete?.name}"? 
+              {itemToDelete?.type === 'folder' && ' This will also delete all contents inside.'}
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90" data-testid="confirm-delete-btn">
+              {saving && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
