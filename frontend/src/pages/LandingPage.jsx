@@ -15,9 +15,16 @@ import {
   Eye,
   Search,
   FileText,
-  Library
+  Library,
+  Share2,
+  Twitter,
+  Facebook,
+  Linkedin,
+  Copy,
+  Check
 } from 'lucide-react';
 import axios from 'axios';
+import { getImageUrl, stripHtml, truncateText } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
