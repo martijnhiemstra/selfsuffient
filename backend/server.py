@@ -333,6 +333,74 @@ def create_token(user_id: str, email: str) -> str:
     }
     return jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
+def send_email(to_email: str, subject: str, html_content: str) -> bool:
+    """Send email via SMTP with SSL on port 465"""
+    if not all([SMTP_HOST, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL]):
+        logger.warning("SMTP not configured, email not sent")
+        return False
+    
+    try:
+        message = MIMEMultipart("alternative")
+        message["Subject"] = subject
+        message["From"] = f"{SMTP_FROM_NAME} <{SMTP_FROM_EMAIL}>"
+        message["To"] = to_email
+        
+        # Create HTML part
+        html_part = MIMEText(html_content, "html")
+        message.attach(html_part)
+        
+        # Create SSL context and send
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+            server.login(SMTP_USER, SMTP_PASSWORD)
+            server.sendmail(SMTP_FROM_EMAIL, to_email, message.as_string())
+        
+        logger.info(f"Email sent to {to_email}")
+        return True
+    except Exception as e:
+        logger.error(f"Failed to send email: {e}")
+        return False
+
+def get_password_reset_email_html(reset_url: str, user_name: str) -> str:
+    """Generate password reset email HTML"""
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+            .header {{ background: linear-gradient(135deg, #2d5a3d 0%, #4a7c59 100%); color: white; padding: 30px; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 24px; }}
+            .content {{ padding: 30px; }}
+            .button {{ display: inline-block; background: #2d5a3d; color: white; text-decoration: none; padding: 14px 28px; border-radius: 25px; font-weight: bold; margin: 20px 0; }}
+            .footer {{ padding: 20px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{APP_NAME}</h1>
+            </div>
+            <div class="content">
+                <p>Hello {user_name},</p>
+                <p>We received a request to reset your password. Click the button below to create a new password:</p>
+                <p style="text-align: center;">
+                    <a href="{reset_url}" class="button">Reset Password</a>
+                </p>
+                <p>This link will expire in 1 hour.</p>
+                <p>If you didn't request this, you can safely ignore this email.</p>
+                <p>Best regards,<br>The {APP_NAME} Team</p>
+            </div>
+            <div class="footer">
+                <p>This is an automated message from {APP_NAME}.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
 async def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(security)):
     try:
         token = credentials.credentials
