@@ -163,7 +163,7 @@ export const Layout = ({ children }) => {
                   </Button>
                 </Link>
               ))}
-              <Link to="/" target="_blank" onClick={() => setMobileMenuOpen(false)}>
+              <Link to="/my-public-site" onClick={() => setMobileMenuOpen(false)}>
                 <Button variant="ghost" className="w-full justify-start gap-2">
                   <Globe className="w-4 h-4" />
                   Public Site
