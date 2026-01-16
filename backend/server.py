@@ -1066,6 +1066,7 @@ async def create_gallery_folder(
         "project_id": project_id,
         "name": data.name,
         "parent_id": data.parent_id,
+        "is_public": data.is_public,
         "created_at": now,
         "updated_at": now
     }
