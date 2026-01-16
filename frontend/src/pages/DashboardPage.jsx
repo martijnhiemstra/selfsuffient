@@ -39,10 +39,11 @@ export const DashboardPage = () => {
         
         setProjects(projectsRes.data.projects || []);
         setTodayTasks(dashboardRes.data.today_tasks || []);
-        setStartupTasks(dashboardRes.data.startup_tasks || []);
-        setShutdownTasks(dashboardRes.data.shutdown_tasks || []);
-        setStartupCompletions(dashboardRes.data.startup_completions || []);
-        setShutdownCompletions(dashboardRes.data.shutdown_completions || []);
+        setStartupTasks(dashboardRes.data.incomplete_startup_tasks || []);
+        setShutdownTasks(dashboardRes.data.incomplete_shutdown_tasks || []);
+        // Completions are already filtered out in the backend response
+        setStartupCompletions([]);
+        setShutdownCompletions([]);
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
       } finally {
