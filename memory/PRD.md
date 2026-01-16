@@ -86,6 +86,7 @@ Build an application to help users setup a self-sufficient lifestyle with:
 - Frontend: React, TailwindCSS, Shadcn/UI, React Router, TipTap
 - Database: MongoDB
 - Design: Playfair Display + DM Sans fonts, earthy green theme
+- Containerization: Docker, Docker Compose
 
 ## Key API Endpoints
 - `/api/auth/{login, logout, forgot-password, reset-password}`
