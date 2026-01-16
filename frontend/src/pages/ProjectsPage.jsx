@@ -274,7 +274,7 @@ export const ProjectsPage = () => {
                 </CardHeader>
                 <CardContent>
                   <p className="text-sm text-muted-foreground line-clamp-2">
-                    {project.description || 'No description'}
+                    {project.description?.replace(/<[^>]*>/g, '').slice(0, 150) || 'No description'}
                   </p>
                   <p className="text-xs text-muted-foreground mt-3 font-mono-data">
                     Created {new Date(project.created_at).toLocaleDateString()}
