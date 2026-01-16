@@ -1,8 +1,10 @@
 """Health check routes."""
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
+from fastapi.responses import FileResponse
 from datetime import datetime, timezone
+from pathlib import Path
 
-from config import db, APP_NAME
+from config import db, APP_NAME, UPLOADS_DIR
 
 router = APIRouter()
 
@@ -17,10 +19,32 @@ async def health_check():
     }
 
 
+@router.get("/files/{file_path:path}")
+async def serve_file(file_path: str):
+    """Serve uploaded files with proper CORS headers"""
+    full_path = UPLOADS_DIR / file_path
+    
+    if not full_path.exists() or not full_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    # Security check - ensure path is within uploads directory
+    try:
+        full_path.resolve().relative_to(UPLOADS_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+    
+    return FileResponse(
+        full_path,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cross-Origin-Resource-Policy": "cross-origin"
+        }
+    )
+
+
 @router.get("/seed/admin")
 async def seed_admin_get():
     """Alternative seed admin route (GET method for easy testing)"""
-    from fastapi import HTTPException
     import uuid
     from services import hash_password
     from config import logger
