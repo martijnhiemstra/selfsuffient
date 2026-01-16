@@ -216,16 +216,20 @@ export const LandingPage = () => {
                       <p className="text-muted-foreground text-sm line-clamp-2 mb-4">
                         {truncateText(stripHtml(project.description), 100) || 'No description'}
                       </p>
-                      <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <Eye className="w-4 h-4" /> Views
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <FileText className="w-4 h-4" /> Blog
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Library className="w-4 h-4" /> Library
-                        </span>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Eye className="w-4 h-4" /> Views
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <FileText className="w-4 h-4" /> Blog
+                          </span>
+                        </div>
+                        <ShareIcons 
+                          title={project.name}
+                          description={project.description}
+                          url={`${window.location.origin}/public/project/${project.id}`}
+                        />
                       </div>
                     </CardContent>
                   </Card>
