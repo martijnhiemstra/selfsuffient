@@ -54,7 +54,7 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { getImageUrl } from '../utils';
+import { getImageUrl, validateImageFile, getMaxUploadSizeMB } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -163,9 +163,11 @@ export const BlogPage = () => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error('Invalid file type. Allowed: JPEG, PNG, GIF, WEBP');
+    // Validate file
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
 
@@ -338,7 +340,7 @@ export const BlogPage = () => {
                       Add Image
                     </Button>
                     <p className="text-xs text-muted-foreground mt-2 text-center">
-                      Supported: JPEG, PNG, GIF, WEBP
+                      Supported: JPEG, PNG, GIF, WEBP (max {getMaxUploadSizeMB()}MB)
                     </p>
                   </div>
                 </div>
