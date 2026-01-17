@@ -54,6 +54,10 @@ export const PublicProjectPage = () => {
   const [librarySort, setLibrarySort] = useState('created_at-desc');
   const [gallerySearch, setGallerySearch] = useState('');
   const [gallerySort, setGallerySort] = useState('created_at-desc');
+  
+  // Image modal state
+  const [viewingImage, setViewingImage] = useState(null);
+  const [imageModalOpen, setImageModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
