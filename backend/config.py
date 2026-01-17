@@ -35,6 +35,10 @@ APP_URL = os.environ.get('APP_URL', 'http://localhost:3000')
 UPLOADS_DIR = ROOT_DIR / "uploads"
 UPLOADS_DIR.mkdir(exist_ok=True)
 
+# Maximum upload file size (5MB)
+MAX_UPLOAD_SIZE = 5 * 1024 * 1024  # 5MB in bytes
+MAX_UPLOAD_SIZE_MB = 5  # For display messages
+
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,

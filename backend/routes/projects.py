@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime, timezone
 import uuid
 
-from config import db, UPLOADS_DIR
+from config import db, UPLOADS_DIR, MAX_UPLOAD_SIZE, MAX_UPLOAD_SIZE_MB
 from models import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse, MessageResponse
 from services import get_current_user
 
@@ -144,6 +144,16 @@ async def upload_project_image(
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Invalid file type. Allowed: JPEG, PNG, GIF, WEBP")
     
+    # Check file size
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413, 
+            detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE_MB}MB"
+        )
+    # Reset file position for later use
+    await file.seek(0)
+    
     project_dir = UPLOADS_DIR / "projects" / project_id
     project_dir.mkdir(parents=True, exist_ok=True)
     
@@ -156,6 +166,7 @@ async def upload_project_image(
     filename = f"cover.{file_ext}"
     file_path = project_dir / filename
     
+    # Content already read for size check, read again
     content = await file.read()
     with open(file_path, "wb") as f:
         f.write(content)
