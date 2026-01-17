@@ -27,7 +27,12 @@ import {
   ArrowUpDown,
   Image,
   Folder,
-  Share2
+  Share2,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Download,
+  ZoomIn
 } from 'lucide-react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
