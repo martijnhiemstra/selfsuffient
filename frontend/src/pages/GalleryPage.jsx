@@ -631,7 +631,7 @@ export const GalleryPage = () => {
                       data-testid={`thumbnail-${img.id}`}
                     >
                       <img
-                        src={getImageUrl(img.url)}
+                        src={getImageUrl(img.url, token)}
                         alt={img.filename}
                         className="w-full h-full object-cover"
                       />
