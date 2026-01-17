@@ -129,6 +129,25 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - New endpoints: POST/DELETE `/api/projects/{id}/blog/{entry_id}/images`
 - Images stored in `/uploads/blog/{project_id}/{entry_id}/`
 - Blog model updated with `images` array field
+- **Diary & Library pages also updated to use SimpleEditor**
+
+#### CORS Fix for Cross-Origin Uploads ✅ (Jan 17, 2026)
+- Implemented `CORSAllMiddleware` custom middleware in server.py
+- Handles OPTIONS preflight requests with proper headers
+- All responses include CORS headers for cross-origin access
+- Verified working with cross-origin requests from different domains
+
+#### Maximum Upload Image Size (5MB) ✅ (Jan 17, 2026)
+- Added `MAX_UPLOAD_SIZE` (5MB) constant in config.py
+- Backend validates file size on all image upload endpoints:
+  - Project image upload (`/api/projects/{id}/image`)
+  - Gallery image upload (`/api/projects/{id}/gallery/images`)
+  - Blog image upload (`/api/projects/{id}/blog/{entry_id}/images`)
+- Returns HTTP 413 with clear error message for oversized files
+- New `/api/config` endpoint exposes max upload size to frontend
+- Frontend validation in `utils.js`: `validateImageFile()`, `getMaxUploadSizeMB()`
+- Upload dialogs display "Supported: JPEG, PNG, GIF, WEBP (max 5MB)"
+- Error toast displayed immediately when user selects oversized file
 
 ## Key API Endpoints
 - **Auth**: `/api/auth/{login, forgot-password, reset-password, me, settings, change-password}`
@@ -144,6 +163,7 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Public**: `/api/public/{projects, users/{id}/profile}`
 - **Files**: `/api/files/{path}` - Serves files with access control (supports `?token=` for auth)
 - **Health**: `/api/health`
+- **Config**: `/api/config` - Returns app configuration (max_upload_size_mb, max_upload_size_bytes, allowed_image_types)
 
 ## Test Credentials
 - **Admin Email**: admin@selfsufficient.app
@@ -152,7 +172,9 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 ## Test Reports
 - `/app/test_reports/iteration_10.json` - Backend refactoring tests (33 passed)
 - `/app/test_reports/iteration_11.json` - Image fix & sharing tests (29 passed)
+- `/app/test_reports/iteration_12.json` - CORS, max upload size, SimpleEditor tests (all passed)
 - `/app/tests/test_image_and_sharing.py` - Pytest test suite
+- `/app/tests/test_upload_size_and_cors.py` - CORS and upload size tests
 
 ## Future Enhancements (Backlog)
 1. Export/import functionality for projects
