@@ -5,129 +5,88 @@ PRODUCT REQUIREMENTS:
 - Users with authentication (Login and forgot password, no register).
 - Users can maintain projects (name, description, image, private/public).
 - Each project can have a diary with searchable/sortable entries.
-- Each project can have a gallery with recursive folders and searchable/sortable images.
+- Each project can have a gallery with recursive folders and searchable/sortable images. Gallery folders can be public.
 - Each project can have a blog with public/private entries and a public-facing page with view counts.
 - Each project can have a library (similar to a blog) with recursive folders, public/private entries, and view counts.
 - All description fields must use an HTML editor.
 - Each project must have tasks with calendar integration (month/week/day views), recurrence, and drag-and-drop support.
-- Each project has daily startup and shutdown task lists, with completion tracked per day.
+- Each project has daily startup (Start of day items) and shutdown (End of day items) task lists, with completion tracked per day.
 - A public landing page shows all public projects, blogs, and libraries.
 - The user dashboard shows undone daily routines and today's tasks.
 - When a user logs in, they are redirected to their dashboard.
+- Users can enable a daily reminders email containing their tasks for the day.
+- The application must be containerized using Docker.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack FastAPI/React application is in place. Core features have been implemented across several phases:
-- **Phase 1 (Core Infrastructure):** JWT-based user authentication (login, logout), protected routes, and a nature-themed design system with Shadcn UI components. An admin user is seeded.
-- **Phase 2 (Project Management):** Full CRUD functionality for projects, including image uploads and an admin page for user management.
-- **Phase 3 (Content Features):** Backend and frontend for Diary, Gallery, Blog, and Library features are created. A rich text editor (TipTap) is integrated for description fields.
-- **Phase 4 (Task Management):** Backend and frontend for Tasks and daily routines (Startup/Shutdown) are implemented. A basic calendar page exists.
-- **Final Polish & Bug Fixes:** A public landing page and user-specific public pages were created. Sorting preferences are saved in local storage. Bugs related to navigating to the calendar and public site have been fixed.
+A full-stack FastAPI/React application that fulfills all original product requirements and is fully containerized.
+
+Recent major changes include:
+- The monolithic backend  has been refactored into a modular structure with , , and  directories for improved maintainability.
+- The WYSIWYG editor for blogs was replaced with a simpler editor, removing embedded image support in favor of a new image attachment system.
+- Security for private gallery images has been implemented, requiring authentication to access files in non-public folders.
+- A gallery modal was added to view images in fullscreen on both private and public gallery pages.
+- Social sharing buttons have been added to public projects and blog posts.
+- A CORS issue blocking project image display was resolved by serving files through a dedicated API endpoint.
 
 **Last working item**:
-    - Last item agent was working: The agent was starting to implement three user requests:
-        1. Add task editing functionality when a task is clicked on the calendar.
-        2. Implement drag-and-drop for tasks on the calendar.
-        3. Make the public site URL user-specific by including a user ID.
-      The agent had just viewed  with the intention of adding a new endpoint for public user profiles before updating the frontend.
+    - Last item agent was working: The user reported a CORS error when uploading a project image in their deployed environment: . This is due to a cross-origin request between the frontend and a separate API subdomain. The agent implemented a fix by making the  in  more permissive to handle such requests.
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? both
+    - Which testing method agent to use? backend testing agent. The agent should simulate a preflight  request followed by a  request with a file to the project image upload endpoint () to verify the CORS policy is working as expected.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Implement Calendar Interactivity (P0)
-  - Issue 2: Make Public Site URL User-Specific (P0)
-  - Issue 3: Implement Recursive Folder Structure for Gallery and Library (P1)
-  - Issue 4: Implement View Counts for Blog and Library (P2)
-  - Issue 5: Enhance Search Functionality (P2)
+  - Issue 1: Verify the fix for the project image upload CORS error. (P0)
   
   Issues Detail:
   - Issue 1: 
-     - Attempted fixes: None yet. This is a new feature request.
+     - Attempted fixes: The agent updated  to use a more permissive  configuration, allowing all origins, methods, and headers, and restarted the backend.
      - Next debug checklist: 
-        1.  **Backend:** Create/update an endpoint in  to handle task updates via drag-and-drop (e.g., changing the date).
-        2.  **Frontend:** Install a drag-and-drop library (e.g.,  or ).
-        3.  **Frontend:** Modify  to wrap calendar events with drag-and-drop handlers.
-        4.  **Frontend:** Implement a modal or inline editing form that appears when a task is clicked, allowing users to edit task details.
-     - Why fix this issue and what will be achieved with the fix?: This will fulfill a core requirement from the user's problem statement, making the calendar interactive and user-friendly.
-     - Status:  NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: None.
-
-  - Issue 2: 
-     - Attempted fixes: None yet. This is a new feature request.
-     - Next debug checklist: 
-        1.  **Backend:** Add a new public endpoint in  like  that returns a user's public projects.
-        2.  **Frontend:** Update the route in  from  to a dynamic route like .
-        3.  **Frontend:** Update the  component to generate the correct link using the logged-in user's ID.
-        4.  **Frontend:** Create or update a page to fetch and display data from the new user-specific public endpoint.
-     - Why fix this issue and what will be achieved with the fix?: To create permanent, shareable public URLs for each user's profile, as requested by the user.
+        1. Create a Python script or use  to simulate a cross-origin file upload.
+        2. First, send an  request (preflight) to the endpoint .
+        3. Verify the response includes the necessary , , and  headers.
+        4. If the preflight succeeds, send a  request with a file to the same endpoint.
+        5. Confirm the upload is successful (HTTP 200).
+     - Why fix this issue and what will be achieved with the fix?: This will resolve a critical file upload blocker for the user in their production-like environment.
      - Status:  IN PROGRESS
      - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: None.
-
-  - Issue 3: 
-     - Attempted fixes: Models were created that allow a , but the API logic and UI to handle creation, navigation, and display of nested folders have not been implemented or tested.
-     - Next debug checklist: 
-        1. **Backend:** Review and test the API endpoints for gallery/library folder creation and retrieval in  to ensure they handle nesting correctly.
-        2. **Frontend:** Update  and  to display folders in a nested/breadcrumb structure.
-        3. **Frontend:** Add UI controls to create new sub-folders within existing folders.
-     - Why fix this issue and what will be achieved with the fix?: Fulfills a key requirement for organizing content in the Gallery and Library.
-     - Status:  NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: None.
-
-  - Issue 4: 
-     - Attempted fixes: None.
-     - Next debug checklist: 
-        1. **Backend:** Add a  field to  and  collections.
-        2. **Backend:** Create or update endpoints in  that increment the view count when a public entry is accessed.
-        3. **Frontend:** Update the public project and entry pages to display the view counts.
-     - Why fix this issue and what will be achieved with the fix?: Fulfills the requirement to track the popularity of public content.
-     - Status:  NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: None.
-
-  - Issue 5:
-     - Attempted fixes: Basic search on titles has been implemented.
-     - Next debug checklist:
-        1. **Backend:** Enhance the search endpoints in  for Diary, Blog, and Library to include the  fields in the search query. Ensure MongoDB text indexes are used if appropriate for performance.
-        2. **Frontend:** Verify that the search UI on , , etc., works as expected with the enhanced backend search.
-     - Why fix this issue and what will be achieved with the fix?: Fulfills the original requirement to allow searching within descriptions.
-     - Status: NOT STARTED
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? both
-     - Blocked on other issue: None.
+     - Should Test frontend/backend/both after fix? backend
+     - Blocked on other issue: None
 
 **In progress Task List**:
-  - Task 1: 
-     - Where to resume: Modify  to add a new API endpoint for fetching a user's public profile and projects.
-     - What will be achieved with this?: This is the first step to creating user-specific public URLs.
-     - Status:  IN PROGRESS
-     - Should Test frontend/backend/both after fix? backend
-     - Blocked on something: No.
+- None
 
 **Upcoming and Future Tasks**
-    Upcoming Tasks:
-    - (P1) Implement real password reset functionality. The current  endpoint is a mock. This will require integrating an email service like Resend or SendGrid.
-    - (P2) Refine the gallery feature to allow uploading multiple images to a folder at once.
+- **Upcoming Tasks:**
+    - (P0) Replace the  in the Diary and Library pages with the new , aligning their functionality with the Blog page (i.e., removing image embedding).
+- **Future Tasks:**
+    - (P1) Implement project export/import functionality.
+    - (P2) Develop a mobile application.
+    - (P2) Add multi-language support.
+    - (P2) Implement two-factor authentication (2FA).
+    - (P2) Add project collaboration features.
 
 **Completed work in this session**
-- **Core Infrastructure & Auth:** Implemented JWT-based authentication, seeding an admin user ().
-- **Project Management:** Full CRUD for projects with image uploads.
-- **Content Features:** Created pages and backend for Diary, Gallery, Blog, and Library, with a TipTap rich text editor.
-- **Task & Routine Management:** Implemented Tasks, a Calendar page, and daily Startup/Shutdown routines.
-- **UI/UX Polish:** Implemented a public landing page, user-specific public pages, and saved sorting preferences to local storage.
-- **Bug Fixes:** Resolved issues with navigation to the Calendar page and the Public Site link.
+- **Backend Refactoring:** The monolithic  was successfully broken down into a modular structure (, , ).
+- **Editor Overhaul:** Replaced the WYSIWYG editor for blogs with a  and added a separate image attachment feature.
+- **Image Security:** Secured images in private gallery folders, making them accessible only with a valid authentication token.
+- **Gallery Modal:** Implemented a fullscreen image viewer modal for gallery images.
+- **Social Sharing:** Added share buttons for public projects and blog entries.
+- **Bug Fixes:**
+    - Fixed an issue where saving blogs with large images failed by increasing model character limits.
+    - Resolved a frontend compile error related to incorrect Tiptap extension imports.
+    - Fixed broken project images on various pages by creating a dedicated file-serving API endpoint.
+- **Watermark Removal:** Removed the Emergent watermark from the application UI.
 
 **Earlier issues found/mentioned but not fixed**
-None. The agent has addressed all user-reported issues so far. However, some initial requirements from the problem statement (listed in the Pending Issues section) are not yet fully implemented.
+   - Issue 1: Numerous frontend linting errors and warnings exist across multiple files (e.g., , ). The agent acknowledged these but classified them as pre-existing and did not fix them.
+     - Debug checklist: Run yarn run v1.22.22
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. in the  directory to see all issues. Fix them according to the ESLint rules.
+     - Why to solve this issue and what will be achieved with this?: Fixing these improves code quality, maintainability, and prevents potential runtime bugs.
+     - Should Test frontend/backend/both after fix: frontend
+     - Is recurring issue? Y
 
 **Known issue recurrence from previous fork**
   - N/A
@@ -136,89 +95,75 @@ None. The agent has addressed all user-reported issues so far. However, some ini
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, MongoDB (via ), Pydantic, JWT for authentication.
-- **Frontend:** React, React Router, Axios, Tailwind CSS, Shadcn/UI, TipTap (for rich text editing).
-- **Architecture:** Single Page Application (SPA) with a RESTful API backend.
+- **Backend:** FastAPI, MongoDB (via ), Pydantic, JWT. Now with a modular route and service architecture.
+- **Frontend:** React, React Router, Axios, Tailwind CSS, Shadcn/UI, TipTap (for ).
+- **Containerization:** Docker, Docker Compose.
+- **File Serving:** Static files (like project/gallery images) are now served through a dedicated, secure API endpoint () to handle CORS and authentication properly.
 
 **key DB schema**
-  - : {id, email, hashed_password, is_admin}
-  - : {id, user_id, name, description, image_url, is_public}
-  - : {id, project_id, title, story, created_at}
-  - : {id, project_id, title, description, is_public, view_count}
-  - : {id, project_id, folder_id, title, description, is_public, view_count}
-  - : {id, project_id, parent_id, name}
-  - : {id, project_id, title, description, due_date, is_all_day, recurrence}
-  - : {id, project_id, title}
-  - : {id, project_id, title}
-  - : {routine_id, date}
+  - : {..., **images: List[BlogImage]**} (Embedded document)
+  - : {id, url, filename}
+  - Description fields for , , and  have had their  increased from 10,000 to 1,000,000.
 
 **changes in tech stack**
-  - None.
+- Added  and  to the frontend dependencies for the new .
 
 **All files of reference**
-- : The single source of truth for all backend logic, models, and API endpoints. Needs refactoring.
-- : Contains all frontend routes and connects the pages.
-- : Needs to be updated for drag-and-drop and task editing.
-- : Needs to be updated to generate user-specific public site URLs.
-- : Contains the project requirements and progress tracking.
+- : Core application file, now refactored to mount routers and configure middleware.
+- : Contains the updated secure file-serving endpoint logic.
+- : Updated to handle  for image attachments.
+- : The new simplified Tiptap editor component.
+- : Rewritten to use  and the new image attachment system.
+- : Updated to handle secure image loading and the new image modal.
+- : Contains the  helper function, updated to handle auth tokens for private images.
 
 **Areas that need refactoring**:
-- The  file is a monolith containing all Pydantic models, database helpers, and API routes for all features. It should be broken down into a more modular structure (e.g., separate files for models, routers per feature, and services/CRUD operations) to improve maintainability.
+- The frontend has a significant number of linting errors that should be addressed.
+- The  component should be deprecated and replaced with  in the Diary and Library pages to maintain consistency, as requested by the user.
 
 **key api endpoints**
-- 
-- 
--  (CRUD endpoints)
-- 
--  (CRUD for sub-features)
-- 
-- 
+- : Endpoint for project image uploads, subject of the current CORS issue.
+- : Now accepts  to handle blog content and image attachments.
+- : New secure endpoint to serve uploaded files. It checks authentication for private gallery images via a  query parameter.
 
 **Critical Info for New Agent**
-- The backend is a single monolithic file (). Be careful when editing it. Future work should focus on refactoring this into smaller, feature-specific modules.
-- The password recovery flow is currently mocked at the API level and does not send real emails.
-- All core features from the initial prompt have a foundational implementation, but some details like recursive folders, view counts, and calendar interactivity are either missing or incomplete.
+- The immediate priority is to verify the CORS fix for project image uploads. The user's environment uses different domains for the app and API ( and ), which is the root cause. The implemented fix in  is to allow any origin (). You must test if this is effective.
+- The security for private gallery images now depends on the frontend passing the auth token as a query parameter to the  endpoint. This logic is implemented in .
+- The user has explicitly requested to replace the WYSIWYG editor in other parts of the app (Diary, Library) with the new . This should be the next task after the CORS issue is confirmed to be resolved.
 
 **documents and test reports created in this job**
 - 
 - 
-- 
-- 
-- 
-- 
 
-**Last 10 User Messages and any pending HUMAN messages**
-1.  **User:** Requests task editing on calendar click, drag-and-drop support, and user-specific public site URLs. (PENDING)
-2.  **Agent:** Confirms understanding and plans to implement the requested features.
-3.  **Agent:** Announces that both the calendar page and public site link bugs are fixed and provides details. (COMPLETED)
-4.  **Agent:** Shows a screenshot confirming the user-specific public site is working.
-5.  **Agent:** Announces the calendar page is working and shows a screenshot.
-6.  **Agent:** Confirms understanding of the two reported bugs and plans to fix them.
-7.  **User:** Reports two bugs: the View calendar link on the dashboard is broken, and the Public site link for a logged-in user goes to the generic landing page instead of a user-specific one. (RESOLVED)
-8.  **Agent:** Provides a final summary of the application's features.
-9.  **Agent:** Shows a screenshot of the working dashboard after a successful login.
-10. **Agent:** Confirms login works and the dashboard displays correctly.
+**Last 10 User Messages and any pending HUMAN messages** 
+1.  **User:** Reports a CORS error when uploading a project image in their deployed environment. (PENDING - fix implemented, needs verification)
+2.  **Agent:** Provides a summary of the blog editor replacement and private image security fix.
+3.  **User:** Requests to replace the WYSIWYG editor with a simpler one, remove embedded images from blogs, and add image attachments instead. (COMPLETED)
+4.  **Agent:** Provides a summary of the gallery image modal implementation.
+5.  **User:** Reports a frontend compile error. (COMPLETED)
+6.  **Agent:** Provides a summary of the image display and social sharing implementation.
+7.  **User:** Requests a modal to view gallery images when clicked. (COMPLETED)
+8.  **User:** Asks if private gallery images are protected from anonymous users. (COMPLETED - agent implemented security)
+9.  **User:** Asks if a new Docker build is required for deployment. (COMPLETED - agent confirmed)
+10. **Agent:** Provides a summary of the backend refactoring.
 
 **Project Health Check:**
-- **Broken:** None.
-- **Mocked:** The Forgot Password functionality is mocked; it generates a reset token but does not send an email.
+- **Broken:** The project image upload feature is potentially broken in the user's deployed environment due to a CORS issue. The fix is implemented but unverified.
+- **Mocked:** None.
 
 **3rd Party Integrations**
-- None currently active. TipTap.js and its extensions are used on the frontend but are part of the codebase.
+- None.
 
 **Testing status**
-  - Testing agent used after significant changes: YES
+  - Testing agent used after significant changes: YES (after backend refactor and after image/sharing features).
   - Troubleshoot agent used after agent stuck in loop: NO
-  - Test files created: No dedicated test files were created. Testing was performed by the testing agent and ad-hoc  or  scripts.
+  - Test files created: None.
   - Known regressions: None.
 
 **Credentials to test flow:**
-- **Email:** 
-- **Password:** 
+- **Default Email:** 
+- **Default Password:** 
 
 **What agent forgot to execute**
-- The agent has not yet implemented the following requirements from the original problem statement:
-    - **Drag-and-drop** for calendar tasks.
-    - **Recursive (sub-folder)** functionality for Gallery and Library.
-    - **View counts** for public blog and library entries.
-    - Searching within **description fields** (currently only searches titles).</analysis>
+- The agent did not fix numerous pre-existing frontend linting errors reported by the linter.
+- The agent noted the color picker was missing from the  toolbar UI but did not investigate or fix it.</analysis>
