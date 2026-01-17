@@ -556,7 +556,7 @@ export const GalleryPage = () => {
                   className="text-white hover:bg-white/20"
                   onClick={() => {
                     const link = document.createElement('a');
-                    link.href = getImageUrl(viewingImage?.url);
+                    link.href = getImageUrl(viewingImage?.url, token);
                     link.download = viewingImage?.filename || 'image';
                     link.click();
                   }}
@@ -581,7 +581,7 @@ export const GalleryPage = () => {
             <div className="flex-1 flex items-center justify-center p-4 pt-20 pb-4">
               {viewingImage && (
                 <img
-                  src={getImageUrl(viewingImage.url)}
+                  src={getImageUrl(viewingImage.url, token)}
                   alt={viewingImage.filename}
                   className="max-w-full max-h-[80vh] object-contain"
                   data-testid="modal-image"
