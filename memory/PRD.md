@@ -115,10 +115,20 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - Token passed via query parameter for `<img>` tag compatibility
 - Public folder/project images remain accessible to everyone
 
-#### Blog/Diary/Library Image Save Fix ✅ (Jan 17, 2026)
-- Increased description field limit from 10KB to 500KB
-- Allows saving entries with embedded base64 images from TipTap editor
-- Applied to: Blog, Diary, and Library entry models
+#### Simplified Editor & Blog Image Attachments ✅ (Jan 17, 2026)
+- Replaced RichTextEditor with SimpleEditor (no embedded images)
+- SimpleEditor features:
+  - Headings (H1, H2, H3)
+  - Text formatting (Bold, Italic, Underline, Strikethrough)
+  - Text color picker (20 preset colors)
+  - Lists (bullet, numbered) and blockquotes
+  - Text alignment (left, center, right)
+  - Links
+  - Undo/Redo
+- Blog entries now support attached images (separate from content)
+- New endpoints: POST/DELETE `/api/projects/{id}/blog/{entry_id}/images`
+- Images stored in `/uploads/blog/{project_id}/{entry_id}/`
+- Blog model updated with `images` array field
 
 ## Key API Endpoints
 - **Auth**: `/api/auth/{login, forgot-password, reset-password, me, settings, change-password}`
@@ -126,7 +136,7 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Projects**: `/api/projects` (CRUD with image upload)
 - **Diary**: `/api/projects/{id}/diary` (CRUD)
 - **Gallery**: `/api/projects/{id}/gallery/{folders, images}` (CRUD)
-- **Blog**: `/api/projects/{id}/blog` (CRUD)
+- **Blog**: `/api/projects/{id}/blog` (CRUD) + `/blog/{entry_id}/images` (image attachments)
 - **Library**: `/api/projects/{id}/library/{folders, entries}` (CRUD)
 - **Tasks**: `/api/projects/{id}/tasks` (CRUD)
 - **Routines**: `/api/projects/{id}/routines/{startup, shutdown}` (CRUD + complete)
