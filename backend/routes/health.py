@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Optional
 import jwt
 
-from config import db, APP_NAME, UPLOADS_DIR, JWT_SECRET, JWT_ALGORITHM
+from config import db, APP_NAME, UPLOADS_DIR, JWT_SECRET, JWT_ALGORITHM, MAX_UPLOAD_SIZE_MB
 
 router = APIRouter()
 security = HTTPBearer(auto_error=False)
@@ -20,6 +20,16 @@ async def health_check():
         "status": "healthy",
         "app": APP_NAME,
         "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+
+
+@router.get("/config")
+async def get_app_config():
+    """Get public application configuration"""
+    return {
+        "max_upload_size_mb": MAX_UPLOAD_SIZE_MB,
+        "max_upload_size_bytes": MAX_UPLOAD_SIZE_MB * 1024 * 1024,
+        "allowed_image_types": ["image/jpeg", "image/png", "image/gif", "image/webp"]
     }
 
 
