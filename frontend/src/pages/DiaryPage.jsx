@@ -33,6 +33,7 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { RichTextEditor } from '../components/RichTextEditor';
+import { SimpleEditor } from '../components/SimpleEditor';
 import { 
   ArrowLeft, 
   Plus, 
@@ -210,7 +211,7 @@ export const DiaryPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Story</Label>
-                  <RichTextEditor
+                  <SimpleEditor
                     content={formData.story}
                     onChange={(html) => setFormData({ ...formData, story: html })}
                     placeholder="Write your diary entry..."
