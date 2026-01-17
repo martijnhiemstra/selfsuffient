@@ -4,7 +4,7 @@ from typing import Optional
 from datetime import datetime, timezone
 import uuid
 
-from config import db, UPLOADS_DIR
+from config import db, UPLOADS_DIR, MAX_UPLOAD_SIZE, MAX_UPLOAD_SIZE_MB
 from models import (
     GalleryFolderCreate, GalleryFolderUpdate, GalleryFolderResponse,
     GalleryImageResponse, GalleryListResponse, MessageResponse
@@ -137,6 +137,14 @@ async def upload_gallery_image(
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Invalid file type")
     
+    # Check file size
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413, 
+            detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE_MB}MB"
+        )
+    
     image_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -147,7 +155,7 @@ async def upload_gallery_image(
     filename = f"{image_id}.{file_ext}"
     file_path = gallery_dir / filename
     
-    content = await file.read()
+    # content already read for size check
     with open(file_path, "wb") as f:
         f.write(content)
     
