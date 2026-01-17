@@ -52,7 +52,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import RichTextEditor from '../components/RichTextEditor';
+import { SimpleEditor } from '../components/SimpleEditor';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -484,7 +484,7 @@ export const LibraryPage = () => {
               </div>
               <div className="space-y-2">
                 <Label htmlFor="entryDescription">Content</Label>
-                <RichTextEditor 
+                <SimpleEditor 
                   content={entryForm.description}
                   onChange={(html) => setEntryForm({ ...entryForm, description: html })}
                 />
