@@ -77,6 +77,29 @@ async def get_public_project(project_id: str):
     return ProjectResponse(**project)
 
 
+async def get_blog_images(blog_id: str) -> list:
+    """Get all images for a blog entry"""
+    images = await db.blog_images.find({"blog_id": blog_id}, {"_id": 0}).to_list(100)
+    return images
+
+
+async def build_blog_response(entry: dict) -> BlogEntryResponse:
+    """Build a blog entry response with images"""
+    from models import BlogImageResponse
+    images = await get_blog_images(entry["id"])
+    return BlogEntryResponse(
+        id=entry["id"],
+        project_id=entry["project_id"],
+        title=entry["title"],
+        description=entry["description"],
+        is_public=entry.get("is_public", False),
+        views=entry.get("views", 0),
+        images=[BlogImageResponse(**img) for img in images],
+        created_at=entry["created_at"],
+        updated_at=entry["updated_at"]
+    )
+
+
 # Public Blog routes
 @router.get("/projects/{project_id}/blog", response_model=BlogListResponse)
 async def list_public_blog_entries(
@@ -100,7 +123,12 @@ async def list_public_blog_entries(
     total = await db.blog_entries.count_documents(query)
     entries = await db.blog_entries.find(query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
     
-    return BlogListResponse(entries=[BlogEntryResponse(**e) for e in entries], total=total)
+    # Build responses with images
+    responses = []
+    for entry in entries:
+        responses.append(await build_blog_response(entry))
+    
+    return BlogListResponse(entries=responses, total=total)
 
 
 @router.get("/projects/{project_id}/blog/{entry_id}", response_model=BlogEntryResponse)
@@ -116,7 +144,7 @@ async def get_public_blog_entry(project_id: str, entry_id: str):
     await db.blog_entries.update_one({"id": entry_id}, {"$inc": {"views": 1}})
     entry["views"] = entry.get("views", 0) + 1
     
-    return BlogEntryResponse(**entry)
+    return await build_blog_response(entry)
 
 
 # Public Library routes
