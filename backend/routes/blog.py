@@ -4,7 +4,7 @@ from typing import Optional, List
 from datetime import datetime, timezone
 import uuid
 
-from config import db, UPLOADS_DIR
+from config import db, UPLOADS_DIR, MAX_UPLOAD_SIZE, MAX_UPLOAD_SIZE_MB
 from models import BlogEntryCreate, BlogEntryUpdate, BlogEntryResponse, BlogListResponse, BlogImageResponse, MessageResponse
 from services import get_current_user, verify_project_access
 
@@ -173,6 +173,14 @@ async def upload_blog_image(
     if file.content_type not in allowed_types:
         raise HTTPException(status_code=400, detail="Invalid file type. Allowed: JPEG, PNG, GIF, WEBP")
     
+    # Check file size
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(
+            status_code=413, 
+            detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE_MB}MB"
+        )
+    
     image_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -185,7 +193,7 @@ async def upload_blog_image(
     filename = f"{image_id}.{file_ext}"
     file_path = blog_dir / filename
     
-    content = await file.read()
+    # content already read for size check
     with open(file_path, "wb") as f:
         f.write(content)
     
