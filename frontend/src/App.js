@@ -1,9 +1,11 @@
 import "@/App.css";
+import { useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
+import { fetchAppConfig } from "./utils";
 
 // Pages
 import { LoginPage } from "./pages/LoginPage";
@@ -27,6 +29,11 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { MyPublicSitePage } from "./pages/MyPublicSitePage";
 
 function App() {
+  // Fetch app config on mount to get max upload size
+  useEffect(() => {
+    fetchAppConfig();
+  }, []);
+
   return (
     <AuthProvider>
       <BrowserRouter>
