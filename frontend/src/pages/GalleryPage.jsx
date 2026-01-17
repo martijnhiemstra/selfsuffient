@@ -205,6 +205,48 @@ export const GalleryPage = () => {
     }
   };
 
+  // Image modal functions
+  const openImageModal = (image) => {
+    setViewingImage(image);
+    setImageModalOpen(true);
+  };
+
+  const closeImageModal = () => {
+    setImageModalOpen(false);
+    setViewingImage(null);
+  };
+
+  const getCurrentImageIndex = () => {
+    if (!viewingImage) return -1;
+    return images.findIndex(img => img.id === viewingImage.id);
+  };
+
+  const goToPreviousImage = () => {
+    const currentIndex = getCurrentImageIndex();
+    if (currentIndex > 0) {
+      setViewingImage(images[currentIndex - 1]);
+    }
+  };
+
+  const goToNextImage = () => {
+    const currentIndex = getCurrentImageIndex();
+    if (currentIndex < images.length - 1) {
+      setViewingImage(images[currentIndex + 1]);
+    }
+  };
+
+  const handleKeyDown = useCallback((e) => {
+    if (!imageModalOpen) return;
+    if (e.key === 'ArrowLeft') goToPreviousImage();
+    if (e.key === 'ArrowRight') goToNextImage();
+    if (e.key === 'Escape') closeImageModal();
+  }, [imageModalOpen, viewingImage, images]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [handleKeyDown]);
+
   const navigateToFolder = (folderId) => {
     setCurrentFolderId(folderId);
     setLoading(true);
