@@ -48,7 +48,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { getImageUrl } from '../utils';
+import { getImageUrl, validateImageFile } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -115,6 +115,14 @@ export const ProjectDetailPage = () => {
   const handleImageUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validate file before upload
+    const validation = validateImageFile(file);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     const formData = new FormData();
     formData.append('file', file);
