@@ -413,7 +413,7 @@ export const GalleryPage = () => {
             >
               <div className="aspect-square relative">
                 <img 
-                  src={getImageUrl(image.url)}
+                  src={getImageUrl(image.url, token)}
                   alt={image.filename}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
