@@ -106,6 +106,20 @@ Build an application that helps users setup a self-sufficient lifestyle with:
   - Keyboard navigation: Arrow keys (left/right), Escape to close
 - Works on both secure Gallery page and public project Gallery tab
 
+#### Private Gallery Image Security ✅ (Jan 17, 2026)
+- Images in private folders are now protected from anonymous access
+- Access control checks:
+  - Image folder's `is_public` flag
+  - User authentication via token (query param or header)
+  - Project ownership verification
+- Token passed via query parameter for `<img>` tag compatibility
+- Public folder/project images remain accessible to everyone
+
+#### Blog/Diary/Library Image Save Fix ✅ (Jan 17, 2026)
+- Increased description field limit from 10KB to 500KB
+- Allows saving entries with embedded base64 images from TipTap editor
+- Applied to: Blog, Diary, and Library entry models
+
 ## Key API Endpoints
 - **Auth**: `/api/auth/{login, forgot-password, reset-password, me, settings, change-password}`
 - **Admin**: `/api/admin/users` (CRUD)
@@ -118,7 +132,7 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Routines**: `/api/projects/{id}/routines/{startup, shutdown}` (CRUD + complete)
 - **Dashboard**: `/api/dashboard/{data, all-tasks}`
 - **Public**: `/api/public/{projects, users/{id}/profile}`
-- **Files**: `/api/files/{path}` - Serves uploaded files with CORS
+- **Files**: `/api/files/{path}` - Serves files with access control (supports `?token=` for auth)
 - **Health**: `/api/health`
 
 ## Test Credentials
