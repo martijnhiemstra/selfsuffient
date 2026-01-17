@@ -24,14 +24,14 @@ class LibraryFolderResponse(BaseModel):
 
 class LibraryEntryCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(default="", max_length=10000)
+    description: str = Field(default="", max_length=500000)  # Increased for embedded images
     folder_id: Optional[str] = None
     is_public: bool = False
 
 
 class LibraryEntryUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=10000)
+    description: Optional[str] = Field(None, max_length=500000)  # Increased for embedded images
     folder_id: Optional[str] = None
     is_public: Optional[bool] = None
 

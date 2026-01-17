@@ -5,13 +5,13 @@ from typing import List, Optional
 
 class DiaryEntryCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    story: str = Field(default="", max_length=10000)
+    story: str = Field(default="", max_length=500000)  # Increased for embedded images
     entry_datetime: Optional[str] = None
 
 
 class DiaryEntryUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
-    story: Optional[str] = Field(None, max_length=10000)
+    story: Optional[str] = Field(None, max_length=500000)  # Increased for embedded images
     entry_datetime: Optional[str] = None
 
 
