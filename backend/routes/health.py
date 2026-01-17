@@ -118,9 +118,13 @@ async def check_gallery_image_access(file_path: str, user: Optional[dict]) -> bo
 @router.get("/files/{file_path:path}")
 async def serve_file(
     file_path: str,
-    current_user: Optional[dict] = Depends(get_optional_user)
+    token: Optional[str] = None,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ):
     """Serve uploaded files with access control for private gallery images"""
+    # Get user from either header or query param
+    current_user = await get_optional_user(credentials, token)
+    
     full_path = UPLOADS_DIR / file_path
     
     if not full_path.exists() or not full_path.is_file():
