@@ -55,7 +55,7 @@ import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
 import { toast } from 'sonner';
 import axios from 'axios';
-import { getImageUrl } from '../utils';
+import { getImageUrl, validateImageFile, getMaxUploadSizeMB } from '../utils';
 
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -154,6 +154,13 @@ export const GalleryPage = () => {
   const handleUploadImage = async (e) => {
     e.preventDefault();
     if (!selectedFile) return;
+    
+    // Validate file before upload
+    const validation = validateImageFile(selectedFile);
+    if (!validation.valid) {
+      toast.error(validation.error);
+      return;
+    }
     
     setUploading(true);
     try {
@@ -504,6 +511,9 @@ export const GalleryPage = () => {
               {selectedFile && (
                 <p className="text-sm text-muted-foreground mt-2">Selected: {selectedFile.name}</p>
               )}
+              <p className="text-xs text-muted-foreground mt-2">
+                Supported: JPEG, PNG, GIF, WEBP (max {getMaxUploadSizeMB()}MB)
+              </p>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => { setUploadDialogOpen(false); setSelectedFile(null); }}>Cancel</Button>
