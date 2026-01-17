@@ -23,13 +23,23 @@ async def health_check():
     }
 
 
-async def get_optional_user(credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)):
+async def get_optional_user(
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security),
+    token: Optional[str] = None  # Query parameter fallback
+):
     """Get current user if authenticated, None otherwise"""
-    if not credentials:
+    # Try header first, then query parameter
+    auth_token = None
+    if credentials:
+        auth_token = credentials.credentials
+    elif token:
+        auth_token = token
+    
+    if not auth_token:
         return None
+    
     try:
-        token = credentials.credentials
-        payload = jwt.decode(token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
+        payload = jwt.decode(auth_token, JWT_SECRET, algorithms=[JWT_ALGORITHM])
         user_id = payload.get("sub")
         if not user_id:
             return None
