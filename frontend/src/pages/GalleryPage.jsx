@@ -407,8 +407,9 @@ export const GalleryPage = () => {
           {images.map((image) => (
             <Card 
               key={image.id} 
-              className="border border-border/50 overflow-hidden group"
+              className="border border-border/50 overflow-hidden group cursor-pointer"
               data-testid={`image-${image.id}`}
+              onClick={() => openImageModal(image)}
             >
               <div className="aspect-square relative">
                 <img 
@@ -416,11 +417,14 @@ export const GalleryPage = () => {
                   alt={image.filename}
                   className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                 />
+                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                  <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                </div>
                 <Button
                   variant="secondary"
                   size="icon"
-                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8"
-                  onClick={() => { setItemToDelete({ type: 'image', id: image.id, name: image.filename }); setDeleteDialogOpen(true); }}
+                  className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 z-10"
+                  onClick={(e) => { e.stopPropagation(); setItemToDelete({ type: 'image', id: image.id, name: image.filename }); setDeleteDialogOpen(true); }}
                   data-testid={`delete-image-${image.id}`}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
