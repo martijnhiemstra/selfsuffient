@@ -5,13 +5,13 @@ from typing import List, Optional
 
 class BlogEntryCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200)
-    description: str = Field(default="", max_length=10000)
+    description: str = Field(default="", max_length=500000)  # Increased for embedded images
     is_public: bool = False
 
 
 class BlogEntryUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=200)
-    description: Optional[str] = Field(None, max_length=10000)
+    description: Optional[str] = Field(None, max_length=500000)  # Increased for embedded images
     is_public: Optional[bool] = None
 
 
