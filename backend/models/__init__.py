@@ -10,7 +10,7 @@ from .gallery import (
     GalleryFolderCreate, GalleryFolderUpdate, GalleryFolderResponse,
     GalleryImageResponse, GalleryListResponse, PublicGalleryResponse
 )
-from .blog import BlogEntryCreate, BlogEntryUpdate, BlogEntryResponse, BlogListResponse
+from .blog import BlogEntryCreate, BlogEntryUpdate, BlogEntryResponse, BlogListResponse, BlogImageResponse
 from .library import (
     LibraryFolderCreate, LibraryFolderUpdate, LibraryFolderResponse,
     LibraryEntryCreate, LibraryEntryUpdate, LibraryEntryResponse, LibraryListResponse
@@ -35,7 +35,7 @@ __all__ = [
     "GalleryFolderCreate", "GalleryFolderUpdate", "GalleryFolderResponse",
     "GalleryImageResponse", "GalleryListResponse", "PublicGalleryResponse",
     # Blog
-    "BlogEntryCreate", "BlogEntryUpdate", "BlogEntryResponse", "BlogListResponse",
+    "BlogEntryCreate", "BlogEntryUpdate", "BlogEntryResponse", "BlogListResponse", "BlogImageResponse",
     # Library
     "LibraryFolderCreate", "LibraryFolderUpdate", "LibraryFolderResponse",
     "LibraryEntryCreate", "LibraryEntryUpdate", "LibraryEntryResponse", "LibraryListResponse",
