@@ -32,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { RichTextEditor } from '../components/RichTextEditor';
 import { SimpleEditor } from '../components/SimpleEditor';
 import { 
   ArrowLeft, 
