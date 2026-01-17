@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
@@ -34,7 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import { RichTextEditor } from '../components/RichTextEditor';
+import { SimpleEditor } from '../components/SimpleEditor';
 import { 
   ArrowLeft, 
   Plus, 
@@ -46,17 +46,22 @@ import {
   Loader2,
   Eye,
   Globe,
-  Lock
+  Lock,
+  Upload,
+  Image,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
+import { getImageUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const BlogPage = () => {
   const { projectId } = useParams();
   const { token } = useAuth();
+  const fileInputRef = useRef(null);
   
   const [entries, setEntries] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -68,12 +73,14 @@ export const BlogPage = () => {
   const [editingEntry, setEditingEntry] = useState(null);
   const [viewingEntry, setViewingEntry] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     is_public: false
   });
+  const [entryImages, setEntryImages] = useState([]);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -112,9 +119,22 @@ export const BlogPage = () => {
         });
         toast.success('Entry updated!');
       } else {
-        await axios.post(`${API}/projects/${projectId}/blog`, formData, {
+        const response = await axios.post(`${API}/projects/${projectId}/blog`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        // If we have pending images, upload them to the new entry
+        if (entryImages.length > 0) {
+          toast.info(`Uploading ${entryImages.length} image(s)...`);
+          for (const img of entryImages) {
+            if (img.file) {
+              const formData = new FormData();
+              formData.append('file', img.file);
+              await axios.post(`${API}/projects/${projectId}/blog/${response.data.id}/images`, formData, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+            }
+          }
+        }
         toast.success('Entry created!');
       }
       setDialogOpen(false);
@@ -139,6 +159,64 @@ export const BlogPage = () => {
     }
   };
 
+  const handleImageUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error('Invalid file type. Allowed: JPEG, PNG, GIF, WEBP');
+      return;
+    }
+
+    if (editingEntry) {
+      // Upload directly to existing entry
+      setUploading(true);
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        const response = await axios.post(
+          `${API}/projects/${projectId}/blog/${editingEntry.id}/images`,
+          formData,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEntryImages([...entryImages, response.data]);
+        toast.success('Image uploaded!');
+      } catch (error) {
+        toast.error('Failed to upload image');
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      // Store locally for new entry
+      const preview = URL.createObjectURL(file);
+      setEntryImages([...entryImages, { id: `temp-${Date.now()}`, file, preview, filename: file.name }]);
+    }
+    
+    // Clear file input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleDeleteImage = async (image) => {
+    if (image.file) {
+      // Local image (not uploaded yet)
+      setEntryImages(entryImages.filter(i => i.id !== image.id));
+      URL.revokeObjectURL(image.preview);
+    } else if (editingEntry) {
+      // Uploaded image - delete from server
+      try {
+        await axios.delete(
+          `${API}/projects/${projectId}/blog/${editingEntry.id}/images/${image.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEntryImages(entryImages.filter(i => i.id !== image.id));
+        toast.success('Image deleted');
+      } catch (error) {
+        toast.error('Failed to delete image');
+      }
+    }
+  };
+
   const openEditDialog = (entry) => {
     setEditingEntry(entry);
     setFormData({
@@ -146,12 +224,18 @@ export const BlogPage = () => {
       description: entry.description,
       is_public: entry.is_public
     });
+    setEntryImages(entry.images || []);
     setDialogOpen(true);
   };
 
   const resetForm = () => {
     setEditingEntry(null);
     setFormData({ title: '', description: '', is_public: false });
+    // Cleanup temp image previews
+    entryImages.forEach(img => {
+      if (img.preview) URL.revokeObjectURL(img.preview);
+    });
+    setEntryImages([]);
   };
 
   return (
@@ -197,12 +281,68 @@ export const BlogPage = () => {
                 </div>
                 <div className="space-y-2">
                   <Label>Content</Label>
-                  <RichTextEditor
+                  <SimpleEditor
                     content={formData.description}
                     onChange={(html) => setFormData({ ...formData, description: html })}
                     placeholder="Write your blog post..."
                   />
                 </div>
+                
+                {/* Image Attachments */}
+                <div className="space-y-2">
+                  <Label>Images</Label>
+                  <div className="border border-input rounded-lg p-4">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
+                    
+                    {entryImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        {entryImages.map((image) => (
+                          <div key={image.id} className="relative group aspect-square">
+                            <img
+                              src={image.preview || getImageUrl(image.url, token)}
+                              alt={image.filename}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDeleteImage(image)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploading}
+                      className="w-full"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      Add Image
+                    </Button>
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
+                      Supported: JPEG, PNG, GIF, WEBP
+                    </p>
+                  </div>
+                </div>
+                
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label htmlFor="public">Make Public</Label>
@@ -295,6 +435,11 @@ export const BlogPage = () => {
                           <Lock className="w-3 h-3" /> Private
                         </Badge>
                       )}
+                      {entry.images?.length > 0 && (
+                        <Badge variant="outline" className="gap-1">
+                          <Image className="w-3 h-3" /> {entry.images.length}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-muted-foreground font-mono-data flex items-center gap-4">
                       <span>{format(parseISO(entry.created_at), 'PP')}</span>
@@ -319,7 +464,7 @@ export const BlogPage = () => {
                       <AlertDialogContent>
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Post?</AlertDialogTitle>
-                          <AlertDialogDescription>This will permanently delete this blog post.</AlertDialogDescription>
+                          <AlertDialogDescription>This will permanently delete this blog post and all its images.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                           <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -340,6 +485,24 @@ export const BlogPage = () => {
                   className="prose-content text-muted-foreground line-clamp-3"
                   dangerouslySetInnerHTML={{ __html: entry.description || '<p>No content</p>' }}
                 />
+                {/* Preview images */}
+                {entry.images?.length > 0 && (
+                  <div className="flex gap-2 mt-3 overflow-x-auto">
+                    {entry.images.slice(0, 4).map((img) => (
+                      <img
+                        key={img.id}
+                        src={getImageUrl(img.url, token)}
+                        alt={img.filename}
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                      />
+                    ))}
+                    {entry.images.length > 4 && (
+                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm text-muted-foreground">+{entry.images.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -368,6 +531,22 @@ export const BlogPage = () => {
                 className="prose-content py-4"
                 dangerouslySetInnerHTML={{ __html: viewingEntry.description || '<p>No content</p>' }}
               />
+              {/* Display attached images */}
+              {viewingEntry.images?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Attached Images</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {viewingEntry.images.map((img) => (
+                      <img
+                        key={img.id}
+                        src={getImageUrl(img.url, token)}
+                        alt={img.filename}
+                        className="w-full rounded-lg"
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </DialogContent>
