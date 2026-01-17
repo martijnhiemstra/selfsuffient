@@ -71,7 +71,7 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 11. **Daily Reminders** ✅ - Opt-in email via cron
 12. **Docker** ✅ - Full containerization
 
-### Recent Updates (Jan 16, 2026)
+### Recent Updates (Jan 16-17, 2026)
 
 #### Watermark Removed ✅
 - Removed emergent-main.js script from index.html
@@ -93,6 +93,18 @@ Build an application that helps users setup a self-sufficient lifestyle with:
   - Public project pages (Share button in header)
   - Landing page project cards (Share icons)
   - Blog/Library entry cards (Share icons)
+
+#### Gallery Image Modal ✅ (Jan 17, 2026)
+- Click on gallery images to view in fullscreen modal
+- Features:
+  - Large image display with dark overlay background
+  - Filename and image counter (e.g., "1 of 5")
+  - Download button to save image
+  - Close button (X) and click outside to close
+  - Previous/Next navigation arrows (when multiple images)
+  - Thumbnail strip at bottom for quick navigation
+  - Keyboard navigation: Arrow keys (left/right), Escape to close
+- Works on both secure Gallery page and public project Gallery tab
 
 ## Key API Endpoints
 - **Auth**: `/api/auth/{login, forgot-password, reset-password, me, settings, change-password}`
