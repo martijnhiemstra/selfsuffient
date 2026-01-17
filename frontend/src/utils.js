@@ -8,9 +8,10 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
  * Get the full URL for an uploaded file/image
  * Uses the API endpoint to ensure CORS headers are applied
  * @param {string} imagePath - The image path from the database (e.g., "/uploads/projects/123/cover.png")
+ * @param {string} token - Optional auth token for private images
  * @returns {string} The full URL to access the image
  */
-export const getImageUrl = (imagePath) => {
+export const getImageUrl = (imagePath, token = null) => {
   if (!imagePath) return null;
   
   // If it's already a full URL, return as-is
@@ -21,7 +22,12 @@ export const getImageUrl = (imagePath) => {
   // Convert /uploads/... path to /api/files/... for CORS support
   if (imagePath.startsWith('/uploads/')) {
     const filePath = imagePath.replace('/uploads/', '');
-    return `${API_URL}/api/files/${filePath}`;
+    let url = `${API_URL}/api/files/${filePath}`;
+    // Add token for authenticated requests (needed for private gallery images)
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`;
+    }
+    return url;
   }
   
   // Fallback: prepend the API URL
@@ -46,5 +52,5 @@ export const stripHtml = (html) => {
  */
 export const truncateText = (text, maxLength = 100) => {
   if (!text || text.length <= maxLength) return text;
-  return text.slice(0, maxLength).trim() + '...';
+  return text.slice(0, maxLength).trim() + '...'
 };
