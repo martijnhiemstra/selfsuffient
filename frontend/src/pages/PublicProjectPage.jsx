@@ -516,14 +516,18 @@ export const PublicProjectPage = () => {
                 {filteredGallery.images.map((image) => (
                   <Card 
                     key={image.id} 
-                    className="border border-border/50 overflow-hidden group"
+                    className="border border-border/50 overflow-hidden group cursor-pointer"
+                    onClick={() => openImageModal(image)}
                   >
                     <div className="aspect-square relative">
                       <img 
-                        src={`${process.env.REACT_APP_BACKEND_URL}${image.url}`}
+                        src={getImageUrl(image.url)}
                         alt={image.filename}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center">
+                        <ZoomIn className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
                     </div>
                     <CardContent className="p-2">
                       <p className="text-xs truncate text-muted-foreground">{image.filename}</p>
@@ -535,6 +539,109 @@ export const PublicProjectPage = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Image Viewer Modal */}
+      {imageModalOpen && viewingImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/95 flex flex-col"
+          onClick={() => setImageModalOpen(false)}
+        >
+          {/* Header */}
+          <div className="flex items-center justify-between p-4 bg-gradient-to-b from-black/80 to-transparent">
+            <div className="text-white">
+              <p className="font-medium truncate max-w-md">{viewingImage.filename}</p>
+              <p className="text-sm text-white/60">
+                {getCurrentImageIndex() + 1} of {filteredGallery.images.length}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const link = document.createElement('a');
+                  link.href = getImageUrl(viewingImage.url);
+                  link.download = viewingImage.filename || 'image';
+                  link.click();
+                }}
+              >
+                <Download className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="text-white hover:bg-white/20"
+                onClick={() => setImageModalOpen(false)}
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
+          </div>
+
+          {/* Image Container */}
+          <div 
+            className="flex-1 flex items-center justify-center p-4"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={getImageUrl(viewingImage.url)}
+              alt={viewingImage.filename}
+              className="max-w-full max-h-[80vh] object-contain"
+            />
+          </div>
+
+          {/* Navigation Arrows */}
+          {filteredGallery.images.length > 1 && (
+            <>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 text-white hover:bg-black/70 disabled:opacity-30"
+                onClick={(e) => { e.stopPropagation(); goToPreviousImage(); }}
+                disabled={getCurrentImageIndex() === 0}
+              >
+                <ChevronLeft className="w-8 h-8" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute right-4 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-black/50 text-white hover:bg-black/70 disabled:opacity-30"
+                onClick={(e) => { e.stopPropagation(); goToNextImage(); }}
+                disabled={getCurrentImageIndex() === filteredGallery.images.length - 1}
+              >
+                <ChevronRight className="w-8 h-8" />
+              </Button>
+            </>
+          )}
+
+          {/* Thumbnail Strip */}
+          {filteredGallery.images.length > 1 && (
+            <div className="p-4 bg-gradient-to-t from-black/80 to-transparent">
+              <div className="flex gap-2 justify-center overflow-x-auto pb-2">
+                {filteredGallery.images.map((img) => (
+                  <button
+                    key={img.id}
+                    onClick={(e) => { e.stopPropagation(); setViewingImage(img); }}
+                    className={`flex-shrink-0 w-16 h-16 rounded-lg overflow-hidden border-2 transition-all ${
+                      viewingImage.id === img.id 
+                        ? 'border-white scale-110' 
+                        : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img
+                      src={getImageUrl(img.url)}
+                      alt={img.filename}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-border/40 py-8 px-6">
