@@ -174,6 +174,31 @@ export const PublicProjectPage = () => {
     }
   };
 
+  // Image modal functions
+  const openImageModal = (image) => {
+    setViewingImage(image);
+    setImageModalOpen(true);
+  };
+
+  const getCurrentImageIndex = () => {
+    if (!viewingImage) return -1;
+    return filteredGallery.images.findIndex(img => img.id === viewingImage.id);
+  };
+
+  const goToPreviousImage = () => {
+    const currentIndex = getCurrentImageIndex();
+    if (currentIndex > 0) {
+      setViewingImage(filteredGallery.images[currentIndex - 1]);
+    }
+  };
+
+  const goToNextImage = () => {
+    const currentIndex = getCurrentImageIndex();
+    if (currentIndex < filteredGallery.images.length - 1) {
+      setViewingImage(filteredGallery.images[currentIndex + 1]);
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
