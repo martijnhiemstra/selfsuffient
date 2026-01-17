@@ -4,13 +4,11 @@ Self-Sufficient Life - Main Application Entry Point
 A full-stack application for managing self-sufficient lifestyle projects,
 including diary entries, galleries, blogs, libraries, tasks, and daily routines.
 """
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.cors import CORSMiddleware
 from starlette.middleware.base import BaseHTTPMiddleware
-from starlette.requests import Request
 import os
-import mimetypes
 
 from config import APP_NAME, UPLOADS_DIR, db, logger
 from routes import api_router
@@ -21,28 +19,45 @@ from services import hash_password
 app = FastAPI(title=APP_NAME)
 
 
-# Custom middleware to add CORS headers to all responses including static files
-class CORSStaticFilesMiddleware(BaseHTTPMiddleware):
+# Custom middleware to ensure CORS headers on ALL responses
+class CORSAllMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
-        response = await call_next(request)
-        if request.url.path.startswith("/uploads"):
+        # Handle preflight OPTIONS requests
+        if request.method == "OPTIONS":
+            response = Response(status_code=200)
             response.headers["Access-Control-Allow-Origin"] = "*"
-            response.headers["Access-Control-Allow-Methods"] = "GET, HEAD, OPTIONS"
+            response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
             response.headers["Access-Control-Allow-Headers"] = "*"
+            response.headers["Access-Control-Allow-Credentials"] = "true"
+            response.headers["Access-Control-Max-Age"] = "3600"
+            return response
+        
+        response = await call_next(request)
+        
+        # Add CORS headers to all responses
+        response.headers["Access-Control-Allow-Origin"] = "*"
+        response.headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+        response.headers["Access-Control-Allow-Headers"] = "*"
+        response.headers["Access-Control-Allow-Credentials"] = "true"
+        
+        # Additional headers for static files
+        if request.url.path.startswith("/uploads"):
             response.headers["Cross-Origin-Resource-Policy"] = "cross-origin"
+        
         return response
 
 
-# Add custom middleware first (runs last in middleware stack)
-app.add_middleware(CORSStaticFilesMiddleware)
+# Add custom CORS middleware first (runs last in middleware stack)
+app.add_middleware(CORSAllMiddleware)
 
-# CORS middleware
+# Standard CORS middleware as backup
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Mount static files for uploads
