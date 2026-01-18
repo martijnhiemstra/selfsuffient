@@ -12,7 +12,9 @@ import {
   Loader2,
   CheckCircle,
   Bell,
-  Mail
+  Mail,
+  Send,
+  Settings
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -26,6 +28,7 @@ export const SettingsPage = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changing, setChanging] = useState(false);
   const [savingReminders, setSavingReminders] = useState(false);
+  const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [dailyReminders, setDailyReminders] = useState(user?.daily_reminders || false);
 
   const handleChangePassword = async (e) => {
@@ -74,6 +77,20 @@ export const SettingsPage = () => {
       setDailyReminders(!checked); // Revert on error
     } finally {
       setSavingReminders(false);
+    }
+  };
+
+  const handleSendTestEmail = async () => {
+    setSendingTestEmail(true);
+    try {
+      const response = await axios.post(`${API}/auth/test-email`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(response.data.message || 'Test email sent successfully!');
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to send test email');
+    } finally {
+      setSendingTestEmail(false);
     }
   };
 
@@ -159,7 +176,7 @@ export const SettingsPage = () => {
       </Card>
 
       {/* Change Password */}
-      <Card className="border border-border/50">
+      <Card className="border border-border/50 mb-6">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Lock className="w-5 h-5" />
@@ -219,6 +236,38 @@ export const SettingsPage = () => {
           </form>
         </CardContent>
       </Card>
+
+      {/* Admin: Email Configuration Test */}
+      {user?.is_admin && (
+        <Card className="border border-border/50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Settings className="w-5 h-5" />
+              Email Configuration
+            </CardTitle>
+            <CardDescription>Test your SMTP email settings</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Send a test email to verify that your SMTP configuration is working correctly. 
+              The test email will be sent to your email address: <strong>{user?.email}</strong>
+            </p>
+            <Button 
+              onClick={handleSendTestEmail} 
+              disabled={sendingTestEmail}
+              variant="outline"
+              data-testid="send-test-email-button"
+            >
+              {sendingTestEmail ? (
+                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              ) : (
+                <Send className="w-4 h-4 mr-2" />
+              )}
+              Send Test Email
+            </Button>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
