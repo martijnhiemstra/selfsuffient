@@ -12,7 +12,7 @@ from config import (
 
 
 def send_email(to_email: str, subject: str, html_content: str) -> bool:
-    """Send email via SMTP with SSL on port 465"""
+    """Send email via SMTP with SSL (port 465) or STARTTLS (port 587)"""
     if not all([SMTP_HOST, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL]):
         logger.warning("SMTP not configured, email not sent")
         return False
@@ -27,9 +27,18 @@ def send_email(to_email: str, subject: str, html_content: str) -> bool:
         message.attach(html_part)
         
         context = ssl.create_default_context()
-        with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
-            server.login(SMTP_USER, SMTP_PASSWORD)
-            server.sendmail(SMTP_FROM_EMAIL, to_email, message.as_string())
+        
+        if SMTP_PORT == 465:
+            # Implicit SSL (SMTP_SSL)
+            with smtplib.SMTP_SSL(SMTP_HOST, SMTP_PORT, context=context) as server:
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, to_email, message.as_string())
+        else:
+            # STARTTLS (typically port 587 or 25)
+            with smtplib.SMTP(SMTP_HOST, SMTP_PORT) as server:
+                server.starttls(context=context)
+                server.login(SMTP_USER, SMTP_PASSWORD)
+                server.sendmail(SMTP_FROM_EMAIL, to_email, message.as_string())
         
         logger.info(f"Email sent to {to_email}")
         return True
