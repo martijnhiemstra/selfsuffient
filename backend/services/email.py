@@ -38,6 +38,49 @@ def send_email(to_email: str, subject: str, html_content: str) -> bool:
         return False
 
 
+def get_test_email_html(user_name: str) -> str:
+    """Generate test email HTML to verify SMTP settings"""
+    return f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {{ font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f5f5f5; margin: 0; padding: 20px; }}
+            .container {{ max-width: 600px; margin: 0 auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+            .header {{ background: linear-gradient(135deg, #2d5a3d 0%, #4a7c59 100%); color: white; padding: 30px; text-align: center; }}
+            .header h1 {{ margin: 0; font-size: 24px; }}
+            .content {{ padding: 30px; }}
+            .success-icon {{ font-size: 48px; text-align: center; margin-bottom: 20px; }}
+            .footer {{ padding: 20px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #eee; }}
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>{APP_NAME}</h1>
+            </div>
+            <div class="content">
+                <div class="success-icon">✅</div>
+                <h2 style="text-align: center; color: #2d5a3d;">Email Configuration Test Successful!</h2>
+                <p>Hello {user_name},</p>
+                <p>This is a test email to confirm that your email settings are configured correctly.</p>
+                <p>If you received this email, your SMTP settings are working properly and you'll be able to:</p>
+                <ul>
+                    <li>Receive password reset emails</li>
+                    <li>Receive daily reminder emails (if enabled)</li>
+                </ul>
+                <p>Best regards,<br>The {APP_NAME} Team</p>
+            </div>
+            <div class="footer">
+                <p>This is a test email from {APP_NAME}.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+
+
 def get_password_reset_email_html(reset_url: str, user_name: str) -> str:
     """Generate password reset email HTML"""
     return f"""
