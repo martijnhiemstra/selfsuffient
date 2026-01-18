@@ -7,7 +7,7 @@ from datetime import datetime
 
 from config import (
     SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD,
-    SMTP_FROM_EMAIL, SMTP_FROM_NAME, APP_NAME, APP_URL, logger
+    SMTP_FROM_EMAIL, SMTP_FROM_NAME, SMTP_VERIFY_SSL, APP_NAME, APP_URL, logger
 )
 
 
@@ -26,7 +26,13 @@ def send_email(to_email: str, subject: str, html_content: str) -> bool:
         html_part = MIMEText(html_content, "html")
         message.attach(html_part)
         
-        context = ssl.create_default_context()
+        # Create SSL context - optionally skip verification for self-signed certs
+        if SMTP_VERIFY_SSL:
+            context = ssl.create_default_context()
+        else:
+            context = ssl.create_default_context()
+            context.check_hostname = False
+            context.verify_mode = ssl.CERT_NONE
         
         if SMTP_PORT == 465:
             # Implicit SSL (SMTP_SSL)

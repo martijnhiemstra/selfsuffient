@@ -26,6 +26,7 @@ SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', '')
 SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'Self-Sufficient Life')
+SMTP_VERIFY_SSL = os.environ.get('SMTP_VERIFY_SSL', 'true').lower() == 'true'
 
 # App Configuration
 APP_NAME = os.environ.get('APP_NAME', 'Self-Sufficient Life')
