@@ -11,7 +11,7 @@ from models import (
 )
 from services import (
     hash_password, verify_password, create_token, get_current_user,
-    send_email, get_password_reset_email_html
+    send_email, get_password_reset_email_html, get_test_email_html
 )
 
 router = APIRouter()
@@ -148,3 +148,27 @@ async def change_password(data: ChangePasswordRequest, current_user: dict = Depe
     )
     
     return MessageResponse(message="Password changed successfully")
+
+
+@router.post("/test-email", response_model=MessageResponse)
+async def send_test_email(current_user: dict = Depends(get_current_user)):
+    """Send a test email to verify SMTP configuration (admin only)"""
+    from fastapi import HTTPException
+    
+    if not current_user.get("is_admin", False):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    
+    email_html = get_test_email_html(current_user.get("name", "Admin"))
+    email_sent = send_email(
+        current_user["email"],
+        f"{APP_NAME} - Email Configuration Test",
+        email_html
+    )
+    
+    if not email_sent:
+        raise HTTPException(
+            status_code=500, 
+            detail="Failed to send test email. Please check your SMTP configuration (SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM_EMAIL)."
+        )
+    
+    return MessageResponse(message=f"Test email sent successfully to {current_user['email']}")
