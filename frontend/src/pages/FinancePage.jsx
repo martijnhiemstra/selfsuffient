@@ -1075,7 +1075,7 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
 };
 
 // Transaction Dialog Component
-const TransactionDialog = ({ open, data, projects, accounts, categories, savingsGoals, selectedProjectId, onClose, onSave }) => {
+const TransactionDialog = ({ open, data, projects, accounts, categories, savingsGoals, selectedProjectId, onClose, onSave, onCategoryCreated, token }) => {
   const [form, setForm] = useState({
     date: '',
     amount: '',
@@ -1086,6 +1086,10 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
     notes: ''
   });
   const [isExpense, setIsExpense] = useState(true);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryType, setNewCategoryType] = useState('expense');
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -1112,12 +1116,38 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
       });
       setIsExpense(true);
     }
+    setShowNewCategory(false);
+    setNewCategoryName('');
   }, [data, selectedProjectId, accounts, open]);
 
   // Filter categories by selected project
   const projectCategories = categories.filter(c => c.project_id === form.project_id);
   // Filter savings goals by selected project
   const projectSavingsGoals = savingsGoals?.filter(g => g.project_id === form.project_id) || [];
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName || !form.project_id) {
+      toast.error('Please enter a category name');
+      return;
+    }
+    setCreatingCategory(true);
+    try {
+      const res = await axios.post(`${API}/finance/categories`, {
+        project_id: form.project_id,
+        name: newCategoryName,
+        type: newCategoryType
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Category created');
+      setForm({ ...form, category_id: res.data.id });
+      setShowNewCategory(false);
+      setNewCategoryName('');
+      if (onCategoryCreated) onCategoryCreated();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create category');
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
