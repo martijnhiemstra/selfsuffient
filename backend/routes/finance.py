@@ -705,3 +705,138 @@ async def calculate_runway(
         is_below_threshold=total_liquid_cash < safety_threshold,
         accounts_included=accounts_included
     )
+
+
+# ============ SAVINGS GOALS ============
+
+async def calculate_savings_goal_progress(goal_id: str) -> tuple:
+    """Calculate current amount saved towards a goal"""
+    pipeline = [
+        {"$match": {"savings_goal_id": goal_id}},
+        {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+    ]
+    result = await db.finance_transactions.aggregate(pipeline).to_list(1)
+    current = abs(result[0]["total"]) if result else 0.0
+    return current
+
+
+@router.post("/savings-goals", response_model=SavingsGoalResponse)
+async def create_savings_goal(data: SavingsGoalCreate, current_user: dict = Depends(get_current_user)):
+    """Create a new savings goal"""
+    project = await db.projects.find_one({"id": data.project_id, "user_id": current_user["id"]})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    goal_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    
+    goal_doc = {
+        "id": goal_id,
+        "user_id": current_user["id"],
+        "project_id": data.project_id,
+        "name": data.name,
+        "description": data.description,
+        "target_amount": data.target_amount,
+        "created_at": now,
+        "updated_at": now
+    }
+    
+    await db.finance_savings_goals.insert_one(goal_doc)
+    
+    return SavingsGoalResponse(
+        **{k: v for k, v in goal_doc.items() if k != "_id"},
+        project_name=project["name"],
+        current_amount=0.0,
+        progress_percent=0.0
+    )
+
+
+@router.get("/savings-goals", response_model=SavingsGoalListResponse)
+async def list_savings_goals(
+    project_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """List all savings goals"""
+    query = {"user_id": current_user["id"]}
+    if project_id:
+        query["project_id"] = project_id
+    
+    goals = await db.finance_savings_goals.find(query, {"_id": 0}).to_list(1000)
+    
+    result = []
+    for goal in goals:
+        project = await db.projects.find_one({"id": goal["project_id"]}, {"_id": 0, "name": 1})
+        current_amount = await calculate_savings_goal_progress(goal["id"])
+        progress = (current_amount / goal["target_amount"] * 100) if goal["target_amount"] > 0 else 0
+        
+        result.append(SavingsGoalResponse(
+            **goal,
+            project_name=project["name"] if project else None,
+            current_amount=round(current_amount, 2),
+            progress_percent=round(min(progress, 100), 1)
+        ))
+    
+    return SavingsGoalListResponse(savings_goals=result, total=len(result))
+
+
+@router.get("/savings-goals/{goal_id}", response_model=SavingsGoalResponse)
+async def get_savings_goal(goal_id: str, current_user: dict = Depends(get_current_user)):
+    """Get a specific savings goal"""
+    goal = await db.finance_savings_goals.find_one({"id": goal_id, "user_id": current_user["id"]}, {"_id": 0})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Savings goal not found")
+    
+    project = await db.projects.find_one({"id": goal["project_id"]}, {"_id": 0, "name": 1})
+    current_amount = await calculate_savings_goal_progress(goal_id)
+    progress = (current_amount / goal["target_amount"] * 100) if goal["target_amount"] > 0 else 0
+    
+    return SavingsGoalResponse(
+        **goal,
+        project_name=project["name"] if project else None,
+        current_amount=round(current_amount, 2),
+        progress_percent=round(min(progress, 100), 1)
+    )
+
+
+@router.put("/savings-goals/{goal_id}", response_model=SavingsGoalResponse)
+async def update_savings_goal(
+    goal_id: str, data: SavingsGoalUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Update a savings goal"""
+    goal = await db.finance_savings_goals.find_one({"id": goal_id, "user_id": current_user["id"]})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Savings goal not found")
+    
+    update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    
+    await db.finance_savings_goals.update_one({"id": goal_id}, {"$set": update_data})
+    updated = await db.finance_savings_goals.find_one({"id": goal_id}, {"_id": 0})
+    
+    project = await db.projects.find_one({"id": updated["project_id"]}, {"_id": 0, "name": 1})
+    current_amount = await calculate_savings_goal_progress(goal_id)
+    progress = (current_amount / updated["target_amount"] * 100) if updated["target_amount"] > 0 else 0
+    
+    return SavingsGoalResponse(
+        **updated,
+        project_name=project["name"] if project else None,
+        current_amount=round(current_amount, 2),
+        progress_percent=round(min(progress, 100), 1)
+    )
+
+
+@router.delete("/savings-goals/{goal_id}", response_model=MessageResponse)
+async def delete_savings_goal(goal_id: str, current_user: dict = Depends(get_current_user)):
+    """Delete a savings goal (unlinks all transactions)"""
+    goal = await db.finance_savings_goals.find_one({"id": goal_id, "user_id": current_user["id"]})
+    if not goal:
+        raise HTTPException(status_code=404, detail="Savings goal not found")
+    
+    # Unlink all transactions from this goal
+    await db.finance_transactions.update_many(
+        {"savings_goal_id": goal_id},
+        {"$set": {"savings_goal_id": None}}
+    )
+    
+    await db.finance_savings_goals.delete_one({"id": goal_id})
+    return MessageResponse(message="Savings goal deleted")
