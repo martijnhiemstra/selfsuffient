@@ -847,3 +847,138 @@ async def delete_savings_goal(goal_id: str, current_user: dict = Depends(get_cur
     
     await db.finance_savings_goals.delete_one({"id": goal_id})
     return MessageResponse(message="Savings goal deleted")
+
+
+# ============ RECURRING CHECKLIST ============
+
+@router.get("/recurring/checklist")
+async def get_recurring_checklist(
+    month: str = Query(..., description="Month in YYYY-MM format"),
+    project_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Get recurring transactions with their execution status for a given month.
+    Matches recurring transactions with actual transactions based on:
+    - Same category
+    - Same project
+    - Similar amount (within 10% tolerance)
+    - Transaction date within the month
+    """
+    # Validate month format
+    try:
+        year, mon = map(int, month.split("-"))
+        start_date = f"{month}-01"
+        next_month = datetime(year, mon, 1) + relativedelta(months=1)
+        end_date = (next_month - relativedelta(days=1)).strftime("%Y-%m-%d")
+    except:
+        raise HTTPException(status_code=400, detail="Invalid month format. Use YYYY-MM")
+    
+    # Get recurring transactions
+    rec_query = {"user_id": current_user["id"], "active": True}
+    if project_id:
+        rec_query["project_id"] = project_id
+    
+    recurring = await db.finance_recurring.find(rec_query, {"_id": 0}).to_list(1000)
+    
+    # Get all transactions for the month
+    tx_query = {
+        "user_id": current_user["id"],
+        "date": {"$gte": start_date, "$lte": end_date}
+    }
+    if project_id:
+        tx_query["project_id"] = project_id
+    
+    transactions = await db.finance_transactions.find(tx_query, {"_id": 0}).to_list(10000)
+    
+    # Build checklist
+    checklist = []
+    total_expected_income = 0.0
+    total_expected_expenses = 0.0
+    total_matched_income = 0.0
+    total_matched_expenses = 0.0
+    
+    for rec in recurring:
+        # Check if this recurring should apply to this month
+        rec_start = rec.get("start_date", "2000-01-01")
+        if rec_start > end_date:
+            continue  # Recurring hasn't started yet
+        
+        # For yearly recurring, check if this is the right month
+        if rec.get("frequency") == "yearly":
+            rec_month = rec_start[5:7]  # Extract month from start_date
+            if rec_month != month[5:7]:
+                continue  # Not the right month for yearly recurring
+        
+        # Get related info
+        project = await db.projects.find_one({"id": rec["project_id"]}, {"_id": 0, "name": 1})
+        category = await db.finance_categories.find_one({"id": rec["category_id"]}, {"_id": 0, "name": 1, "type": 1})
+        account = await db.finance_accounts.find_one({"id": rec["account_id"]}, {"_id": 0, "name": 1})
+        
+        expected_amount = rec["amount"]
+        cat_type = category.get("type", "expense") if category else "expense"
+        
+        # Track expected totals
+        if expected_amount > 0 or cat_type == "income":
+            total_expected_income += abs(expected_amount)
+        else:
+            total_expected_expenses += abs(expected_amount)
+        
+        # Find matching transaction
+        # Match criteria: same category, same project, similar amount (within 10%)
+        matched_tx = None
+        amount_tolerance = abs(expected_amount) * 0.1  # 10% tolerance
+        
+        for tx in transactions:
+            if tx["category_id"] == rec["category_id"] and tx["project_id"] == rec["project_id"]:
+                amount_diff = abs(abs(tx["amount"]) - abs(expected_amount))
+                if amount_diff <= amount_tolerance or amount_tolerance == 0:
+                    matched_tx = tx
+                    break
+        
+        # Track matched totals
+        if matched_tx:
+            if expected_amount > 0 or cat_type == "income":
+                total_matched_income += abs(matched_tx["amount"])
+            else:
+                total_matched_expenses += abs(matched_tx["amount"])
+        
+        checklist.append({
+            "recurring_id": rec["id"],
+            "name": rec["name"],
+            "expected_amount": expected_amount,
+            "frequency": rec["frequency"],
+            "project_id": rec["project_id"],
+            "project_name": project["name"] if project else None,
+            "category_id": rec["category_id"],
+            "category_name": category["name"] if category else None,
+            "category_type": cat_type,
+            "account_id": rec["account_id"],
+            "account_name": account["name"] if account else None,
+            "is_matched": matched_tx is not None,
+            "matched_transaction": {
+                "id": matched_tx["id"],
+                "date": matched_tx["date"],
+                "amount": matched_tx["amount"],
+                "notes": matched_tx.get("notes")
+            } if matched_tx else None
+        })
+    
+    # Sort: unmatched first, then by amount (largest first)
+    checklist.sort(key=lambda x: (x["is_matched"], -abs(x["expected_amount"])))
+    
+    return {
+        "month": month,
+        "checklist": checklist,
+        "summary": {
+            "total_recurring": len(checklist),
+            "matched": sum(1 for c in checklist if c["is_matched"]),
+            "pending": sum(1 for c in checklist if not c["is_matched"]),
+            "expected_income": round(total_expected_income, 2),
+            "expected_expenses": round(total_expected_expenses, 2),
+            "matched_income": round(total_matched_income, 2),
+            "matched_expenses": round(total_matched_expenses, 2),
+            "pending_income": round(total_expected_income - total_matched_income, 2),
+            "pending_expenses": round(total_expected_expenses - total_matched_expenses, 2)
+        }
+    }
