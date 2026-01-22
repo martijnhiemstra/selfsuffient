@@ -945,6 +945,16 @@ export const FinancePage = () => {
         onClose={() => setRecurringDialog({ open: false, data: null })}
         onSave={handleSaveRecurring}
       />
+
+      {/* Savings Goal Dialog */}
+      <SavingsGoalDialog
+        open={savingsGoalDialog.open}
+        data={savingsGoalDialog.data}
+        projects={projects}
+        selectedProjectId={selectedProjectId}
+        onClose={() => setSavingsGoalDialog({ open: false, data: null })}
+        onSave={handleSaveSavingsGoal}
+      />
     </div>
   );
 };
