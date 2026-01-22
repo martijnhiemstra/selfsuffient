@@ -667,12 +667,14 @@ async def calculate_runway(
     total_liquid_cash = 0.0
     
     for acc in accounts:
-        balance = await calculate_account_balance(acc["id"])
+        starting_balance = acc.get("starting_balance", 0.0)
+        balance = await calculate_account_balance(acc["id"], starting_balance)
         total_liquid_cash += balance
         accounts_included.append({
             "id": acc["id"],
             "name": acc["name"],
             "type": acc["type"],
+            "starting_balance": round(starting_balance, 2),
             "balance": round(balance, 2)
         })
     
