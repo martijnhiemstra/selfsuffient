@@ -115,6 +115,27 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - Token passed via query parameter for `<img>` tag compatibility
 - Public folder/project images remain accessible to everyone
 
+#### Financial Module ✅ (Jan 22, 2026)
+- **Global finance tracking** with project filtering
+- **Accounts** (per project): bank, cash, crypto, asset types
+- **Categories** (per project): income, expense, investment with default seeding
+- **Transactions**: Full CRUD with income/expense tracking
+- **Recurring Transactions**: Monthly/yearly templates for regular costs
+- **Analytics**:
+  - Project Dashboard: Income, expenses, investments, net balance, burn rate
+  - Monthly Overview: By project and category breakdowns
+  - Runway Calculator: Liquid cash, burn rate, months remaining, safety threshold warning
+- **API Endpoints**: 
+  - `/api/finance/accounts` - Account CRUD
+  - `/api/finance/categories` - Category CRUD + seeding
+  - `/api/finance/transactions` - Transaction CRUD
+  - `/api/finance/recurring` - Recurring transaction CRUD
+  - `/api/finance/dashboard/{project_id}` - Project summary
+  - `/api/finance/monthly?month=YYYY-MM` - Monthly overview
+  - `/api/finance/runway` - Runway calculation
+- **Frontend**: 5-tab interface (Transactions, Accounts, Recurring, Monthly, Runway)
+- EUR currency only
+
 #### Simplified Editor & Blog Image Attachments ✅ (Jan 17, 2026)
 - Replaced RichTextEditor with SimpleEditor (no embedded images)
 - SimpleEditor features:
