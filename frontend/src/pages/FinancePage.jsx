@@ -1226,7 +1226,7 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
 };
 
 // Recurring Transaction Dialog Component
-const RecurringDialog = ({ open, data, projects, accounts, categories, selectedProjectId, onClose, onSave }) => {
+const RecurringDialog = ({ open, data, projects, accounts, categories, selectedProjectId, onClose, onSave, onCategoryCreated, token }) => {
   const [form, setForm] = useState({
     name: '',
     amount: '',
@@ -1238,6 +1238,10 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
     active: true
   });
   const [isExpense, setIsExpense] = useState(true);
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState('');
+  const [newCategoryType, setNewCategoryType] = useState('expense');
+  const [creatingCategory, setCreatingCategory] = useState(false);
 
   useEffect(() => {
     if (data) {
@@ -1266,9 +1270,35 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
       });
       setIsExpense(true);
     }
+    setShowNewCategory(false);
+    setNewCategoryName('');
   }, [data, selectedProjectId, accounts, open]);
 
   const projectCategories = categories.filter(c => c.project_id === form.project_id);
+
+  const handleCreateCategory = async () => {
+    if (!newCategoryName || !form.project_id) {
+      toast.error('Please enter a category name');
+      return;
+    }
+    setCreatingCategory(true);
+    try {
+      const res = await axios.post(`${API}/finance/categories`, {
+        project_id: form.project_id,
+        name: newCategoryName,
+        type: newCategoryType
+      }, { headers: { Authorization: `Bearer ${token}` } });
+      toast.success('Category created');
+      setForm({ ...form, category_id: res.data.id });
+      setShowNewCategory(false);
+      setNewCategoryName('');
+      if (onCategoryCreated) onCategoryCreated();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to create category');
+    } finally {
+      setCreatingCategory(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1351,17 +1381,52 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Category *</Label>
-            <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })} disabled={!form.project_id}>
-              <SelectTrigger>
-                <SelectValue placeholder={form.project_id ? "Select category" : "Select project first"} />
-              </SelectTrigger>
-              <SelectContent>
-                {projectCategories.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label>Category *</Label>
+              {form.project_id && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewCategory(!showNewCategory)}>
+                  <Plus className="w-3 h-3 mr-1" /> New
+                </Button>
+              )}
+            </div>
+            {showNewCategory ? (
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/50">
+                <Input 
+                  value={newCategoryName} 
+                  onChange={(e) => setNewCategoryName(e.target.value)} 
+                  placeholder="Category name"
+                />
+                <div className="flex gap-2">
+                  <Select value={newCategoryType} onValueChange={setNewCategoryType}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="investment">Investment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" size="sm" onClick={handleCreateCategory} disabled={creatingCategory}>
+                    {creatingCategory ? 'Creating...' : 'Add'}
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewCategory(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })} disabled={!form.project_id}>
+                <SelectTrigger>
+                  <SelectValue placeholder={form.project_id ? (projectCategories.length === 0 ? "No categories - create one" : "Select category") : "Select project first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectCategories.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
