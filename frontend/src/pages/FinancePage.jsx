@@ -837,6 +837,79 @@ export const FinancePage = () => {
             </Card>
           )}
         </TabsContent>
+
+        {/* Savings Goals Tab */}
+        <TabsContent value="savings" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Savings Goals</h2>
+            <Button onClick={() => setSavingsGoalDialog({ open: true, data: null })} data-testid="add-savings-goal-btn">
+              <Plus className="w-4 h-4 mr-2" /> Add Savings Goal
+            </Button>
+          </div>
+          
+          {savingsGoals.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                No savings goals yet. Create a goal and attach transactions to track your progress.
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {savingsGoals.map(goal => (
+                <Card key={goal.id}>
+                  <CardHeader className="pb-2">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <PiggyBank className="w-5 h-5 text-primary" />
+                        <CardTitle className="text-lg">{goal.name}</CardTitle>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => setSavingsGoalDialog({ open: true, data: goal })}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" onClick={() => handleDeleteSavingsGoal(goal.id)}>
+                          <Trash2 className="w-4 h-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </div>
+                    <CardDescription>{goal.project_name}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Progress</span>
+                        <span className="font-medium">{goal.progress_percent}%</span>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-3">
+                        <div 
+                          className={`h-3 rounded-full transition-all ${goal.progress_percent >= 100 ? 'bg-green-500' : 'bg-primary'}`}
+                          style={{ width: `${Math.min(goal.progress_percent, 100)}%` }}
+                        />
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Saved</span>
+                        <span className="font-medium text-green-600">{formatCurrency(goal.current_amount)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-muted-foreground">Target</span>
+                        <span className="font-medium">{formatCurrency(goal.target_amount)}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-sm text-muted-foreground">Remaining</span>
+                        <span className={`font-medium ${goal.target_amount - goal.current_amount <= 0 ? 'text-green-600' : 'text-orange-600'}`}>
+                          {formatCurrency(Math.max(0, goal.target_amount - goal.current_amount))}
+                        </span>
+                      </div>
+                      {goal.description && (
+                        <p className="text-sm text-muted-foreground mt-2 border-t pt-2">{goal.description}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </TabsContent>
       </Tabs>
 
       {/* Account Dialog */}
