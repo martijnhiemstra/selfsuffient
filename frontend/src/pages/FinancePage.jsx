@@ -1326,4 +1326,101 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
   );
 };
 
+// Savings Goal Dialog Component
+const SavingsGoalDialog = ({ open, data, projects, selectedProjectId, onClose, onSave }) => {
+  const [form, setForm] = useState({
+    project_id: '',
+    name: '',
+    description: '',
+    target_amount: ''
+  });
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        project_id: data.project_id,
+        name: data.name,
+        description: data.description || '',
+        target_amount: data.target_amount.toString()
+      });
+    } else {
+      setForm({
+        project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
+        name: '',
+        description: '',
+        target_amount: ''
+      });
+    }
+  }, [data, selectedProjectId, open]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.project_id || !form.name || !form.target_amount) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    onSave({
+      ...form,
+      target_amount: parseFloat(form.target_amount)
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{data ? 'Edit Savings Goal' : 'New Savings Goal'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Project *</Label>
+            <Select value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v })} disabled={!!data}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Name *</Label>
+            <Input 
+              value={form.name} 
+              onChange={(e) => setForm({ ...form, name: e.target.value })} 
+              placeholder="e.g., New Tractor, Solar Panels" 
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Target Amount (EUR) *</Label>
+            <Input 
+              type="number" 
+              step="0.01" 
+              value={form.target_amount} 
+              onChange={(e) => setForm({ ...form, target_amount: e.target.value })} 
+              placeholder="0.00" 
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Description</Label>
+            <Textarea 
+              value={form.description} 
+              onChange={(e) => setForm({ ...form, description: e.target.value })} 
+              placeholder="Optional description (max 2000 characters)..."
+              maxLength={2000}
+            />
+            <p className="text-xs text-muted-foreground">{form.description.length}/2000 characters</p>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit">{data ? 'Update' : 'Create'}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default FinancePage;
