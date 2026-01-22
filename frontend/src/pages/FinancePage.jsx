@@ -547,6 +547,11 @@ export const FinancePage = () => {
                       <p className={`text-2xl font-bold ${acc.balance >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(acc.balance)}
                       </p>
+                      {acc.starting_balance > 0 && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Starting: {formatCurrency(acc.starting_balance)}
+                        </p>
+                      )}
                       {acc.notes && <p className="text-sm text-muted-foreground mt-2">{acc.notes}</p>}
                     </CardContent>
                   </Card>
