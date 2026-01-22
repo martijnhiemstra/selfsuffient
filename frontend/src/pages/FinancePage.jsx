@@ -950,6 +950,8 @@ export const FinancePage = () => {
         selectedProjectId={selectedProjectId}
         onClose={() => setRecurringDialog({ open: false, data: null })}
         onSave={handleSaveRecurring}
+        onCategoryCreated={fetchCategories}
+        token={token}
       />
 
       {/* Savings Goal Dialog */}
