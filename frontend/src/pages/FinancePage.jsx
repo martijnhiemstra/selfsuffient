@@ -1049,13 +1049,14 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
 };
 
 // Transaction Dialog Component
-const TransactionDialog = ({ open, data, projects, accounts, categories, selectedProjectId, onClose, onSave }) => {
+const TransactionDialog = ({ open, data, projects, accounts, categories, savingsGoals, selectedProjectId, onClose, onSave }) => {
   const [form, setForm] = useState({
     date: '',
     amount: '',
     account_id: '',
     project_id: '',
     category_id: '',
+    savings_goal_id: '',
     notes: ''
   });
   const [isExpense, setIsExpense] = useState(true);
@@ -1068,6 +1069,7 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, selecte
         account_id: data.account_id,
         project_id: data.project_id,
         category_id: data.category_id,
+        savings_goal_id: data.savings_goal_id || '',
         notes: data.notes || ''
       });
       setIsExpense(data.amount < 0);
@@ -1079,6 +1081,7 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, selecte
         account_id: accounts[0]?.id || '',
         project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
         category_id: '',
+        savings_goal_id: '',
         notes: ''
       });
       setIsExpense(true);
@@ -1087,6 +1090,8 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, selecte
 
   // Filter categories by selected project
   const projectCategories = categories.filter(c => c.project_id === form.project_id);
+  // Filter savings goals by selected project
+  const projectSavingsGoals = savingsGoals?.filter(g => g.project_id === form.project_id) || [];
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -1097,6 +1102,7 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, selecte
     const amount = parseFloat(form.amount);
     onSave({
       ...form,
+      savings_goal_id: form.savings_goal_id || null,
       amount: isExpense ? -Math.abs(amount) : Math.abs(amount)
     });
   };
