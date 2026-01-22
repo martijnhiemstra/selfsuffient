@@ -1215,17 +1215,52 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
             </Select>
           </div>
           <div className="space-y-2">
-            <Label>Category *</Label>
-            <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })} disabled={!form.project_id}>
-              <SelectTrigger>
-                <SelectValue placeholder={form.project_id ? "Select category" : "Select project first"} />
-              </SelectTrigger>
-              <SelectContent>
-                {projectCategories.map(c => (
-                  <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="flex items-center justify-between">
+              <Label>Category *</Label>
+              {form.project_id && (
+                <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewCategory(!showNewCategory)}>
+                  <Plus className="w-3 h-3 mr-1" /> New
+                </Button>
+              )}
+            </div>
+            {showNewCategory ? (
+              <div className="space-y-2 p-3 border rounded-lg bg-muted/50">
+                <Input 
+                  value={newCategoryName} 
+                  onChange={(e) => setNewCategoryName(e.target.value)} 
+                  placeholder="Category name"
+                />
+                <div className="flex gap-2">
+                  <Select value={newCategoryType} onValueChange={setNewCategoryType}>
+                    <SelectTrigger className="flex-1">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="expense">Expense</SelectItem>
+                      <SelectItem value="investment">Investment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="button" size="sm" onClick={handleCreateCategory} disabled={creatingCategory}>
+                    {creatingCategory ? 'Creating...' : 'Add'}
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setShowNewCategory(false)}>
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })} disabled={!form.project_id}>
+                <SelectTrigger>
+                  <SelectValue placeholder={form.project_id ? (projectCategories.length === 0 ? "No categories - create one" : "Select category") : "Select project first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {projectCategories.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Savings Goal (Optional)</Label>
