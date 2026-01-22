@@ -27,12 +27,14 @@ class AccountCreate(BaseModel):
     project_id: str
     name: str
     type: AccountType
+    starting_balance: float = 0.0  # Initial capital in the account
     notes: Optional[str] = None
 
 
 class AccountUpdate(BaseModel):
     name: Optional[str] = None
     type: Optional[AccountType] = None
+    starting_balance: Optional[float] = None
     notes: Optional[str] = None
 
 
@@ -41,8 +43,9 @@ class AccountResponse(BaseModel):
     project_id: str
     name: str
     type: AccountType
+    starting_balance: float = 0.0
     notes: Optional[str] = None
-    balance: float = 0.0
+    balance: float = 0.0  # Current balance = starting_balance + sum(transactions)
     created_at: str
     updated_at: str
 
