@@ -37,6 +37,7 @@ export const FinancePage = () => {
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
   const [recurringTransactions, setRecurringTransactions] = useState([]);
+  const [savingsGoals, setSavingsGoals] = useState([]);
   const [loading, setLoading] = useState(true);
   
   // Dashboard state
@@ -53,6 +54,7 @@ export const FinancePage = () => {
   const [categoryDialog, setCategoryDialog] = useState({ open: false, data: null });
   const [transactionDialog, setTransactionDialog] = useState({ open: false, data: null });
   const [recurringDialog, setRecurringDialog] = useState({ open: false, data: null });
+  const [savingsGoalDialog, setSavingsGoalDialog] = useState({ open: false, data: null });
 
   const headers = { Authorization: `Bearer ${token}` };
 
