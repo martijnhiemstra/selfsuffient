@@ -27,6 +27,7 @@ from .finance import (
     CategoryCreate, CategoryUpdate, CategoryResponse, CategoryListResponse,
     TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse,
     RecurringTransactionCreate, RecurringTransactionUpdate, RecurringTransactionResponse, RecurringTransactionListResponse,
+    SavingsGoalCreate, SavingsGoalUpdate, SavingsGoalResponse, SavingsGoalListResponse,
     ProjectFinanceSummary, MonthlyOverview, RunwayCalculation, DEFAULT_CATEGORIES
 )
 
@@ -60,5 +61,6 @@ __all__ = [
     "CategoryCreate", "CategoryUpdate", "CategoryResponse", "CategoryListResponse",
     "TransactionCreate", "TransactionUpdate", "TransactionResponse", "TransactionListResponse",
     "RecurringTransactionCreate", "RecurringTransactionUpdate", "RecurringTransactionResponse", "RecurringTransactionListResponse",
+    "SavingsGoalCreate", "SavingsGoalUpdate", "SavingsGoalResponse", "SavingsGoalListResponse",
     "ProjectFinanceSummary", "MonthlyOverview", "RunwayCalculation", "DEFAULT_CATEGORIES",
 ]
