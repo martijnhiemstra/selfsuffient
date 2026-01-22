@@ -966,6 +966,7 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
     project_id: '',
     name: '',
     type: 'bank',
+    starting_balance: '',
     notes: ''
   });
 
@@ -975,6 +976,7 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
         project_id: data.project_id,
         name: data.name,
         type: data.type,
+        starting_balance: data.starting_balance?.toString() || '0',
         notes: data.notes || ''
       });
     } else {
@@ -982,6 +984,7 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
         project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
         name: '',
         type: 'bank',
+        starting_balance: '0',
         notes: ''
       });
     }
@@ -993,7 +996,10 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
       toast.error('Please fill all required fields');
       return;
     }
-    onSave(form);
+    onSave({
+      ...form,
+      starting_balance: parseFloat(form.starting_balance) || 0
+    });
   };
 
   return (
@@ -1033,6 +1039,17 @@ const AccountDialog = ({ open, data, projects, selectedProjectId, onClose, onSav
                 <SelectItem value="asset">Asset</SelectItem>
               </SelectContent>
             </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Starting Balance (EUR)</Label>
+            <Input 
+              type="number" 
+              step="0.01" 
+              value={form.starting_balance} 
+              onChange={(e) => setForm({ ...form, starting_balance: e.target.value })} 
+              placeholder="0.00"
+            />
+            <p className="text-xs text-muted-foreground">Initial capital already in this account</p>
           </div>
           <div className="space-y-2">
             <Label>Notes</Label>
