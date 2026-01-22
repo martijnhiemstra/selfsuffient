@@ -223,6 +223,13 @@ async def create_transaction(data: TransactionCreate, current_user: dict = Depen
     if not category:
         raise HTTPException(status_code=404, detail="Category not found")
     
+    # Verify savings goal if provided
+    savings_goal = None
+    if data.savings_goal_id:
+        savings_goal = await db.finance_savings_goals.find_one({"id": data.savings_goal_id, "user_id": current_user["id"]})
+        if not savings_goal:
+            raise HTTPException(status_code=404, detail="Savings goal not found")
+    
     tx_id = str(uuid.uuid4())
     now = datetime.now(timezone.utc).isoformat()
     
@@ -236,6 +243,7 @@ async def create_transaction(data: TransactionCreate, current_user: dict = Depen
         "category_id": data.category_id,
         "notes": data.notes,
         "linked_transaction_id": data.linked_transaction_id,
+        "savings_goal_id": data.savings_goal_id,
         "created_at": now,
         "updated_at": now
     }
@@ -247,7 +255,8 @@ async def create_transaction(data: TransactionCreate, current_user: dict = Depen
         account_name=account["name"],
         project_name=project["name"],
         category_name=category["name"],
-        category_type=category["type"]
+        category_type=category["type"],
+        savings_goal_name=savings_goal["name"] if savings_goal else None
     )
 
 
