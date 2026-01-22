@@ -333,7 +333,16 @@ async def update_transaction(
     if not tx:
         raise HTTPException(status_code=404, detail="Transaction not found")
     
+    # Validate savings_goal_id if provided
+    if data.savings_goal_id is not None and data.savings_goal_id != "":
+        savings_goal_check = await db.finance_savings_goals.find_one({"id": data.savings_goal_id, "user_id": current_user["id"]})
+        if not savings_goal_check:
+            raise HTTPException(status_code=404, detail="Savings goal not found")
+    
     update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+    # Allow clearing savings_goal_id by setting it to empty string or null
+    if data.savings_goal_id == "":
+        update_data["savings_goal_id"] = None
     update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
     
     await db.finance_transactions.update_one({"id": tx_id}, {"$set": update_data})
@@ -342,13 +351,17 @@ async def update_transaction(
     account = await db.finance_accounts.find_one({"id": updated["account_id"]}, {"_id": 0, "name": 1})
     project = await db.projects.find_one({"id": updated["project_id"]}, {"_id": 0, "name": 1})
     category = await db.finance_categories.find_one({"id": updated["category_id"]}, {"_id": 0, "name": 1, "type": 1})
+    savings_goal = None
+    if updated.get("savings_goal_id"):
+        savings_goal = await db.finance_savings_goals.find_one({"id": updated["savings_goal_id"]}, {"_id": 0, "name": 1})
     
     return TransactionResponse(
         **updated,
         account_name=account["name"] if account else None,
         project_name=project["name"] if project else None,
         category_name=category["name"] if category else None,
-        category_type=category["type"] if category else None
+        category_type=category["type"] if category else None,
+        savings_goal_name=savings_goal["name"] if savings_goal else None
     )
 
 
