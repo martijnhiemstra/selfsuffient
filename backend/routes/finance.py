@@ -496,14 +496,15 @@ async def delete_recurring_transaction(rec_id: str, current_user: dict = Depends
 
 # ============ ANALYTICS ============
 
-async def calculate_account_balance(account_id: str) -> float:
-    """Calculate current balance of an account"""
+async def calculate_account_balance(account_id: str, starting_balance: float = 0.0) -> float:
+    """Calculate current balance of an account (starting_balance + sum of transactions)"""
     pipeline = [
         {"$match": {"account_id": account_id}},
         {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
     ]
     result = await db.finance_transactions.aggregate(pipeline).to_list(1)
-    return result[0]["total"] if result else 0.0
+    transaction_sum = result[0]["total"] if result else 0.0
+    return starting_balance + transaction_sum
 
 
 @router.get("/dashboard/{project_id}", response_model=ProjectFinanceSummary)
