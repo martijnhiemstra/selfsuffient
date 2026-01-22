@@ -434,9 +434,10 @@ export const FinancePage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="transactions" data-testid="tab-transactions">Transactions</TabsTrigger>
           <TabsTrigger value="accounts" data-testid="tab-accounts">Accounts</TabsTrigger>
+          <TabsTrigger value="savings" data-testid="tab-savings">Savings</TabsTrigger>
           <TabsTrigger value="recurring" data-testid="tab-recurring">Recurring</TabsTrigger>
           <TabsTrigger value="monthly" data-testid="tab-monthly">Monthly</TabsTrigger>
           <TabsTrigger value="runway" data-testid="tab-runway">Runway</TabsTrigger>
