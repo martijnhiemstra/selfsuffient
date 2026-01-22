@@ -199,6 +199,7 @@ export const FinancePage = () => {
         fetchTransactions(),
         fetchRecurring(),
         fetchSavingsGoals(),
+        fetchRecurringChecklist(),
         fetchRunway()
       ]);
       setLoading(false);
@@ -213,6 +214,7 @@ export const FinancePage = () => {
     fetchTransactions();
     fetchRecurring();
     fetchSavingsGoals();
+    fetchRecurringChecklist();
     fetchDashboard();
     fetchMonthly();
   }, [selectedProjectId]);
@@ -221,6 +223,11 @@ export const FinancePage = () => {
   useEffect(() => {
     fetchMonthly();
   }, [selectedMonth]);
+
+  // Refresh checklist when checklist month changes
+  useEffect(() => {
+    fetchRecurringChecklist();
+  }, [checklistMonth]);
 
   // CRUD handlers
   const handleSaveAccount = async (data) => {
