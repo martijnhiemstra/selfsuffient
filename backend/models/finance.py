@@ -86,6 +86,7 @@ class TransactionCreate(BaseModel):
     category_id: str
     notes: Optional[str] = None
     linked_transaction_id: Optional[str] = None  # For transfers
+    savings_goal_id: Optional[str] = None  # Link to savings goal
 
 
 class TransactionUpdate(BaseModel):
@@ -94,6 +95,7 @@ class TransactionUpdate(BaseModel):
     account_id: Optional[str] = None
     category_id: Optional[str] = None
     notes: Optional[str] = None
+    savings_goal_id: Optional[str] = None  # Can attach/detach from savings goal
 
 
 class TransactionResponse(BaseModel):
@@ -109,6 +111,8 @@ class TransactionResponse(BaseModel):
     category_type: Optional[str] = None
     notes: Optional[str] = None
     linked_transaction_id: Optional[str] = None
+    savings_goal_id: Optional[str] = None
+    savings_goal_name: Optional[str] = None
     created_at: str
     updated_at: str
 
@@ -208,3 +212,35 @@ DEFAULT_CATEGORIES = [
     {"name": "Investment", "type": "investment"},
     {"name": "Misc", "type": "expense"},
 ]
+
+
+# Savings Goal models
+class SavingsGoalCreate(BaseModel):
+    project_id: str
+    name: str
+    description: Optional[str] = Field(None, max_length=2000)
+    target_amount: float
+
+
+class SavingsGoalUpdate(BaseModel):
+    name: Optional[str] = None
+    description: Optional[str] = Field(None, max_length=2000)
+    target_amount: Optional[float] = None
+
+
+class SavingsGoalResponse(BaseModel):
+    id: str
+    project_id: str
+    project_name: Optional[str] = None
+    name: str
+    description: Optional[str] = None
+    target_amount: float
+    current_amount: float = 0.0
+    progress_percent: float = 0.0
+    created_at: str
+    updated_at: str
+
+
+class SavingsGoalListResponse(BaseModel):
+    savings_goals: List[SavingsGoalResponse]
+    total: int
