@@ -27,6 +27,7 @@ import { TasksPage } from "./pages/TasksPage";
 import { RoutinesPage } from "./pages/RoutinesPage";
 import { CalendarPage } from "./pages/CalendarPage";
 import { MyPublicSitePage } from "./pages/MyPublicSitePage";
+import { FinancePage } from "./pages/FinancePage";
 
 function App() {
   // Fetch app config on mount to get max upload size
