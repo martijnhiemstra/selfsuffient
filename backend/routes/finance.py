@@ -64,7 +64,8 @@ async def list_accounts(
     # Calculate balance for each account
     result = []
     for acc in accounts:
-        balance = await calculate_account_balance(acc["id"])
+        starting_balance = acc.get("starting_balance", 0.0)
+        balance = await calculate_account_balance(acc["id"], starting_balance)
         result.append(AccountResponse(**acc, balance=balance))
     
     return AccountListResponse(accounts=result, total=len(result))
@@ -79,7 +80,8 @@ async def get_account(account_id: str, current_user: dict = Depends(get_current_
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
     
-    balance = await calculate_account_balance(account_id)
+    starting_balance = account.get("starting_balance", 0.0)
+    balance = await calculate_account_balance(account_id, starting_balance)
     return AccountResponse(**account, balance=balance)
 
 
@@ -97,7 +99,8 @@ async def update_account(
     
     await db.finance_accounts.update_one({"id": account_id}, {"$set": update_data})
     updated = await db.finance_accounts.find_one({"id": account_id}, {"_id": 0})
-    balance = await calculate_account_balance(account_id)
+    starting_balance = updated.get("starting_balance", 0.0)
+    balance = await calculate_account_balance(account_id, starting_balance)
     return AccountResponse(**updated, balance=balance)
 
 
