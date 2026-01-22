@@ -929,6 +929,7 @@ export const FinancePage = () => {
         projects={projects}
         accounts={accounts}
         categories={categories}
+        savingsGoals={savingsGoals}
         selectedProjectId={selectedProjectId}
         onClose={() => setTransactionDialog({ open: false, data: null })}
         onSave={handleSaveTransaction}
