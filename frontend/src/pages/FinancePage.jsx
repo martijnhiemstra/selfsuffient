@@ -120,6 +120,19 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
+  // Fetch savings goals
+  const fetchSavingsGoals = useCallback(async () => {
+    try {
+      const url = selectedProjectId === 'all'
+        ? `${API}/finance/savings-goals`
+        : `${API}/finance/savings-goals?project_id=${selectedProjectId}`;
+      const res = await axios.get(url, { headers });
+      setSavingsGoals(res.data.savings_goals || []);
+    } catch (err) {
+      console.error('Failed to fetch savings goals:', err);
+    }
+  }, [token, selectedProjectId]);
+
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
     if (selectedProjectId === 'all') {
