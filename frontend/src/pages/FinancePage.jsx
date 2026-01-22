@@ -138,6 +138,19 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
+  // Fetch recurring checklist
+  const fetchRecurringChecklist = useCallback(async () => {
+    try {
+      const url = selectedProjectId === 'all'
+        ? `${API}/finance/recurring/checklist?month=${checklistMonth}`
+        : `${API}/finance/recurring/checklist?month=${checklistMonth}&project_id=${selectedProjectId}`;
+      const res = await axios.get(url, { headers });
+      setRecurringChecklist(res.data);
+    } catch (err) {
+      console.error('Failed to fetch recurring checklist:', err);
+    }
+  }, [token, checklistMonth, selectedProjectId]);
+
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
     if (selectedProjectId === 'all') {
