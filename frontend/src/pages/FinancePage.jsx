@@ -938,6 +938,8 @@ export const FinancePage = () => {
         selectedProjectId={selectedProjectId}
         onClose={() => setTransactionDialog({ open: false, data: null })}
         onSave={handleSaveTransaction}
+        onCategoryCreated={fetchCategories}
+        token={token}
       />
 
       {/* Recurring Dialog */}
