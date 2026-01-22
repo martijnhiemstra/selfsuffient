@@ -13,7 +13,8 @@ import { Textarea } from '../components/ui/textarea';
 import { 
   Plus, Trash2, Edit, Wallet, TrendingUp, TrendingDown, 
   PiggyBank, Calculator, Calendar, AlertTriangle, RefreshCw,
-  ArrowUpCircle, ArrowDownCircle, Building, Landmark, Coins, Package, Target
+  ArrowUpCircle, ArrowDownCircle, Building, Landmark, Coins, Package, Target,
+  CheckCircle2, Circle, Clock
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
