@@ -17,6 +17,7 @@ from .routines import router as routines_router
 from .public import router as public_router
 from .dashboard import router as dashboard_router
 from .health import router as health_router
+from .finance import router as finance_router
 
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
@@ -30,3 +31,4 @@ api_router.include_router(routines_router, tags=["Routines"])
 api_router.include_router(public_router, prefix="/public", tags=["Public"])
 api_router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(health_router, tags=["Health"])
+api_router.include_router(finance_router, prefix="/finance", tags=["Finance"])
