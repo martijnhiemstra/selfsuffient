@@ -306,6 +306,34 @@ export const FinancePage = () => {
     }
   };
 
+  const handleSaveSavingsGoal = async (data) => {
+    try {
+      if (savingsGoalDialog.data?.id) {
+        await axios.put(`${API}/finance/savings-goals/${savingsGoalDialog.data.id}`, data, { headers });
+        toast.success('Savings goal updated');
+      } else {
+        await axios.post(`${API}/finance/savings-goals`, data, { headers });
+        toast.success('Savings goal created');
+      }
+      setSavingsGoalDialog({ open: false, data: null });
+      fetchSavingsGoals();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save savings goal');
+    }
+  };
+
+  const handleDeleteSavingsGoal = async (id) => {
+    if (!window.confirm('Delete this savings goal? Transactions will be unlinked but not deleted.')) return;
+    try {
+      await axios.delete(`${API}/finance/savings-goals/${id}`, { headers });
+      toast.success('Savings goal deleted');
+      fetchSavingsGoals();
+      fetchTransactions();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete savings goal');
+    }
+  };
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
   };
