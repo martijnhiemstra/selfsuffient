@@ -1172,6 +1172,20 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
             </Select>
           </div>
           <div className="space-y-2">
+            <Label>Savings Goal (Optional)</Label>
+            <Select value={form.savings_goal_id} onValueChange={(v) => setForm({ ...form, savings_goal_id: v })} disabled={!form.project_id}>
+              <SelectTrigger>
+                <SelectValue placeholder="Attach to savings goal..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">None</SelectItem>
+                {projectSavingsGoals.map(g => (
+                  <SelectItem key={g.id} value={g.id}>{g.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Notes</Label>
             <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes..." />
           </div>
