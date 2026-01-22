@@ -180,6 +180,7 @@ export const FinancePage = () => {
         fetchCategories(),
         fetchTransactions(),
         fetchRecurring(),
+        fetchSavingsGoals(),
         fetchRunway()
       ]);
       setLoading(false);
@@ -193,6 +194,7 @@ export const FinancePage = () => {
     fetchCategories();
     fetchTransactions();
     fetchRecurring();
+    fetchSavingsGoals();
     fetchDashboard();
     fetchMonthly();
   }, [selectedProjectId]);
