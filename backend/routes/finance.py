@@ -38,6 +38,7 @@ async def create_account(data: AccountCreate, current_user: dict = Depends(get_c
         "project_id": data.project_id,
         "name": data.name,
         "type": data.type.value,
+        "starting_balance": data.starting_balance,
         "notes": data.notes,
         "created_at": now,
         "updated_at": now
@@ -45,7 +46,7 @@ async def create_account(data: AccountCreate, current_user: dict = Depends(get_c
     
     await db.finance_accounts.insert_one(account_doc)
     
-    return AccountResponse(**{k: v for k, v in account_doc.items() if k != "_id"}, balance=0.0)
+    return AccountResponse(**{k: v for k, v in account_doc.items() if k != "_id"}, balance=data.starting_balance)
 
 
 @router.get("/accounts", response_model=AccountListResponse)
