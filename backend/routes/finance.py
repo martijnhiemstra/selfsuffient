@@ -265,6 +265,7 @@ async def list_transactions(
     project_id: Optional[str] = None,
     account_id: Optional[str] = None,
     category_id: Optional[str] = None,
+    savings_goal_id: Optional[str] = None,
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     sort_by: str = "date",
@@ -282,6 +283,8 @@ async def list_transactions(
         query["account_id"] = account_id
     if category_id:
         query["category_id"] = category_id
+    if savings_goal_id:
+        query["savings_goal_id"] = savings_goal_id
     if start_date:
         query["date"] = {"$gte": start_date}
     if end_date:
@@ -305,13 +308,17 @@ async def list_transactions(
         account = await db.finance_accounts.find_one({"id": tx["account_id"]}, {"_id": 0, "name": 1})
         project = await db.projects.find_one({"id": tx["project_id"]}, {"_id": 0, "name": 1})
         category = await db.finance_categories.find_one({"id": tx["category_id"]}, {"_id": 0, "name": 1, "type": 1})
+        savings_goal = None
+        if tx.get("savings_goal_id"):
+            savings_goal = await db.finance_savings_goals.find_one({"id": tx["savings_goal_id"]}, {"_id": 0, "name": 1})
         
         result.append(TransactionResponse(
             **tx,
             account_name=account["name"] if account else None,
             project_name=project["name"] if project else None,
             category_name=category["name"] if category else None,
-            category_type=category["type"] if category else None
+            category_type=category["type"] if category else None,
+            savings_goal_name=savings_goal["name"] if savings_goal else None
         ))
     
     return TransactionListResponse(transactions=result, total=total)
