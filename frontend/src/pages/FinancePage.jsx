@@ -38,6 +38,7 @@ export const FinancePage = () => {
   const [transactions, setTransactions] = useState([]);
   const [recurringTransactions, setRecurringTransactions] = useState([]);
   const [savingsGoals, setSavingsGoals] = useState([]);
+  const [recurringChecklist, setRecurringChecklist] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // Dashboard state
@@ -45,6 +46,10 @@ export const FinancePage = () => {
   const [monthlyOverview, setMonthlyOverview] = useState(null);
   const [runway, setRunway] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  });
+  const [checklistMonth, setChecklistMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
