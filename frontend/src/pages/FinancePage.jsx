@@ -614,67 +614,188 @@ export const FinancePage = () => {
         </TabsContent>
 
         {/* Recurring Tab */}
-        <TabsContent value="recurring" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Recurring Transactions</h2>
-            <Button onClick={() => setRecurringDialog({ open: true, data: null })} data-testid="add-recurring-btn">
-              <Plus className="w-4 h-4 mr-2" /> Add Recurring
-            </Button>
+        <TabsContent value="recurring" className="space-y-6">
+          {/* Monthly Checklist Section */}
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">Monthly Checklist</h2>
+              <Input 
+                type="month" 
+                value={checklistMonth} 
+                onChange={(e) => setChecklistMonth(e.target.value)}
+                className="w-[180px]"
+                data-testid="checklist-month-picker"
+              />
+            </div>
+            
+            {recurringChecklist ? (
+              <div className="space-y-4">
+                {/* Summary Cards */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-green-500" />
+                        <span className="text-sm text-muted-foreground">Matched</span>
+                      </div>
+                      <p className="text-xl font-bold text-green-600">{recurringChecklist.summary.matched}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-orange-500" />
+                        <span className="text-sm text-muted-foreground">Pending</span>
+                      </div>
+                      <p className="text-xl font-bold text-orange-600">{recurringChecklist.summary.pending}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        <ArrowDownCircle className="w-4 h-4 text-red-500" />
+                        <span className="text-sm text-muted-foreground">Pending Expenses</span>
+                      </div>
+                      <p className="text-xl font-bold text-red-600">{formatCurrency(recurringChecklist.summary.pending_expenses)}</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        <ArrowUpCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-sm text-muted-foreground">Pending Income</span>
+                      </div>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(recurringChecklist.summary.pending_income)}</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Checklist Table */}
+                {recurringChecklist.checklist.length === 0 ? (
+                  <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      No active recurring transactions for this month.
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-12">Status</TableHead>
+                          <TableHead>Name</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Project</TableHead>
+                          <TableHead className="text-right">Expected</TableHead>
+                          <TableHead className="text-right">Actual</TableHead>
+                          <TableHead>Matched On</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {recurringChecklist.checklist.map(item => (
+                          <TableRow key={item.recurring_id} className={item.is_matched ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}>
+                            <TableCell>
+                              {item.is_matched ? (
+                                <CheckCircle2 className="w-5 h-5 text-green-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 text-orange-400" />
+                              )}
+                            </TableCell>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell>
+                              <Badge variant={item.category_type === 'income' ? 'default' : item.category_type === 'investment' ? 'secondary' : 'destructive'}>
+                                {item.category_name}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{item.project_name}</TableCell>
+                            <TableCell className={`text-right font-medium ${item.expected_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(item.expected_amount)}
+                            </TableCell>
+                            <TableCell className={`text-right font-medium ${item.matched_transaction ? (item.matched_transaction.amount >= 0 ? 'text-green-600' : 'text-red-600') : 'text-muted-foreground'}`}>
+                              {item.matched_transaction ? formatCurrency(item.matched_transaction.amount) : '—'}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {item.matched_transaction ? item.matched_transaction.date : '—'}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Card>
+                )}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="p-6 text-center text-muted-foreground">
+                  Loading checklist...
+                </CardContent>
+              </Card>
+            )}
           </div>
-          
-          {recurringTransactions.length === 0 ? (
-            <Card>
-              <CardContent className="p-8 text-center text-muted-foreground">
-                No recurring transactions. Add monthly bills or regular income here.
-              </CardContent>
-            </Card>
-          ) : (
-            <Card>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Name</TableHead>
-                    <TableHead>Project</TableHead>
-                    <TableHead>Category</TableHead>
-                    <TableHead>Frequency</TableHead>
-                    <TableHead>Next Date</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recurringTransactions.map(rec => (
-                    <TableRow key={rec.id}>
-                      <TableCell className="font-medium">{rec.name}</TableCell>
-                      <TableCell>{rec.project_name}</TableCell>
-                      <TableCell>{rec.category_name}</TableCell>
-                      <TableCell className="capitalize">{rec.frequency}</TableCell>
-                      <TableCell>{rec.next_execution_date}</TableCell>
-                      <TableCell className={`text-right font-medium ${rec.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                        {rec.amount >= 0 ? '+' : ''}{formatCurrency(rec.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={rec.active ? 'default' : 'secondary'}>
-                          {rec.active ? 'Active' : 'Paused'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button size="icon" variant="ghost" onClick={() => setRecurringDialog({ open: true, data: rec })}>
-                            <Edit className="w-4 h-4" />
-                          </Button>
-                          <Button size="icon" variant="ghost" onClick={() => handleDeleteRecurring(rec.id)}>
-                            <Trash2 className="w-4 h-4 text-red-500" />
-                          </Button>
-                        </div>
-                      </TableCell>
+
+          {/* All Recurring Transactions Section */}
+          <div className="space-y-4 border-t pt-6">
+            <div className="flex justify-between items-center">
+              <h2 className="text-xl font-semibold">All Recurring Transactions</h2>
+              <Button onClick={() => setRecurringDialog({ open: true, data: null })} data-testid="add-recurring-btn">
+                <Plus className="w-4 h-4 mr-2" /> Add Recurring
+              </Button>
+            </div>
+            
+            {recurringTransactions.length === 0 ? (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  No recurring transactions. Add monthly bills or regular income here.
+                </CardContent>
+              </Card>
+            ) : (
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Project</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Frequency</TableHead>
+                      <TableHead>Next Date</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </Card>
-          )}
+                  </TableHeader>
+                  <TableBody>
+                    {recurringTransactions.map(rec => (
+                      <TableRow key={rec.id}>
+                        <TableCell className="font-medium">{rec.name}</TableCell>
+                        <TableCell>{rec.project_name}</TableCell>
+                        <TableCell>{rec.category_name}</TableCell>
+                        <TableCell className="capitalize">{rec.frequency}</TableCell>
+                        <TableCell>{rec.next_execution_date}</TableCell>
+                        <TableCell className={`text-right font-medium ${rec.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {rec.amount >= 0 ? '+' : ''}{formatCurrency(rec.amount)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={rec.active ? 'default' : 'secondary'}>
+                            {rec.active ? 'Active' : 'Paused'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button size="icon" variant="ghost" onClick={() => setRecurringDialog({ open: true, data: rec })}>
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleDeleteRecurring(rec.id)}>
+                              <Trash2 className="w-4 h-4 text-red-500" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         {/* Monthly Overview Tab */}
