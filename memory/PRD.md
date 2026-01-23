@@ -117,24 +117,45 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 
 #### Financial Module ✅ (Jan 22, 2026)
 - **Global finance tracking** with project filtering
-- **Accounts** (per project): bank, cash, crypto, asset types
+- **Accounts** (per project): bank, cash, crypto, asset types with starting balance support
 - **Categories** (per project): income, expense, investment with default seeding
-- **Transactions**: Full CRUD with income/expense tracking
-- **Recurring Transactions**: Monthly/yearly templates for regular costs
+- **Transactions**: Full CRUD with income/expense tracking, savings goal attachment
+- **Savings Goals**: Track savings progress with target amounts and linked transactions
 - **Analytics**:
   - Project Dashboard: Income, expenses, investments, net balance, burn rate
   - Monthly Overview: By project and category breakdowns
   - Runway Calculator: Liquid cash, burn rate, months remaining, safety threshold warning
 - **API Endpoints**: 
-  - `/api/finance/accounts` - Account CRUD
+  - `/api/finance/accounts` - Account CRUD (with starting_balance)
   - `/api/finance/categories` - Category CRUD + seeding
   - `/api/finance/transactions` - Transaction CRUD
-  - `/api/finance/recurring` - Recurring transaction CRUD
+  - `/api/finance/savings-goals` - Savings goals CRUD
   - `/api/finance/dashboard/{project_id}` - Project summary
   - `/api/finance/monthly?month=YYYY-MM` - Monthly overview
   - `/api/finance/runway` - Runway calculation
-- **Frontend**: 5-tab interface (Transactions, Accounts, Recurring, Monthly, Runway)
+- **Frontend**: 6-tab interface (Transactions, Accounts, Savings, Budget, Monthly, Runway)
 - EUR currency only
+
+#### Budgeting System ✅ (Jan 23, 2026)
+- **Replaced old Recurring Transactions** with a more powerful Expense Periods system
+- **Expense Periods**: Time-bound budget periods (e.g., "2026", "First Year on Farm")
+  - Define start and end months (YYYY-MM format)
+  - Contains Expected Items (budgeted income/expenses)
+  - Shows monthly income, expenses, and net totals
+- **Expected Items**: Budget line items within periods
+  - Types: income or expense
+  - Frequencies: monthly, yearly, or one-time
+  - Optional category assignment for automatic transaction matching
+- **Budget vs Actual Comparison**: Monthly view showing
+  - Expected vs actual income/expenses/profit
+  - Individual budget item matching with actual transactions
+  - Unbudgeted transactions list
+  - Status indicators (matched/unmatched)
+- **API Endpoints**:
+  - `/api/budget/periods` - Expense period CRUD
+  - `/api/budget/items` - Expected item CRUD
+  - `/api/budget/comparison?month=YYYY-MM` - Monthly budget comparison
+- **Old recurring transactions system removed** (endpoints and UI deprecated)
 
 #### Simplified Editor & Blog Image Attachments ✅ (Jan 17, 2026)
 - Replaced RichTextEditor with SimpleEditor (no embedded images)
