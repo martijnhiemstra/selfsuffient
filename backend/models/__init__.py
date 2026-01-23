@@ -69,4 +69,9 @@ __all__ = [
     "RecurringTransactionCreate", "RecurringTransactionUpdate", "RecurringTransactionResponse", "RecurringTransactionListResponse",
     "SavingsGoalCreate", "SavingsGoalUpdate", "SavingsGoalResponse", "SavingsGoalListResponse",
     "ProjectFinanceSummary", "MonthlyOverview", "RunwayCalculation", "DEFAULT_CATEGORIES",
+    # Budget
+    "ExpenseFrequency", "ExpenseType",
+    "ExpensePeriodCreate", "ExpensePeriodUpdate", "ExpensePeriodResponse", "ExpensePeriodListResponse",
+    "ExpectedItemCreate", "ExpectedItemUpdate", "ExpectedItemResponse", "ExpectedItemListResponse",
+    "MonthlyBudgetItem", "MonthlyBudgetComparison",
 ]
