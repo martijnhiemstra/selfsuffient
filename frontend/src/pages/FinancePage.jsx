@@ -10,11 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Textarea } from '../components/ui/textarea';
+import { Checkbox } from '../components/ui/checkbox';
 import { 
   Plus, Trash2, Edit, Wallet, TrendingUp, 
   PiggyBank, Calculator, AlertTriangle, RefreshCw,
   ArrowUpCircle, ArrowDownCircle, Landmark, Coins, Package,
-  CheckCircle2, Circle, CalendarRange
+  CheckCircle2, Circle, CalendarRange, Upload, FileSpreadsheet, X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -57,6 +58,7 @@ export const FinancePage = () => {
   const [periodDialog, setPeriodDialog] = useState({ open: false, data: null });
   const [expectedItemDialog, setExpectedItemDialog] = useState({ open: false, data: null, periodId: null });
   const [savingsGoalDialog, setSavingsGoalDialog] = useState({ open: false, data: null });
+  const [importDialog, setImportDialog] = useState({ open: false });
 
   const headers = { Authorization: `Bearer ${token}` };
 
