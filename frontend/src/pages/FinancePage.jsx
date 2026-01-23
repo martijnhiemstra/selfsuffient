@@ -39,7 +39,9 @@ export const FinancePage = () => {
   const [transactions, setTransactions] = useState([]);
   const [recurringTransactions, setRecurringTransactions] = useState([]);
   const [savingsGoals, setSavingsGoals] = useState([]);
-  const [recurringChecklist, setRecurringChecklist] = useState(null);
+  const [expensePeriods, setExpensePeriods] = useState([]);
+  const [expectedItems, setExpectedItems] = useState([]);
+  const [budgetComparison, setBudgetComparison] = useState(null);
   const [loading, setLoading] = useState(true);
   
   // Dashboard state
@@ -50,7 +52,7 @@ export const FinancePage = () => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
-  const [checklistMonth, setChecklistMonth] = useState(() => {
+  const [budgetMonth, setBudgetMonth] = useState(() => {
     const now = new Date();
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
@@ -59,7 +61,8 @@ export const FinancePage = () => {
   const [accountDialog, setAccountDialog] = useState({ open: false, data: null });
   const [categoryDialog, setCategoryDialog] = useState({ open: false, data: null });
   const [transactionDialog, setTransactionDialog] = useState({ open: false, data: null });
-  const [recurringDialog, setRecurringDialog] = useState({ open: false, data: null });
+  const [periodDialog, setPeriodDialog] = useState({ open: false, data: null });
+  const [expectedItemDialog, setExpectedItemDialog] = useState({ open: false, data: null, periodId: null });
   const [savingsGoalDialog, setSavingsGoalDialog] = useState({ open: false, data: null });
 
   const headers = { Authorization: `Bearer ${token}` };
