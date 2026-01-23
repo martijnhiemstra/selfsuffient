@@ -28,7 +28,8 @@ from .finance import (
     TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse,
     RecurringTransactionCreate, RecurringTransactionUpdate, RecurringTransactionResponse, RecurringTransactionListResponse,
     SavingsGoalCreate, SavingsGoalUpdate, SavingsGoalResponse, SavingsGoalListResponse,
-    ProjectFinanceSummary, MonthlyOverview, RunwayCalculation, DEFAULT_CATEGORIES
+    ProjectFinanceSummary, MonthlyOverview, RunwayCalculation, DEFAULT_CATEGORIES,
+    ImportedTransaction, CSVColumnMapping, ImportPreviewRequest, ImportPreviewResponse, ImportConfirmRequest
 )
 from .budget import (
     ExpenseFrequency, ExpenseType,
