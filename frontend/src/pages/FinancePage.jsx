@@ -530,7 +530,7 @@ export const FinancePage = () => {
           <TabsTrigger value="transactions" data-testid="tab-transactions">Transactions</TabsTrigger>
           <TabsTrigger value="accounts" data-testid="tab-accounts">Accounts</TabsTrigger>
           <TabsTrigger value="savings" data-testid="tab-savings">Savings</TabsTrigger>
-          <TabsTrigger value="recurring" data-testid="tab-recurring">Recurring</TabsTrigger>
+          <TabsTrigger value="budget" data-testid="tab-budget">Budget</TabsTrigger>
           <TabsTrigger value="monthly" data-testid="tab-monthly">Monthly</TabsTrigger>
           <TabsTrigger value="runway" data-testid="tab-runway">Runway</TabsTrigger>
         </TabsList>
