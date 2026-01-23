@@ -142,18 +142,47 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
-  // Fetch recurring checklist
-  const fetchRecurringChecklist = useCallback(async () => {
+  // Fetch expense periods
+  const fetchExpensePeriods = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
-        ? `${API}/finance/recurring/checklist?month=${checklistMonth}`
-        : `${API}/finance/recurring/checklist?month=${checklistMonth}&project_id=${selectedProjectId}`;
+        ? `${API}/budget/periods`
+        : `${API}/budget/periods?project_id=${selectedProjectId}`;
       const res = await axios.get(url, { headers });
-      setRecurringChecklist(res.data);
+      setExpensePeriods(res.data.periods || []);
     } catch (err) {
-      console.error('Failed to fetch recurring checklist:', err);
+      console.error('Failed to fetch expense periods:', err);
     }
-  }, [token, checklistMonth, selectedProjectId]);
+  }, [token, selectedProjectId]);
+
+  // Fetch expected items
+  const fetchExpectedItems = useCallback(async (periodId = null) => {
+    try {
+      let url = `${API}/budget/items`;
+      const params = [];
+      if (periodId) params.push(`period_id=${periodId}`);
+      if (selectedProjectId !== 'all') params.push(`project_id=${selectedProjectId}`);
+      if (params.length > 0) url += `?${params.join('&')}`;
+      
+      const res = await axios.get(url, { headers });
+      setExpectedItems(res.data.items || []);
+    } catch (err) {
+      console.error('Failed to fetch expected items:', err);
+    }
+  }, [token, selectedProjectId]);
+
+  // Fetch budget comparison
+  const fetchBudgetComparison = useCallback(async () => {
+    try {
+      const url = selectedProjectId === 'all'
+        ? `${API}/budget/comparison?month=${budgetMonth}`
+        : `${API}/budget/comparison?month=${budgetMonth}&project_id=${selectedProjectId}`;
+      const res = await axios.get(url, { headers });
+      setBudgetComparison(res.data);
+    } catch (err) {
+      console.error('Failed to fetch budget comparison:', err);
+    }
+  }, [token, budgetMonth, selectedProjectId]);
 
   // Fetch dashboard data
   const fetchDashboard = useCallback(async () => {
