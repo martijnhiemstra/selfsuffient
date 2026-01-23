@@ -1194,6 +1194,23 @@ export const FinancePage = () => {
         onClose={() => setSavingsGoalDialog({ open: false, data: null })}
         onSave={handleSaveSavingsGoal}
       />
+
+      <ImportDialog
+        open={importDialog.open}
+        projects={projects}
+        accounts={accounts}
+        categories={categories}
+        selectedProjectId={selectedProjectId}
+        onClose={() => setImportDialog({ open: false })}
+        onImportComplete={() => {
+          fetchTransactions();
+          fetchAccounts();
+          fetchMonthly();
+          fetchRunway();
+          fetchBudgetComparison();
+        }}
+        token={token}
+      />
     </div>
   );
 };
