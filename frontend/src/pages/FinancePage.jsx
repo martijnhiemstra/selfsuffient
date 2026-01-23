@@ -473,9 +473,14 @@ export const FinancePage = () => {
         <TabsContent value="transactions" className="space-y-4">
           <div className="flex justify-between items-center">
             <h2 className="text-xl font-semibold">Transactions</h2>
-            <Button onClick={() => setTransactionDialog({ open: true, data: null })} data-testid="add-transaction-btn">
-              <Plus className="w-4 h-4 mr-2" /> Add Transaction
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setImportDialog({ open: true })} data-testid="import-transactions-btn">
+                <Upload className="w-4 h-4 mr-2" /> Import
+              </Button>
+              <Button onClick={() => setTransactionDialog({ open: true, data: null })} data-testid="add-transaction-btn">
+                <Plus className="w-4 h-4 mr-2" /> Add Transaction
+              </Button>
+            </div>
           </div>
           
           {transactions.length === 0 ? (
