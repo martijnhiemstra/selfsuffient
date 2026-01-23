@@ -221,13 +221,12 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - `/app/tests/test_upload_size_and_cors.py` - CORS and upload size tests
 
 ## Future Enhancements (Backlog)
-1. **Transaction Import** - CSV/OFX bank statement import with column mapping
-2. Export/import functionality for projects
-3. Mobile app version
-4. Analytics dashboard for content views
-5. Multi-language support
-6. Two-factor authentication
-7. Project collaboration features
+1. Export/import functionality for projects
+2. Mobile app version
+3. Analytics dashboard for content views
+4. Multi-language support
+5. Two-factor authentication
+6. Project collaboration features
 
 ## Documentation
 - `/app/DOCKER.md` - Docker setup and deployment guide
