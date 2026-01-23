@@ -247,3 +247,49 @@ class SavingsGoalResponse(BaseModel):
 class SavingsGoalListResponse(BaseModel):
     savings_goals: List[SavingsGoalResponse]
     total: int
+
+
+# Import models
+class ImportedTransaction(BaseModel):
+    """A single transaction parsed from import file"""
+    date: str
+    amount: float
+    description: Optional[str] = None
+    memo: Optional[str] = None
+    payee: Optional[str] = None
+    ref_number: Optional[str] = None  # Check number, reference ID, etc.
+    transaction_type: Optional[str] = None  # Credit/Debit/etc.
+
+
+class CSVColumnMapping(BaseModel):
+    """Mapping of CSV columns to transaction fields"""
+    date_column: str
+    amount_column: str
+    description_column: Optional[str] = None
+    memo_column: Optional[str] = None
+    date_format: str = "%Y-%m-%d"  # Python strptime format
+    amount_is_negative_expense: bool = True  # If true, negative = expense
+    has_header: bool = True
+    delimiter: str = ","
+
+
+class ImportPreviewRequest(BaseModel):
+    """Request to preview imported transactions"""
+    file_type: str  # "csv" or "ofx"
+    column_mapping: Optional[CSVColumnMapping] = None  # Only for CSV
+
+
+class ImportPreviewResponse(BaseModel):
+    """Response with parsed transactions preview"""
+    transactions: List[ImportedTransaction]
+    total: int
+    columns: Optional[List[str]] = None  # For CSV, the detected columns
+    warnings: List[str] = []
+
+
+class ImportConfirmRequest(BaseModel):
+    """Request to confirm and save imported transactions"""
+    transactions: List[ImportedTransaction]
+    project_id: str
+    account_id: str
+    default_category_id: str  # Default category for all imported transactions
