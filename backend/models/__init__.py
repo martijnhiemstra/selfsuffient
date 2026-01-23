@@ -70,6 +70,7 @@ __all__ = [
     "RecurringTransactionCreate", "RecurringTransactionUpdate", "RecurringTransactionResponse", "RecurringTransactionListResponse",
     "SavingsGoalCreate", "SavingsGoalUpdate", "SavingsGoalResponse", "SavingsGoalListResponse",
     "ProjectFinanceSummary", "MonthlyOverview", "RunwayCalculation", "DEFAULT_CATEGORIES",
+    "ImportedTransaction", "CSVColumnMapping", "ImportPreviewRequest", "ImportPreviewResponse", "ImportConfirmRequest",
     # Budget
     "ExpenseFrequency", "ExpenseType",
     "ExpensePeriodCreate", "ExpensePeriodUpdate", "ExpensePeriodResponse", "ExpensePeriodListResponse",
