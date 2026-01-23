@@ -30,6 +30,12 @@ from .finance import (
     SavingsGoalCreate, SavingsGoalUpdate, SavingsGoalResponse, SavingsGoalListResponse,
     ProjectFinanceSummary, MonthlyOverview, RunwayCalculation, DEFAULT_CATEGORIES
 )
+from .budget import (
+    ExpenseFrequency, ExpenseType,
+    ExpensePeriodCreate, ExpensePeriodUpdate, ExpensePeriodResponse, ExpensePeriodListResponse,
+    ExpectedItemCreate, ExpectedItemUpdate, ExpectedItemResponse, ExpectedItemListResponse,
+    MonthlyBudgetItem, MonthlyBudgetComparison
+)
 
 __all__ = [
     # Auth
