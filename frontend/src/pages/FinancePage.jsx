@@ -230,9 +230,9 @@ export const FinancePage = () => {
         fetchAccounts(),
         fetchCategories(),
         fetchTransactions(),
-        fetchRecurring(),
         fetchSavingsGoals(),
-        fetchRecurringChecklist(),
+        fetchExpensePeriods(),
+        fetchBudgetComparison(),
         fetchRunway()
       ]);
       setLoading(false);
@@ -245,9 +245,9 @@ export const FinancePage = () => {
     fetchAccounts();
     fetchCategories();
     fetchTransactions();
-    fetchRecurring();
     fetchSavingsGoals();
-    fetchRecurringChecklist();
+    fetchExpensePeriods();
+    fetchBudgetComparison();
     fetchDashboard();
     fetchMonthly();
   }, [selectedProjectId]);
@@ -257,10 +257,10 @@ export const FinancePage = () => {
     fetchMonthly();
   }, [selectedMonth]);
 
-  // Refresh checklist when checklist month changes
+  // Refresh budget comparison when budget month changes
   useEffect(() => {
-    fetchRecurringChecklist();
-  }, [checklistMonth]);
+    fetchBudgetComparison();
+  }, [budgetMonth]);
 
   // CRUD handlers
   const handleSaveAccount = async (data) => {
