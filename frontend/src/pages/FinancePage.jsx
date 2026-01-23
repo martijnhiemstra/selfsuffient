@@ -1940,4 +1940,526 @@ const SavingsGoalDialog = ({ open, data, projects, selectedProjectId, onClose, o
   );
 };
 
+// Import Dialog Component
+const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId, onClose, onImportComplete, token }) => {
+  const [step, setStep] = useState('upload'); // upload, mapping, preview, confirm
+  const [fileType, setFileType] = useState(null); // csv or ofx
+  const [file, setFile] = useState(null);
+  const [columns, setColumns] = useState([]);
+  const [columnMapping, setColumnMapping] = useState({
+    date_column: '',
+    amount_column: '',
+    description_column: '',
+    date_format: '%Y-%m-%d',
+    delimiter: ',',
+    has_header: true
+  });
+  const [previewData, setPreviewData] = useState([]);
+  const [selectedTransactions, setSelectedTransactions] = useState([]);
+  const [warnings, setWarnings] = useState([]);
+  const [importSettings, setImportSettings] = useState({
+    project_id: '',
+    account_id: '',
+    category_id: ''
+  });
+  const [isLoading, setIsLoading] = useState(false);
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  // Reset on open
+  useEffect(() => {
+    if (open) {
+      setStep('upload');
+      setFileType(null);
+      setFile(null);
+      setColumns([]);
+      setColumnMapping({
+        date_column: '',
+        amount_column: '',
+        description_column: '',
+        date_format: '%Y-%m-%d',
+        delimiter: ',',
+        has_header: true
+      });
+      setPreviewData([]);
+      setSelectedTransactions([]);
+      setWarnings([]);
+      setImportSettings({
+        project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
+        account_id: '',
+        category_id: ''
+      });
+    }
+  }, [open, selectedProjectId]);
+
+  const handleFileSelect = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+    
+    const ext = selectedFile.name.toLowerCase().split('.').pop();
+    if (ext === 'csv') {
+      setFileType('csv');
+      setFile(selectedFile);
+    } else if (ext === 'ofx' || ext === 'qfx') {
+      setFileType('ofx');
+      setFile(selectedFile);
+    } else {
+      toast.error('Unsupported file format. Use CSV, OFX, or QFX files.');
+    }
+  };
+
+  const handleUploadCSV = async (withMapping = false) => {
+    if (!file) return;
+    setIsLoading(true);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('delimiter', columnMapping.delimiter);
+    formData.append('has_header', columnMapping.has_header);
+    
+    if (withMapping) {
+      formData.append('date_column', columnMapping.date_column);
+      formData.append('amount_column', columnMapping.amount_column);
+      if (columnMapping.description_column) {
+        formData.append('description_column', columnMapping.description_column);
+      }
+      formData.append('date_format', columnMapping.date_format);
+    }
+    
+    try {
+      const res = await axios.post(`${API}/finance/import/preview/csv`, formData, { headers });
+      
+      if (res.data.columns && res.data.columns.length > 0) {
+        setColumns(res.data.columns);
+      }
+      
+      if (res.data.transactions && res.data.transactions.length > 0) {
+        setPreviewData(res.data.transactions);
+        setSelectedTransactions(res.data.transactions.map((_, i) => i));
+        setStep('preview');
+      } else if (!withMapping) {
+        setStep('mapping');
+      }
+      
+      setWarnings(res.data.warnings || []);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to parse CSV file');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleUploadOFX = async () => {
+    if (!file) return;
+    setIsLoading(true);
+    
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    try {
+      const res = await axios.post(`${API}/finance/import/preview/ofx`, formData, { headers });
+      setPreviewData(res.data.transactions);
+      setSelectedTransactions(res.data.transactions.map((_, i) => i));
+      setWarnings(res.data.warnings || []);
+      setStep('preview');
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to parse OFX file');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleConfirmImport = async () => {
+    if (!importSettings.project_id || !importSettings.account_id || !importSettings.category_id) {
+      toast.error('Please select project, account, and category');
+      return;
+    }
+    
+    const transactionsToImport = selectedTransactions.map(i => previewData[i]);
+    if (transactionsToImport.length === 0) {
+      toast.error('No transactions selected');
+      return;
+    }
+    
+    setIsLoading(true);
+    try {
+      const res = await axios.post(`${API}/finance/import/confirm`, {
+        transactions: transactionsToImport,
+        project_id: importSettings.project_id,
+        account_id: importSettings.account_id,
+        default_category_id: importSettings.category_id
+      }, { headers });
+      
+      toast.success(res.data.message);
+      onImportComplete();
+      onClose();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to import transactions');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedTransactions.length === previewData.length) {
+      setSelectedTransactions([]);
+    } else {
+      setSelectedTransactions(previewData.map((_, i) => i));
+    }
+  };
+
+  const toggleTransaction = (index) => {
+    if (selectedTransactions.includes(index)) {
+      setSelectedTransactions(selectedTransactions.filter(i => i !== index));
+    } else {
+      setSelectedTransactions([...selectedTransactions, index]);
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('de-DE', { style: 'currency', currency: 'EUR' }).format(amount);
+  };
+
+  const projectCategories = categories.filter(c => c.project_id === importSettings.project_id);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5" />
+            Import Transactions
+          </DialogTitle>
+        </DialogHeader>
+
+        {/* Step 1: Upload */}
+        {step === 'upload' && (
+          <div className="space-y-6">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <Upload className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="font-medium mb-2">Upload your bank statement</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Supported formats: CSV, OFX, QFX
+              </p>
+              <Input
+                type="file"
+                accept=".csv,.ofx,.qfx"
+                onChange={handleFileSelect}
+                className="max-w-xs mx-auto"
+                data-testid="import-file-input"
+              />
+            </div>
+
+            {file && (
+              <div className="bg-muted p-4 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <FileSpreadsheet className="w-5 h-5 text-primary" />
+                    <span className="font-medium">{file.name}</span>
+                    <Badge>{fileType?.toUpperCase()}</Badge>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => { setFile(null); setFileType(null); }}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {fileType === 'csv' && (
+              <div className="space-y-4 border-t pt-4">
+                <h4 className="font-medium">CSV Options</h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Delimiter</Label>
+                    <Select value={columnMapping.delimiter} onValueChange={(v) => setColumnMapping({ ...columnMapping, delimiter: v })}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value=",">Comma (,)</SelectItem>
+                        <SelectItem value=";">Semicolon (;)</SelectItem>
+                        <SelectItem value="\t">Tab</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex items-center space-x-2 pt-6">
+                    <Checkbox 
+                      id="has-header"
+                      checked={columnMapping.has_header} 
+                      onCheckedChange={(c) => setColumnMapping({ ...columnMapping, has_header: c })}
+                    />
+                    <Label htmlFor="has-header">First row is header</Label>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={onClose}>Cancel</Button>
+              <Button 
+                onClick={() => fileType === 'csv' ? handleUploadCSV(false) : handleUploadOFX()}
+                disabled={!file || isLoading}
+                data-testid="import-next-btn"
+              >
+                {isLoading ? 'Processing...' : 'Next'}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step 2: Column Mapping (CSV only) */}
+        {step === 'mapping' && (
+          <div className="space-y-6">
+            <div className="space-y-4">
+              <h4 className="font-medium">Map Columns</h4>
+              <p className="text-sm text-muted-foreground">
+                Select which columns contain the date, amount, and description.
+              </p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Date Column *</Label>
+                  <Select value={columnMapping.date_column} onValueChange={(v) => setColumnMapping({ ...columnMapping, date_column: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select column" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {columns.map(col => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Amount Column *</Label>
+                  <Select value={columnMapping.amount_column} onValueChange={(v) => setColumnMapping({ ...columnMapping, amount_column: v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select column" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {columns.map(col => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Description Column (Optional)</Label>
+                  <Select value={columnMapping.description_column || "none"} onValueChange={(v) => setColumnMapping({ ...columnMapping, description_column: v === "none" ? "" : v })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select column" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">None</SelectItem>
+                      {columns.map(col => (
+                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Date Format</Label>
+                  <Select value={columnMapping.date_format} onValueChange={(v) => setColumnMapping({ ...columnMapping, date_format: v })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="%Y-%m-%d">YYYY-MM-DD</SelectItem>
+                      <SelectItem value="%d/%m/%Y">DD/MM/YYYY</SelectItem>
+                      <SelectItem value="%m/%d/%Y">MM/DD/YYYY</SelectItem>
+                      <SelectItem value="%d.%m.%Y">DD.MM.YYYY</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {columns.length > 0 && (
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-xs font-medium mb-1">Detected columns:</p>
+                  <p className="text-xs text-muted-foreground">{columns.join(', ')}</p>
+                </div>
+              )}
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStep('upload')}>Back</Button>
+              <Button 
+                onClick={() => handleUploadCSV(true)}
+                disabled={!columnMapping.date_column || !columnMapping.amount_column || isLoading}
+              >
+                {isLoading ? 'Processing...' : 'Parse'}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step 3: Preview */}
+        {step === 'preview' && (
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h4 className="font-medium">Preview ({previewData.length} transactions)</h4>
+                <p className="text-sm text-muted-foreground">
+                  {selectedTransactions.length} selected for import
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+                {selectedTransactions.length === previewData.length ? 'Deselect All' : 'Select All'}
+              </Button>
+            </div>
+
+            {warnings.length > 0 && (
+              <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3">
+                <div className="flex items-center gap-2 text-yellow-700 dark:text-yellow-400 mb-1">
+                  <AlertTriangle className="w-4 h-4" />
+                  <span className="text-sm font-medium">Warnings</span>
+                </div>
+                <ul className="text-xs text-yellow-600 dark:text-yellow-500 list-disc list-inside">
+                  {warnings.slice(0, 5).map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                  {warnings.length > 5 && <li>... and {warnings.length - 5} more</li>}
+                </ul>
+              </div>
+            )}
+
+            <div className="border rounded-lg max-h-[300px] overflow-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-10"></TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {previewData.map((tx, i) => (
+                    <TableRow 
+                      key={i} 
+                      className={selectedTransactions.includes(i) ? '' : 'opacity-50'}
+                      onClick={() => toggleTransaction(i)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <TableCell>
+                        <Checkbox 
+                          checked={selectedTransactions.includes(i)}
+                          onCheckedChange={() => toggleTransaction(i)}
+                        />
+                      </TableCell>
+                      <TableCell>{tx.date}</TableCell>
+                      <TableCell className="max-w-[300px] truncate">
+                        {tx.description || tx.memo || tx.payee || '—'}
+                      </TableCell>
+                      <TableCell className={`text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(tx.amount)}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStep(fileType === 'csv' ? 'mapping' : 'upload')}>Back</Button>
+              <Button 
+                onClick={() => setStep('confirm')}
+                disabled={selectedTransactions.length === 0}
+              >
+                Continue ({selectedTransactions.length})
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+
+        {/* Step 4: Confirm */}
+        {step === 'confirm' && (
+          <div className="space-y-6">
+            <div>
+              <h4 className="font-medium">Import Settings</h4>
+              <p className="text-sm text-muted-foreground">
+                Select where to import {selectedTransactions.length} transactions.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
+              <div className="space-y-2">
+                <Label>Project *</Label>
+                <Select value={importSettings.project_id} onValueChange={(v) => setImportSettings({ ...importSettings, project_id: v, category_id: '' })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select project" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Account *</Label>
+                <Select value={importSettings.account_id} onValueChange={(v) => setImportSettings({ ...importSettings, account_id: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map(a => (
+                      <SelectItem key={a.id} value={a.id}>{a.name} ({a.type})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Default Category *</Label>
+                <Select value={importSettings.category_id} onValueChange={(v) => setImportSettings({ ...importSettings, category_id: v })} disabled={!importSettings.project_id}>
+                  <SelectTrigger>
+                    <SelectValue placeholder={importSettings.project_id ? "Select category" : "Select project first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projectCategories.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  All imported transactions will use this category. You can change individual transactions later.
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-muted rounded-lg p-4">
+              <h5 className="font-medium mb-2">Summary</h5>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <span className="text-muted-foreground">Transactions:</span>
+                <span>{selectedTransactions.length}</span>
+                <span className="text-muted-foreground">Total Income:</span>
+                <span className="text-green-600">
+                  {formatCurrency(selectedTransactions.reduce((sum, i) => sum + (previewData[i].amount > 0 ? previewData[i].amount : 0), 0))}
+                </span>
+                <span className="text-muted-foreground">Total Expenses:</span>
+                <span className="text-red-600">
+                  {formatCurrency(selectedTransactions.reduce((sum, i) => sum + (previewData[i].amount < 0 ? previewData[i].amount : 0), 0))}
+                </span>
+              </div>
+            </div>
+
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setStep('preview')}>Back</Button>
+              <Button 
+                onClick={handleConfirmImport}
+                disabled={!importSettings.project_id || !importSettings.account_id || !importSettings.category_id || isLoading}
+                data-testid="import-confirm-btn"
+              >
+                {isLoading ? 'Importing...' : `Import ${selectedTransactions.length} Transactions`}
+              </Button>
+            </DialogFooter>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
 export default FinancePage;
