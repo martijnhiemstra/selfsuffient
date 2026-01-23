@@ -157,6 +157,20 @@ Build an application that helps users setup a self-sufficient lifestyle with:
   - `/api/budget/comparison?month=YYYY-MM` - Monthly budget comparison
 - **Old recurring transactions system removed** (endpoints and UI deprecated)
 
+#### Transaction Import ✅ (Jan 23, 2026)
+- **Multi-step import wizard** for bulk transaction import
+- **Supported formats**: CSV, OFX (Open Financial Exchange), QFX (Quicken)
+- **CSV column mapping**: User-configurable mapping for date, amount, description columns
+- **Date format support**: YYYY-MM-DD, DD/MM/YYYY, MM/DD/YYYY, DD.MM.YYYY
+- **Amount parsing**: Handles various formats (1234.56, 1,234.56, 1.234,56)
+- **Transaction preview**: Preview imported transactions with checkboxes for selective import
+- **Batch import**: Assign project, account, and default category to all imported transactions
+- **API Endpoints**:
+  - `POST /api/finance/import/preview/csv` - Parse CSV and return preview
+  - `POST /api/finance/import/preview/ofx` - Parse OFX/QFX and return preview
+  - `POST /api/finance/import/confirm` - Confirm and save imported transactions
+  - `GET /api/finance/import/sample-csv` - Get sample CSV format
+
 #### Simplified Editor & Blog Image Attachments ✅ (Jan 17, 2026)
 - Replaced RichTextEditor with SimpleEditor (no embedded images)
 - SimpleEditor features:
