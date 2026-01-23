@@ -337,30 +337,64 @@ export const FinancePage = () => {
     }
   };
 
-  const handleSaveRecurring = async (data) => {
+  // Expense Period handlers
+  const handleSavePeriod = async (data) => {
     try {
-      if (recurringDialog.data?.id) {
-        await axios.put(`${API}/finance/recurring/${recurringDialog.data.id}`, data, { headers });
-        toast.success('Recurring transaction updated');
+      if (periodDialog.data?.id) {
+        await axios.put(`${API}/budget/periods/${periodDialog.data.id}`, data, { headers });
+        toast.success('Period updated');
       } else {
-        await axios.post(`${API}/finance/recurring`, data, { headers });
-        toast.success('Recurring transaction created');
+        await axios.post(`${API}/budget/periods`, data, { headers });
+        toast.success('Period created');
       }
-      setRecurringDialog({ open: false, data: null });
-      fetchRecurring();
+      setPeriodDialog({ open: false, data: null });
+      fetchExpensePeriods();
+      fetchBudgetComparison();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to save recurring transaction');
+      toast.error(err.response?.data?.detail || 'Failed to save period');
     }
   };
 
-  const handleDeleteRecurring = async (id) => {
-    if (!window.confirm('Delete this recurring transaction?')) return;
+  const handleDeletePeriod = async (id) => {
+    if (!window.confirm('Delete this expense period and all its expected items?')) return;
     try {
-      await axios.delete(`${API}/finance/recurring/${id}`, { headers });
-      toast.success('Recurring transaction deleted');
-      fetchRecurring();
+      await axios.delete(`${API}/budget/periods/${id}`, { headers });
+      toast.success('Period deleted');
+      fetchExpensePeriods();
+      fetchBudgetComparison();
     } catch (err) {
-      toast.error(err.response?.data?.detail || 'Failed to delete recurring transaction');
+      toast.error(err.response?.data?.detail || 'Failed to delete period');
+    }
+  };
+
+  // Expected Item handlers
+  const handleSaveExpectedItem = async (data) => {
+    try {
+      if (expectedItemDialog.data?.id) {
+        await axios.put(`${API}/budget/items/${expectedItemDialog.data.id}`, data, { headers });
+        toast.success('Item updated');
+      } else {
+        await axios.post(`${API}/budget/items`, data, { headers });
+        toast.success('Item created');
+      }
+      setExpectedItemDialog({ open: false, data: null, periodId: null });
+      fetchExpensePeriods();
+      fetchExpectedItems(data.period_id);
+      fetchBudgetComparison();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save item');
+    }
+  };
+
+  const handleDeleteExpectedItem = async (id) => {
+    if (!window.confirm('Delete this expected item?')) return;
+    try {
+      await axios.delete(`${API}/budget/items/${id}`, { headers });
+      toast.success('Item deleted');
+      fetchExpensePeriods();
+      fetchBudgetComparison();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete item');
     }
   };
 
