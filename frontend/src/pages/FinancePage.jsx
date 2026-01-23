@@ -6,22 +6,21 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogClose } from '../components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Badge } from '../components/ui/badge';
 import { Textarea } from '../components/ui/textarea';
 import { 
-  Plus, Trash2, Edit, Wallet, TrendingUp, TrendingDown, 
-  PiggyBank, Calculator, Calendar, AlertTriangle, RefreshCw,
-  ArrowUpCircle, ArrowDownCircle, Building, Landmark, Coins, Package, Target,
-  CheckCircle2, Circle, Clock
+  Plus, Trash2, Edit, Wallet, TrendingUp, 
+  PiggyBank, Calculator, AlertTriangle, RefreshCw,
+  ArrowUpCircle, ArrowDownCircle, Landmark, Coins, Package,
+  CheckCircle2, Circle, CalendarRange
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
-// Account type icons
 const accountTypeIcons = {
   bank: Landmark,
   cash: Wallet,
@@ -37,15 +36,11 @@ export const FinancePage = () => {
   const [accounts, setAccounts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [transactions, setTransactions] = useState([]);
-  const [recurringTransactions, setRecurringTransactions] = useState([]);
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [expensePeriods, setExpensePeriods] = useState([]);
-  const [expectedItems, setExpectedItems] = useState([]);
   const [budgetComparison, setBudgetComparison] = useState(null);
   const [loading, setLoading] = useState(true);
   
-  // Dashboard state
-  const [projectSummary, setProjectSummary] = useState(null);
   const [monthlyOverview, setMonthlyOverview] = useState(null);
   const [runway, setRunway] = useState(null);
   const [selectedMonth, setSelectedMonth] = useState(() => {
@@ -57,9 +52,7 @@ export const FinancePage = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
   });
 
-  // Dialog states
   const [accountDialog, setAccountDialog] = useState({ open: false, data: null });
-  const [categoryDialog, setCategoryDialog] = useState({ open: false, data: null });
   const [transactionDialog, setTransactionDialog] = useState({ open: false, data: null });
   const [periodDialog, setPeriodDialog] = useState({ open: false, data: null });
   const [expectedItemDialog, setExpectedItemDialog] = useState({ open: false, data: null, periodId: null });
@@ -67,7 +60,6 @@ export const FinancePage = () => {
 
   const headers = { Authorization: `Bearer ${token}` };
 
-  // Fetch projects
   const fetchProjects = useCallback(async () => {
     try {
       const res = await axios.get(`${API}/projects`, { headers });
@@ -77,7 +69,6 @@ export const FinancePage = () => {
     }
   }, [token]);
 
-  // Fetch accounts
   const fetchAccounts = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all' 
@@ -90,7 +81,6 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
-  // Fetch categories
   const fetchCategories = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
@@ -103,7 +93,6 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
-  // Fetch transactions
   const fetchTransactions = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
@@ -116,20 +105,6 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
-  // Fetch recurring transactions
-  const fetchRecurring = useCallback(async () => {
-    try {
-      const url = selectedProjectId === 'all'
-        ? `${API}/finance/recurring`
-        : `${API}/finance/recurring?project_id=${selectedProjectId}`;
-      const res = await axios.get(url, { headers });
-      setRecurringTransactions(res.data.recurring_transactions || []);
-    } catch (err) {
-      console.error('Failed to fetch recurring:', err);
-    }
-  }, [token, selectedProjectId]);
-
-  // Fetch savings goals
   const fetchSavingsGoals = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
@@ -142,7 +117,6 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
-  // Fetch expense periods
   const fetchExpensePeriods = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
@@ -155,23 +129,6 @@ export const FinancePage = () => {
     }
   }, [token, selectedProjectId]);
 
-  // Fetch expected items
-  const fetchExpectedItems = useCallback(async (periodId = null) => {
-    try {
-      let url = `${API}/budget/items`;
-      const params = [];
-      if (periodId) params.push(`period_id=${periodId}`);
-      if (selectedProjectId !== 'all') params.push(`project_id=${selectedProjectId}`);
-      if (params.length > 0) url += `?${params.join('&')}`;
-      
-      const res = await axios.get(url, { headers });
-      setExpectedItems(res.data.items || []);
-    } catch (err) {
-      console.error('Failed to fetch expected items:', err);
-    }
-  }, [token, selectedProjectId]);
-
-  // Fetch budget comparison
   const fetchBudgetComparison = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
@@ -184,21 +141,6 @@ export const FinancePage = () => {
     }
   }, [token, budgetMonth, selectedProjectId]);
 
-  // Fetch dashboard data
-  const fetchDashboard = useCallback(async () => {
-    if (selectedProjectId === 'all') {
-      setProjectSummary(null);
-    } else {
-      try {
-        const res = await axios.get(`${API}/finance/dashboard/${selectedProjectId}`, { headers });
-        setProjectSummary(res.data);
-      } catch (err) {
-        console.error('Failed to fetch dashboard:', err);
-      }
-    }
-  }, [token, selectedProjectId]);
-
-  // Fetch monthly overview
   const fetchMonthly = useCallback(async () => {
     try {
       const url = selectedProjectId === 'all'
@@ -211,7 +153,6 @@ export const FinancePage = () => {
     }
   }, [token, selectedMonth, selectedProjectId]);
 
-  // Fetch runway
   const fetchRunway = useCallback(async () => {
     try {
       const res = await axios.get(`${API}/finance/runway`, { headers });
@@ -221,7 +162,6 @@ export const FinancePage = () => {
     }
   }, [token]);
 
-  // Initial data load
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
@@ -240,7 +180,6 @@ export const FinancePage = () => {
     loadData();
   }, []);
 
-  // Refresh when project changes
   useEffect(() => {
     fetchAccounts();
     fetchCategories();
@@ -248,21 +187,17 @@ export const FinancePage = () => {
     fetchSavingsGoals();
     fetchExpensePeriods();
     fetchBudgetComparison();
-    fetchDashboard();
     fetchMonthly();
   }, [selectedProjectId]);
 
-  // Refresh monthly when month changes
   useEffect(() => {
     fetchMonthly();
   }, [selectedMonth]);
 
-  // Refresh budget comparison when budget month changes
   useEffect(() => {
     fetchBudgetComparison();
   }, [budgetMonth]);
 
-  // CRUD handlers
   const handleSaveAccount = async (data) => {
     try {
       if (accountDialog.data?.id) {
@@ -314,9 +249,9 @@ export const FinancePage = () => {
       setTransactionDialog({ open: false, data: null });
       fetchTransactions();
       fetchAccounts();
-      fetchDashboard();
       fetchMonthly();
       fetchRunway();
+      fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save transaction');
     }
@@ -329,15 +264,14 @@ export const FinancePage = () => {
       toast.success('Transaction deleted');
       fetchTransactions();
       fetchAccounts();
-      fetchDashboard();
       fetchMonthly();
       fetchRunway();
+      fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to delete transaction');
     }
   };
 
-  // Expense Period handlers
   const handleSavePeriod = async (data) => {
     try {
       if (periodDialog.data?.id) {
@@ -367,7 +301,6 @@ export const FinancePage = () => {
     }
   };
 
-  // Expected Item handlers
   const handleSaveExpectedItem = async (data) => {
     try {
       if (expectedItemDialog.data?.id) {
@@ -379,7 +312,6 @@ export const FinancePage = () => {
       }
       setExpectedItemDialog({ open: false, data: null, periodId: null });
       fetchExpensePeriods();
-      fetchExpectedItems(data.period_id);
       fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save item');
@@ -679,87 +611,101 @@ export const FinancePage = () => {
           </div>
         </TabsContent>
 
-        {/* Recurring Tab */}
-        <TabsContent value="recurring" className="space-y-6">
-          {/* Monthly Checklist Section */}
+        {/* Budget Tab */}
+        <TabsContent value="budget" className="space-y-6">
+          {/* Budget Comparison Section */}
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">Monthly Checklist</h2>
+              <h2 className="text-xl font-semibold">Budget vs Actual</h2>
               <Input 
                 type="month" 
-                value={checklistMonth} 
-                onChange={(e) => setChecklistMonth(e.target.value)}
+                value={budgetMonth} 
+                onChange={(e) => setBudgetMonth(e.target.value)}
                 className="w-[180px]"
-                data-testid="checklist-month-picker"
+                data-testid="budget-month-picker"
               />
             </div>
             
-            {recurringChecklist ? (
+            {budgetComparison ? (
               <div className="space-y-4">
                 {/* Summary Cards */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                   <Card className="bg-muted/50">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2">
-                        <CheckCircle2 className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-muted-foreground">Matched</span>
+                        <ArrowUpCircle className="w-4 h-4 text-green-500" />
+                        <span className="text-sm text-muted-foreground">Expected Income</span>
                       </div>
-                      <p className="text-xl font-bold text-green-600">{recurringChecklist.summary.matched}</p>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-muted/50">
-                    <CardContent className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Clock className="w-4 h-4 text-orange-500" />
-                        <span className="text-sm text-muted-foreground">Pending</span>
-                      </div>
-                      <p className="text-xl font-bold text-orange-600">{recurringChecklist.summary.pending}</p>
+                      <p className="text-xl font-bold text-green-600">{formatCurrency(budgetComparison.expected_income)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Actual: {formatCurrency(budgetComparison.actual_income)} 
+                        <span className={budgetComparison.income_difference >= 0 ? 'text-green-500' : 'text-red-500'}>
+                          {' '}({budgetComparison.income_difference >= 0 ? '+' : ''}{formatCurrency(budgetComparison.income_difference)})
+                        </span>
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="bg-muted/50">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2">
                         <ArrowDownCircle className="w-4 h-4 text-red-500" />
-                        <span className="text-sm text-muted-foreground">Pending Expenses</span>
+                        <span className="text-sm text-muted-foreground">Expected Expenses</span>
                       </div>
-                      <p className="text-xl font-bold text-red-600">{formatCurrency(recurringChecklist.summary.pending_expenses)}</p>
+                      <p className="text-xl font-bold text-red-600">{formatCurrency(budgetComparison.expected_expenses)}</p>
+                      <p className="text-xs text-muted-foreground">
+                        Actual: {formatCurrency(budgetComparison.actual_expenses)}
+                        <span className={budgetComparison.expense_difference <= 0 ? 'text-green-500' : 'text-red-500'}>
+                          {' '}({budgetComparison.expense_difference >= 0 ? '+' : ''}{formatCurrency(budgetComparison.expense_difference)})
+                        </span>
+                      </p>
                     </CardContent>
                   </Card>
                   <Card className="bg-muted/50">
                     <CardContent className="p-3">
                       <div className="flex items-center gap-2">
-                        <ArrowUpCircle className="w-4 h-4 text-green-500" />
-                        <span className="text-sm text-muted-foreground">Pending Income</span>
+                        <Calculator className="w-4 h-4 text-blue-500" />
+                        <span className="text-sm text-muted-foreground">Expected Profit</span>
                       </div>
-                      <p className="text-xl font-bold text-green-600">{formatCurrency(recurringChecklist.summary.pending_income)}</p>
+                      <p className={`text-xl font-bold ${budgetComparison.expected_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(budgetComparison.expected_profit)}
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-muted/50">
+                    <CardContent className="p-3">
+                      <div className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-purple-500" />
+                        <span className="text-sm text-muted-foreground">Actual Profit</span>
+                      </div>
+                      <p className={`text-xl font-bold ${budgetComparison.actual_profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(budgetComparison.actual_profit)}
+                      </p>
                     </CardContent>
                   </Card>
                 </div>
 
-                {/* Checklist Table */}
-                {recurringChecklist.checklist.length === 0 ? (
+                {/* Budget Items Table */}
+                {budgetComparison.items.length > 0 && (
                   <Card>
-                    <CardContent className="p-6 text-center text-muted-foreground">
-                      No active recurring transactions for this month.
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Budget Items</CardTitle>
+                      <CardDescription>Expected vs actual for {budgetMonth}</CardDescription>
+                    </CardHeader>
                     <Table>
                       <TableHeader>
                         <TableRow>
                           <TableHead className="w-12">Status</TableHead>
-                          <TableHead>Name</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Project</TableHead>
+                          <TableHead>Item</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Frequency</TableHead>
                           <TableHead className="text-right">Expected</TableHead>
                           <TableHead className="text-right">Actual</TableHead>
-                          <TableHead>Matched On</TableHead>
+                          <TableHead className="text-right">Diff</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {recurringChecklist.checklist.map(item => (
-                          <TableRow key={item.recurring_id} className={item.is_matched ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}>
+                        {budgetComparison.items.map(item => (
+                          <TableRow key={item.expected_item_id} className={item.is_matched ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}>
                             <TableCell>
                               {item.is_matched ? (
                                 <CheckCircle2 className="w-5 h-5 text-green-500" />
@@ -769,19 +715,19 @@ export const FinancePage = () => {
                             </TableCell>
                             <TableCell className="font-medium">{item.name}</TableCell>
                             <TableCell>
-                              <Badge variant={item.category_type === 'income' ? 'default' : item.category_type === 'investment' ? 'secondary' : 'destructive'}>
-                                {item.category_name}
+                              <Badge variant={item.item_type === 'income' ? 'default' : 'destructive'}>
+                                {item.item_type}
                               </Badge>
                             </TableCell>
-                            <TableCell className="text-muted-foreground">{item.project_name}</TableCell>
-                            <TableCell className={`text-right font-medium ${item.expected_amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            <TableCell className="capitalize">{item.frequency}</TableCell>
+                            <TableCell className={`text-right font-medium ${item.item_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
                               {formatCurrency(item.expected_amount)}
                             </TableCell>
-                            <TableCell className={`text-right font-medium ${item.matched_transaction ? (item.matched_transaction.amount >= 0 ? 'text-green-600' : 'text-red-600') : 'text-muted-foreground'}`}>
-                              {item.matched_transaction ? formatCurrency(item.matched_transaction.amount) : '—'}
+                            <TableCell className={`text-right font-medium ${item.actual_amount > 0 ? (item.item_type === 'income' ? 'text-green-600' : 'text-red-600') : 'text-muted-foreground'}`}>
+                              {item.actual_amount > 0 ? formatCurrency(item.actual_amount) : '—'}
                             </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {item.matched_transaction ? item.matched_transaction.date : '—'}
+                            <TableCell className={`text-right font-medium ${item.difference > 0 ? 'text-green-600' : item.difference < 0 ? 'text-red-600' : ''}`}>
+                              {item.difference !== 0 ? (item.difference > 0 ? '+' : '') + formatCurrency(item.difference) : '—'}
                             </TableCell>
                           </TableRow>
                         ))}
@@ -789,77 +735,137 @@ export const FinancePage = () => {
                     </Table>
                   </Card>
                 )}
+
+                {/* Unmatched Transactions */}
+                {budgetComparison.unmatched_transactions.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg">Unbudgeted Transactions</CardTitle>
+                      <CardDescription>Transactions not matching any budget item</CardDescription>
+                    </CardHeader>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead>Notes</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {budgetComparison.unmatched_transactions.map(tx => (
+                          <TableRow key={tx.id}>
+                            <TableCell>{tx.date}</TableCell>
+                            <TableCell>{tx.category}</TableCell>
+                            <TableCell className="max-w-[200px] truncate">{tx.notes || '—'}</TableCell>
+                            <TableCell className={`text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(tx.amount)}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </Card>
+                )}
+
+                {budgetComparison.items.length === 0 && !budgetComparison.period_id && (
+                  <Card>
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      No active budget period for {budgetMonth}. Create an expense period below that covers this month.
+                    </CardContent>
+                  </Card>
+                )}
               </div>
             ) : (
               <Card>
                 <CardContent className="p-6 text-center text-muted-foreground">
-                  Loading checklist...
+                  Loading budget comparison...
                 </CardContent>
               </Card>
             )}
           </div>
 
-          {/* All Recurring Transactions Section */}
+          {/* Expense Periods Section */}
           <div className="space-y-4 border-t pt-6">
             <div className="flex justify-between items-center">
-              <h2 className="text-xl font-semibold">All Recurring Transactions</h2>
-              <Button onClick={() => setRecurringDialog({ open: true, data: null })} data-testid="add-recurring-btn">
-                <Plus className="w-4 h-4 mr-2" /> Add Recurring
+              <div>
+                <h2 className="text-xl font-semibold">Expense Periods</h2>
+                <p className="text-sm text-muted-foreground">Define time periods with expected income and expenses</p>
+              </div>
+              <Button onClick={() => setPeriodDialog({ open: true, data: null })} data-testid="add-period-btn">
+                <Plus className="w-4 h-4 mr-2" /> Add Period
               </Button>
             </div>
             
-            {recurringTransactions.length === 0 ? (
+            {expensePeriods.length === 0 ? (
               <Card>
                 <CardContent className="p-8 text-center text-muted-foreground">
-                  No recurring transactions. Add monthly bills or regular income here.
+                  No expense periods yet. Create a period to start budgeting your income and expenses.
                 </CardContent>
               </Card>
             ) : (
-              <Card>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Project</TableHead>
-                      <TableHead>Category</TableHead>
-                      <TableHead>Frequency</TableHead>
-                      <TableHead>Next Date</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {recurringTransactions.map(rec => (
-                      <TableRow key={rec.id}>
-                        <TableCell className="font-medium">{rec.name}</TableCell>
-                        <TableCell>{rec.project_name}</TableCell>
-                        <TableCell>{rec.category_name}</TableCell>
-                        <TableCell className="capitalize">{rec.frequency}</TableCell>
-                        <TableCell>{rec.next_execution_date}</TableCell>
-                        <TableCell className={`text-right font-medium ${rec.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {rec.amount >= 0 ? '+' : ''}{formatCurrency(rec.amount)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant={rec.active ? 'default' : 'secondary'}>
-                            {rec.active ? 'Active' : 'Paused'}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button size="icon" variant="ghost" onClick={() => setRecurringDialog({ open: true, data: rec })}>
-                              <Edit className="w-4 h-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" onClick={() => handleDeleteRecurring(rec.id)}>
-                              <Trash2 className="w-4 h-4 text-red-500" />
-                            </Button>
+              <div className="space-y-4">
+                {expensePeriods.map(period => (
+                  <Card key={period.id}>
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <CalendarRange className="w-5 h-5 text-muted-foreground" />
+                            <CardTitle className="text-lg">{period.name}</CardTitle>
                           </div>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </Card>
+                          <CardDescription>
+                            {period.start_month} to {period.end_month} • {period.project_name}
+                          </CardDescription>
+                        </div>
+                        <div className="flex gap-1">
+                          <Button size="icon" variant="ghost" onClick={() => setPeriodDialog({ open: true, data: period })}>
+                            <Edit className="w-4 h-4" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleDeletePeriod(period.id)}>
+                            <Trash2 className="w-4 h-4 text-red-500" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="flex gap-4 mb-4">
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">Monthly Income</p>
+                          <p className="text-lg font-bold text-green-600">{formatCurrency(period.total_monthly_income)}</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">Monthly Expenses</p>
+                          <p className="text-lg font-bold text-red-600">{formatCurrency(period.total_monthly_expenses)}</p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">Net Monthly</p>
+                          <p className={`text-lg font-bold ${period.total_monthly_income - period.total_monthly_expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(period.total_monthly_income - period.total_monthly_expenses)}
+                          </p>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm text-muted-foreground">Items</p>
+                          <p className="text-lg font-bold">{period.expected_items_count}</p>
+                        </div>
+                      </div>
+                      
+                      {period.notes && (
+                        <p className="text-sm text-muted-foreground mb-4">{period.notes}</p>
+                      )}
+                      
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => setExpectedItemDialog({ open: true, data: null, periodId: period.id })}
+                        data-testid={`add-item-${period.id}`}
+                      >
+                        <Plus className="w-3 h-3 mr-1" /> Add Expected Item
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             )}
           </div>
         </TabsContent>
@@ -905,7 +911,7 @@ export const FinancePage = () => {
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <Building className="w-5 h-5 text-blue-500" />
+                      <TrendingUp className="w-5 h-5 text-blue-500" />
                       <div>
                         <p className="text-sm text-muted-foreground">Investments</p>
                         <p className="text-xl font-bold text-blue-600">{formatCurrency(monthlyOverview.total_investments)}</p>
@@ -913,10 +919,10 @@ export const FinancePage = () => {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className={monthlyOverview.net_result >= 0 ? 'border-green-500' : 'border-red-500'}>
+                <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
-                      <TrendingUp className={`w-5 h-5 ${monthlyOverview.net_result >= 0 ? 'text-green-500' : 'text-red-500'}`} />
+                      <Calculator className="w-5 h-5 text-purple-500" />
                       <div>
                         <p className="text-sm text-muted-foreground">Net Result</p>
                         <p className={`text-xl font-bold ${monthlyOverview.net_result >= 0 ? 'text-green-600' : 'text-red-600'}`}>
@@ -931,21 +937,19 @@ export const FinancePage = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader>
-                    <CardTitle>By Project</CardTitle>
+                    <CardTitle className="text-lg">By Project</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {monthlyOverview.by_project.length === 0 ? (
-                      <p className="text-muted-foreground">No transactions this month</p>
+                      <p className="text-muted-foreground">No data for this month</p>
                     ) : (
                       <div className="space-y-2">
-                        {monthlyOverview.by_project.map((p, i) => (
-                          <div key={i} className="flex justify-between items-center">
-                            <span>{p.name}</span>
-                            <div className="text-sm">
-                              <span className="text-green-600">+{formatCurrency(p.income)}</span>
-                              {' / '}
-                              <span className="text-red-600">-{formatCurrency(p.expenses)}</span>
-                            </div>
+                        {monthlyOverview.by_project.map((proj, i) => (
+                          <div key={i} className="flex justify-between items-center p-2 bg-muted rounded-lg">
+                            <span className="font-medium">{proj.name}</span>
+                            <span className={`font-medium ${proj.income - proj.expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(proj.income - proj.expenses)}
+                            </span>
                           </div>
                         ))}
                       </div>
@@ -955,20 +959,18 @@ export const FinancePage = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>By Category</CardTitle>
+                    <CardTitle className="text-lg">By Category</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {monthlyOverview.by_category.length === 0 ? (
-                      <p className="text-muted-foreground">No transactions this month</p>
+                      <p className="text-muted-foreground">No data for this month</p>
                     ) : (
                       <div className="space-y-2">
-                        {monthlyOverview.by_category.map((c, i) => (
-                          <div key={i} className="flex justify-between items-center">
-                            <Badge variant={c.type === 'income' ? 'default' : c.type === 'investment' ? 'secondary' : 'destructive'}>
-                              {c.name}
-                            </Badge>
-                            <span className={c.type === 'income' ? 'text-green-600' : 'text-red-600'}>
-                              {formatCurrency(c.total)}
+                        {monthlyOverview.by_category.map((cat, i) => (
+                          <div key={i} className="flex justify-between items-center p-2 bg-muted rounded-lg">
+                            <span className="font-medium">{cat.name}</span>
+                            <span className={`font-medium ${cat.income - cat.expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                              {formatCurrency(cat.income - cat.expenses)}
                             </span>
                           </div>
                         ))}
@@ -1130,7 +1132,7 @@ export const FinancePage = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Account Dialog */}
+      {/* Dialogs */}
       <AccountDialog 
         open={accountDialog.open}
         data={accountDialog.data}
@@ -1140,7 +1142,6 @@ export const FinancePage = () => {
         onSave={handleSaveAccount}
       />
 
-      {/* Transaction Dialog */}
       <TransactionDialog
         open={transactionDialog.open}
         data={transactionDialog.data}
@@ -1155,21 +1156,29 @@ export const FinancePage = () => {
         token={token}
       />
 
-      {/* Recurring Dialog */}
-      <RecurringDialog
-        open={recurringDialog.open}
-        data={recurringDialog.data}
+      <PeriodDialog
+        open={periodDialog.open}
+        data={periodDialog.data}
         projects={projects}
-        accounts={accounts}
-        categories={categories}
         selectedProjectId={selectedProjectId}
-        onClose={() => setRecurringDialog({ open: false, data: null })}
-        onSave={handleSaveRecurring}
-        onCategoryCreated={fetchCategories}
-        token={token}
+        onClose={() => setPeriodDialog({ open: false, data: null })}
+        onSave={handleSavePeriod}
       />
 
-      {/* Savings Goal Dialog */}
+      <ExpectedItemDialog
+        open={expectedItemDialog.open}
+        data={expectedItemDialog.data}
+        periodId={expectedItemDialog.periodId}
+        periods={expensePeriods}
+        categories={categories}
+        onClose={() => setExpectedItemDialog({ open: false, data: null, periodId: null })}
+        onSave={handleSaveExpectedItem}
+        onDelete={handleDeleteExpectedItem}
+        token={token}
+        onCategoryCreated={fetchCategories}
+        projects={projects}
+      />
+
       <SavingsGoalDialog
         open={savingsGoalDialog.open}
         data={savingsGoalDialog.data}
@@ -1333,9 +1342,7 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
     setNewCategoryName('');
   }, [data, selectedProjectId, accounts, open]);
 
-  // Filter categories by selected project
   const projectCategories = categories.filter(c => c.project_id === form.project_id);
-  // Filter savings goals by selected project
   const projectSavingsGoals = savingsGoals?.filter(g => g.project_id === form.project_id) || [];
 
   const handleCreateCategory = async () => {
@@ -1503,66 +1510,157 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
   );
 };
 
-// Recurring Transaction Dialog Component
-const RecurringDialog = ({ open, data, projects, accounts, categories, selectedProjectId, onClose, onSave, onCategoryCreated, token }) => {
+// Period Dialog Component
+const PeriodDialog = ({ open, data, projects, selectedProjectId, onClose, onSave }) => {
   const [form, setForm] = useState({
+    project_id: '',
+    name: '',
+    start_month: '',
+    end_month: '',
+    notes: ''
+  });
+
+  useEffect(() => {
+    if (data) {
+      setForm({
+        project_id: data.project_id,
+        name: data.name,
+        start_month: data.start_month,
+        end_month: data.end_month,
+        notes: data.notes || ''
+      });
+    } else {
+      const now = new Date();
+      const currentMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+      const endMonth = `${now.getFullYear()}-12`;
+      setForm({
+        project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
+        name: `${now.getFullYear()}`,
+        start_month: currentMonth,
+        end_month: endMonth,
+        notes: ''
+      });
+    }
+  }, [data, selectedProjectId, open]);
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.project_id || !form.name || !form.start_month || !form.end_month) {
+      toast.error('Please fill all required fields');
+      return;
+    }
+    if (form.start_month > form.end_month) {
+      toast.error('Start month must be before end month');
+      return;
+    }
+    onSave(form);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{data ? 'Edit Expense Period' : 'New Expense Period'}</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label>Project *</Label>
+            <Select value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v })} disabled={!!data}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select project" />
+              </SelectTrigger>
+              <SelectContent>
+                {projects.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label>Name *</Label>
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., 2024, First Year" />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Start Month *</Label>
+              <Input type="month" value={form.start_month} onChange={(e) => setForm({ ...form, start_month: e.target.value })} />
+            </div>
+            <div className="space-y-2">
+              <Label>End Month *</Label>
+              <Input type="month" value={form.end_month} onChange={(e) => setForm({ ...form, end_month: e.target.value })} />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Notes</Label>
+            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes..." />
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+            <Button type="submit">{data ? 'Update' : 'Create'}</Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Expected Item Dialog Component
+const ExpectedItemDialog = ({ open, data, periodId, periods, categories, onClose, onSave, onDelete, token, onCategoryCreated, projects }) => {
+  const [form, setForm] = useState({
+    period_id: '',
     name: '',
     amount: '',
+    item_type: 'expense',
     frequency: 'monthly',
-    start_date: '',
-    account_id: '',
-    project_id: '',
     category_id: '',
-    active: true
+    month: '',
+    notes: ''
   });
-  const [isExpense, setIsExpense] = useState(true);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
   const [newCategoryType, setNewCategoryType] = useState('expense');
   const [creatingCategory, setCreatingCategory] = useState(false);
 
+  const selectedPeriod = periods.find(p => p.id === form.period_id);
+  const projectCategories = categories.filter(c => selectedPeriod && c.project_id === selectedPeriod.project_id);
+
   useEffect(() => {
     if (data) {
       setForm({
+        period_id: data.period_id,
         name: data.name,
-        amount: Math.abs(data.amount).toString(),
+        amount: data.amount.toString(),
+        item_type: data.item_type,
         frequency: data.frequency,
-        start_date: data.start_date,
-        account_id: data.account_id,
-        project_id: data.project_id,
-        category_id: data.category_id,
-        active: data.active
+        category_id: data.category_id || '',
+        month: data.month || '',
+        notes: data.notes || ''
       });
-      setIsExpense(data.amount < 0);
     } else {
-      const today = new Date().toISOString().split('T')[0];
       setForm({
+        period_id: periodId || '',
         name: '',
         amount: '',
+        item_type: 'expense',
         frequency: 'monthly',
-        start_date: today,
-        account_id: accounts[0]?.id || '',
-        project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
         category_id: '',
-        active: true
+        month: '',
+        notes: ''
       });
-      setIsExpense(true);
     }
     setShowNewCategory(false);
     setNewCategoryName('');
-  }, [data, selectedProjectId, accounts, open]);
-
-  const projectCategories = categories.filter(c => c.project_id === form.project_id);
+  }, [data, periodId, open]);
 
   const handleCreateCategory = async () => {
-    if (!newCategoryName || !form.project_id) {
+    if (!newCategoryName || !selectedPeriod) {
       toast.error('Please enter a category name');
       return;
     }
     setCreatingCategory(true);
     try {
       const res = await axios.post(`${API}/finance/categories`, {
-        project_id: form.project_id,
+        project_id: selectedPeriod.project_id,
         name: newCategoryName,
         type: newCategoryType
       }, { headers: { Authorization: `Bearer ${token}` } });
@@ -1580,33 +1678,47 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.name || !form.project_id || !form.account_id || !form.category_id || !form.amount || !form.start_date) {
+    if (!form.period_id || !form.name || !form.amount) {
       toast.error('Please fill all required fields');
       return;
     }
-    const amount = parseFloat(form.amount);
     onSave({
       ...form,
-      amount: isExpense ? -Math.abs(amount) : Math.abs(amount)
+      amount: parseFloat(form.amount),
+      category_id: form.category_id || null,
+      month: form.month || null
     });
   };
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>{data ? 'Edit Recurring Transaction' : 'New Recurring Transaction'}</DialogTitle>
+          <DialogTitle>{data ? 'Edit Expected Item' : 'New Expected Item'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
+            <Label>Expense Period *</Label>
+            <Select value={form.period_id} onValueChange={(v) => setForm({ ...form, period_id: v, category_id: '' })} disabled={!!data}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select period" />
+              </SelectTrigger>
+              <SelectContent>
+                {periods.map(p => (
+                  <SelectItem key={p.id} value={p.id}>{p.name} ({p.start_month} to {p.end_month})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label>Name *</Label>
-            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Monthly Rent" />
+            <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="e.g., Monthly Rent, Salary" />
           </div>
           <div className="flex gap-2">
-            <Button type="button" variant={!isExpense ? 'default' : 'outline'} className="flex-1" onClick={() => setIsExpense(false)}>
+            <Button type="button" variant={form.item_type === 'income' ? 'default' : 'outline'} className="flex-1" onClick={() => setForm({ ...form, item_type: 'income' })}>
               <ArrowUpCircle className="w-4 h-4 mr-2" /> Income
             </Button>
-            <Button type="button" variant={isExpense ? 'destructive' : 'outline'} className="flex-1" onClick={() => setIsExpense(true)}>
+            <Button type="button" variant={form.item_type === 'expense' ? 'destructive' : 'outline'} className="flex-1" onClick={() => setForm({ ...form, item_type: 'expense' })}>
               <ArrowDownCircle className="w-4 h-4 mr-2" /> Expense
             </Button>
           </div>
@@ -1624,44 +1736,22 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
                 <SelectContent>
                   <SelectItem value="monthly">Monthly</SelectItem>
                   <SelectItem value="yearly">Yearly</SelectItem>
+                  <SelectItem value="one_time">One-time</SelectItem>
                 </SelectContent>
               </Select>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>Start Date *</Label>
-            <Input type="date" value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
-          </div>
-          <div className="space-y-2">
-            <Label>Project *</Label>
-            <Select value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v, category_id: '' })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Account *</Label>
-            <Select value={form.account_id} onValueChange={(v) => setForm({ ...form, account_id: v })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select account" />
-              </SelectTrigger>
-              <SelectContent>
-                {accounts.map(a => (
-                  <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {(form.frequency === 'yearly' || form.frequency === 'one_time') && (
+            <div className="space-y-2">
+              <Label>Month (for yearly/one-time)</Label>
+              <Input type="month" value={form.month} onChange={(e) => setForm({ ...form, month: e.target.value })} />
+              <p className="text-xs text-muted-foreground">Specify which month this applies to</p>
+            </div>
+          )}
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Category *</Label>
-              {form.project_id && (
+              <Label>Category (Optional)</Label>
+              {form.period_id && (
                 <Button type="button" variant="ghost" size="sm" onClick={() => setShowNewCategory(!showNewCategory)}>
                   <Plus className="w-3 h-3 mr-1" /> New
                 </Button>
@@ -1694,21 +1784,34 @@ const RecurringDialog = ({ open, data, projects, accounts, categories, selectedP
                 </div>
               </div>
             ) : (
-              <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })} disabled={!form.project_id}>
+              <Select value={form.category_id || "none"} onValueChange={(v) => setForm({ ...form, category_id: v === "none" ? "" : v })} disabled={!form.period_id}>
                 <SelectTrigger>
-                  <SelectValue placeholder={form.project_id ? (projectCategories.length === 0 ? "No categories - create one" : "Select category") : "Select project first"} />
+                  <SelectValue placeholder="Select category for matching" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">None (match by amount)</SelectItem>
                   {projectCategories.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
             )}
+            <p className="text-xs text-muted-foreground">Used to match with actual transactions</p>
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-            <Button type="submit">{data ? 'Update' : 'Create'}</Button>
+          <div className="space-y-2">
+            <Label>Notes</Label>
+            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Optional notes..." />
+          </div>
+          <DialogFooter className="flex justify-between">
+            {data && (
+              <Button type="button" variant="destructive" onClick={() => { onDelete(data.id); onClose(); }}>
+                Delete
+              </Button>
+            )}
+            <div className="flex gap-2">
+              <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+              <Button type="submit">{data ? 'Update' : 'Create'}</Button>
+            </div>
           </DialogFooter>
         </form>
       </DialogContent>
