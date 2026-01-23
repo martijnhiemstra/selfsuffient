@@ -215,6 +215,8 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - `/app/test_reports/iteration_10.json` - Backend refactoring tests (33 passed)
 - `/app/test_reports/iteration_11.json` - Image fix & sharing tests (29 passed)
 - `/app/test_reports/iteration_12.json` - CORS, max upload size, SimpleEditor tests (all passed)
+- `/app/test_reports/iteration_13.json` - Finance module tests
+- `/app/test_reports/iteration_14.json` - Budget system tests (100% passed)
 - `/app/tests/test_image_and_sharing.py` - Pytest test suite
 - `/app/tests/test_upload_size_and_cors.py` - CORS and upload size tests
 
