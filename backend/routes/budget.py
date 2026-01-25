@@ -186,6 +186,36 @@ async def delete_expense_period(period_id: str, current_user: dict = Depends(get
 
 # ============ EXPECTED ITEMS ============
 
+@router.get("/periods/{period_id}/items", response_model=ExpectedItemListResponse)
+async def get_period_items(period_id: str, current_user: dict = Depends(get_current_user)):
+    """Get all expected items for a specific expense period"""
+    period = await db.expense_periods.find_one({"id": period_id, "user_id": current_user["id"]})
+    if not period:
+        raise HTTPException(status_code=404, detail="Expense period not found")
+    
+    items = await db.expected_items.find({"period_id": period_id}, {"_id": 0}).to_list(1000)
+    
+    project = await db.projects.find_one({"id": period["project_id"]}, {"_id": 0, "name": 1})
+    
+    result = []
+    for item in items:
+        category = None
+        if item.get("category_id"):
+            category = await db.finance_categories.find_one({"id": item["category_id"]}, {"_id": 0, "name": 1})
+        
+        result.append(ExpectedItemResponse(
+            **item,
+            period_name=period["name"],
+            project_name=project["name"] if project else None,
+            category_name=category["name"] if category else None
+        ))
+    
+    # Sort by type (income first) then by amount descending
+    result.sort(key=lambda x: (0 if x.item_type == "income" else 1, -x.amount))
+    
+    return ExpectedItemListResponse(items=result, total=len(result))
+
+
 @router.post("/items", response_model=ExpectedItemResponse)
 async def create_expected_item(data: ExpectedItemCreate, current_user: dict = Depends(get_current_user)):
     """Create a new expected item (income or expense) within a period"""
