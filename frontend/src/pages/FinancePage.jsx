@@ -1808,6 +1808,177 @@ const ExpectedItemDialog = ({ open, data, periodId, periods, categories, onClose
   );
 };
 
+// Expense Period Card Component with inline items editing
+const ExpensePeriodCard = ({ period, categories, projects, onEditPeriod, onDeletePeriod, onAddItem, onEditItem, onDeleteItem, onItemsChanged, token, formatCurrency }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [items, setItems] = useState([]);
+  const [loadingItems, setLoadingItems] = useState(false);
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  const fetchItems = async () => {
+    if (!expanded) return;
+    setLoadingItems(true);
+    try {
+      const res = await axios.get(`${API}/budget/periods/${period.id}/items`, { headers });
+      setItems(res.data.items || []);
+    } catch (err) {
+      console.error('Failed to fetch items:', err);
+    } finally {
+      setLoadingItems(false);
+    }
+  };
+
+  useEffect(() => {
+    if (expanded) {
+      fetchItems();
+    }
+  }, [expanded, period.id]);
+
+  // Refresh items when period changes (e.g., after adding an item)
+  useEffect(() => {
+    if (expanded) {
+      fetchItems();
+    }
+  }, [period.expected_items_count]);
+
+  const handleDeleteItem = async (itemId) => {
+    await onDeleteItem(itemId);
+    fetchItems();
+    onItemsChanged();
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-2">
+        <div className="flex justify-between items-start">
+          <div>
+            <div className="flex items-center gap-2">
+              <CalendarRange className="w-5 h-5 text-muted-foreground" />
+              <CardTitle className="text-lg">{period.name}</CardTitle>
+            </div>
+            <CardDescription>
+              {period.start_month} to {period.end_month} • {period.project_name}
+            </CardDescription>
+          </div>
+          <div className="flex gap-1">
+            <Button size="icon" variant="ghost" onClick={onEditPeriod}>
+              <Edit className="w-4 h-4" />
+            </Button>
+            <Button size="icon" variant="ghost" onClick={onDeletePeriod}>
+              <Trash2 className="w-4 h-4 text-red-500" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex gap-4 mb-4">
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Monthly Income</p>
+            <p className="text-lg font-bold text-green-600">{formatCurrency(period.total_monthly_income)}</p>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Monthly Expenses</p>
+            <p className="text-lg font-bold text-red-600">{formatCurrency(period.total_monthly_expenses)}</p>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Net Monthly</p>
+            <p className={`text-lg font-bold ${period.total_monthly_income - period.total_monthly_expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              {formatCurrency(period.total_monthly_income - period.total_monthly_expenses)}
+            </p>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-muted-foreground">Items</p>
+            <p className="text-lg font-bold">{period.expected_items_count}</p>
+          </div>
+        </div>
+        
+        {period.notes && (
+          <p className="text-sm text-muted-foreground mb-4">{period.notes}</p>
+        )}
+        
+        <div className="flex gap-2">
+          <Button 
+            size="sm" 
+            variant="outline" 
+            onClick={onAddItem}
+            data-testid={`add-item-${period.id}`}
+          >
+            <Plus className="w-3 h-3 mr-1" /> Add Item
+          </Button>
+          <Button 
+            size="sm" 
+            variant={expanded ? "secondary" : "outline"}
+            onClick={() => setExpanded(!expanded)}
+            data-testid={`toggle-items-${period.id}`}
+          >
+            {expanded ? 'Hide Items' : `Show Items (${period.expected_items_count})`}
+          </Button>
+        </div>
+
+        {/* Expanded Items List */}
+        {expanded && (
+          <div className="mt-4 border-t pt-4">
+            {loadingItems ? (
+              <div className="flex items-center justify-center py-4">
+                <RefreshCw className="w-5 h-5 animate-spin text-muted-foreground" />
+              </div>
+            ) : items.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-4">No expected items yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {items.map(item => (
+                  <div 
+                    key={item.id} 
+                    className="flex items-center justify-between p-3 bg-muted/50 rounded-lg hover:bg-muted transition-colors cursor-pointer"
+                    onClick={() => onEditItem(item)}
+                    data-testid={`item-${item.id}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.item_type === 'income' ? (
+                        <ArrowUpCircle className="w-4 h-4 text-green-500" />
+                      ) : (
+                        <ArrowDownCircle className="w-4 h-4 text-red-500" />
+                      )}
+                      <div>
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.frequency} {item.category_name && `• ${item.category_name}`}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`font-medium ${item.item_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                        {item.item_type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
+                      </span>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8"
+                        onClick={(e) => { e.stopPropagation(); onEditItem(item); }}
+                      >
+                        <Edit className="w-3 h-3" />
+                      </Button>
+                      <Button 
+                        size="icon" 
+                        variant="ghost" 
+                        className="h-8 w-8"
+                        onClick={(e) => { e.stopPropagation(); handleDeleteItem(item.id); }}
+                      >
+                        <Trash2 className="w-3 h-3 text-red-500" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
 // Savings Goal Dialog Component
 const SavingsGoalDialog = ({ open, data, projects, selectedProjectId, onClose, onSave }) => {
   const [form, setForm] = useState({
