@@ -823,64 +823,20 @@ export const FinancePage = () => {
           ) : (
             <div className="space-y-4">
               {expensePeriods.map(period => (
-                <Card key={period.id}>
-                  <CardHeader className="pb-2">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <CalendarRange className="w-5 h-5 text-muted-foreground" />
-                          <CardTitle className="text-lg">{period.name}</CardTitle>
-                        </div>
-                        <CardDescription>
-                          {period.start_month} to {period.end_month} • {period.project_name}
-                        </CardDescription>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button size="icon" variant="ghost" onClick={() => setPeriodDialog({ open: true, data: period })}>
-                          <Edit className="w-4 h-4" />
-                        </Button>
-                        <Button size="icon" variant="ghost" onClick={() => handleDeletePeriod(period.id)}>
-                          <Trash2 className="w-4 h-4 text-red-500" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex gap-4 mb-4">
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">Monthly Income</p>
-                        <p className="text-lg font-bold text-green-600">{formatCurrency(period.total_monthly_income)}</p>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">Monthly Expenses</p>
-                        <p className="text-lg font-bold text-red-600">{formatCurrency(period.total_monthly_expenses)}</p>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">Net Monthly</p>
-                        <p className={`text-lg font-bold ${period.total_monthly_income - period.total_monthly_expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(period.total_monthly_income - period.total_monthly_expenses)}
-                        </p>
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-sm text-muted-foreground">Items</p>
-                        <p className="text-lg font-bold">{period.expected_items_count}</p>
-                      </div>
-                    </div>
-                    
-                    {period.notes && (
-                      <p className="text-sm text-muted-foreground mb-4">{period.notes}</p>
-                    )}
-                    
-                    <Button 
-                      size="sm" 
-                      variant="outline" 
-                      onClick={() => setExpectedItemDialog({ open: true, data: null, periodId: period.id })}
-                      data-testid={`add-item-${period.id}`}
-                    >
-                      <Plus className="w-3 h-3 mr-1" /> Add Expected Item
-                    </Button>
-                  </CardContent>
-                </Card>
+                <ExpensePeriodCard
+                  key={period.id}
+                  period={period}
+                  categories={categories}
+                  projects={projects}
+                  onEditPeriod={() => setPeriodDialog({ open: true, data: period })}
+                  onDeletePeriod={() => handleDeletePeriod(period.id)}
+                  onAddItem={() => setExpectedItemDialog({ open: true, data: null, periodId: period.id })}
+                  onEditItem={(item) => setExpectedItemDialog({ open: true, data: item, periodId: period.id })}
+                  onDeleteItem={handleDeleteExpectedItem}
+                  onItemsChanged={fetchExpensePeriods}
+                  token={token}
+                  formatCurrency={formatCurrency}
+                />
               ))}
             </div>
           )}
