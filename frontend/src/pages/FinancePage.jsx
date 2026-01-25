@@ -460,11 +460,12 @@ export const FinancePage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="transactions" data-testid="tab-transactions">Transactions</TabsTrigger>
           <TabsTrigger value="accounts" data-testid="tab-accounts">Accounts</TabsTrigger>
           <TabsTrigger value="savings" data-testid="tab-savings">Savings</TabsTrigger>
           <TabsTrigger value="budget" data-testid="tab-budget">Budget</TabsTrigger>
+          <TabsTrigger value="periods" data-testid="tab-periods">Expense Periods</TabsTrigger>
           <TabsTrigger value="monthly" data-testid="tab-monthly">Monthly</TabsTrigger>
           <TabsTrigger value="runway" data-testid="tab-runway">Runway</TabsTrigger>
         </TabsList>
