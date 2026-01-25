@@ -712,33 +712,41 @@ export const FinancePage = () => {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {budgetComparison.items.map(item => (
-                          <TableRow key={item.expected_item_id} className={item.is_matched ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}>
-                            <TableCell>
-                              {item.is_matched ? (
-                                <CheckCircle2 className="w-5 h-5 text-green-500" />
-                              ) : (
-                                <Circle className="w-5 h-5 text-orange-400" />
-                              )}
-                            </TableCell>
-                            <TableCell className="font-medium">{item.name}</TableCell>
-                            <TableCell>
-                              <Badge variant={item.item_type === 'income' ? 'default' : 'destructive'}>
-                                {item.item_type}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="capitalize">{item.frequency}</TableCell>
-                            <TableCell className={`text-right font-medium ${item.item_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(item.expected_amount)}
-                            </TableCell>
-                            <TableCell className={`text-right font-medium ${item.actual_amount > 0 ? (item.item_type === 'income' ? 'text-green-600' : 'text-red-600') : 'text-muted-foreground'}`}>
-                              {item.actual_amount > 0 ? formatCurrency(item.actual_amount) : '—'}
-                            </TableCell>
-                            <TableCell className={`text-right font-medium ${item.difference > 0 ? 'text-green-600' : item.difference < 0 ? 'text-red-600' : ''}`}>
-                              {item.difference !== 0 ? (item.difference > 0 ? '+' : '') + formatCurrency(item.difference) : '—'}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {budgetComparison.items.map(item => {
+                          // For expenses: actual < expected is GOOD (under budget)
+                          // For income: actual > expected is GOOD (over target)
+                          const isUnderBudget = item.item_type === 'expense' && item.actual_amount > 0 && item.actual_amount < item.expected_amount;
+                          const isOverTarget = item.item_type === 'income' && item.actual_amount > item.expected_amount;
+                          const isPositive = isUnderBudget || isOverTarget;
+                          
+                          return (
+                            <TableRow key={item.expected_item_id} className={item.is_matched ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}>
+                              <TableCell>
+                                {item.is_matched ? (
+                                  <CheckCircle2 className="w-5 h-5 text-green-500" />
+                                ) : (
+                                  <Circle className="w-5 h-5 text-orange-400" />
+                                )}
+                              </TableCell>
+                              <TableCell className="font-medium">{item.name}</TableCell>
+                              <TableCell>
+                                <Badge variant={item.item_type === 'income' ? 'default' : 'destructive'}>
+                                  {item.item_type}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="capitalize">{item.frequency}</TableCell>
+                              <TableCell className={`text-right font-medium ${item.item_type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                                {formatCurrency(item.expected_amount)}
+                              </TableCell>
+                              <TableCell className={`text-right ${isPositive ? 'font-bold text-green-600' : (item.actual_amount > 0 ? (item.item_type === 'income' ? 'font-medium text-green-600' : 'font-medium text-red-600') : 'text-muted-foreground')}`}>
+                                {item.actual_amount > 0 ? formatCurrency(item.actual_amount) : '—'}
+                              </TableCell>
+                              <TableCell className={`text-right ${isPositive ? 'font-bold text-green-600' : (item.difference > 0 ? 'font-medium text-green-600' : item.difference < 0 ? 'font-medium text-red-600' : '')}`}>
+                                {item.difference !== 0 ? (item.difference > 0 ? '+' : '') + formatCurrency(item.difference) : '—'}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </Card>
