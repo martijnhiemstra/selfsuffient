@@ -940,9 +940,14 @@ export const FinancePage = () => {
                       <div className="space-y-2">
                         {monthlyOverview.by_category.map((cat, i) => (
                           <div key={i} className="flex justify-between items-center p-2 bg-muted rounded-lg">
-                            <span className="font-medium">{cat.name}</span>
-                            <span className={`font-medium ${cat.income - cat.expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                              {formatCurrency(cat.income - cat.expenses)}
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium">{cat.name}</span>
+                              <Badge variant={cat.type === 'income' ? 'default' : cat.type === 'investment' ? 'secondary' : 'destructive'}>
+                                {cat.type}
+                              </Badge>
+                            </div>
+                            <span className={`font-medium ${cat.type === 'income' ? 'text-green-600' : cat.type === 'investment' ? 'text-blue-600' : 'text-red-600'}`}>
+                              {cat.type === 'income' ? '+' : '-'}{formatCurrency(cat.total)}
                             </span>
                           </div>
                         ))}
