@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -14,7 +14,12 @@ import {
   Bell,
   Mail,
   Send,
-  Settings
+  Settings,
+  Calendar,
+  Link,
+  Unlink,
+  RefreshCw,
+  ExternalLink
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -30,6 +35,51 @@ export const SettingsPage = () => {
   const [savingReminders, setSavingReminders] = useState(false);
   const [sendingTestEmail, setSendingTestEmail] = useState(false);
   const [dailyReminders, setDailyReminders] = useState(user?.daily_reminders || false);
+  
+  // Google Calendar state
+  const [googleCalendarStatus, setGoogleCalendarStatus] = useState(null);
+  const [googleClientId, setGoogleClientId] = useState('');
+  const [googleClientSecret, setGoogleClientSecret] = useState('');
+  const [syncTasks, setSyncTasks] = useState(true);
+  const [syncRoutines, setSyncRoutines] = useState(true);
+  const [syncEvents, setSyncEvents] = useState(true);
+  const [savingGoogleSettings, setSavingGoogleSettings] = useState(false);
+  const [connectingGoogle, setConnectingGoogle] = useState(false);
+  const [syncingTasks, setSyncingTasks] = useState(false);
+  const [syncingRoutines, setSyncingRoutines] = useState(false);
+
+  const headers = { Authorization: `Bearer ${token}` };
+
+  // Check for Google OAuth callback result
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('google_connected') === 'true') {
+      toast.success('Google Calendar connected successfully!');
+      // Clean URL
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchGoogleCalendarStatus();
+    } else if (params.get('google_error')) {
+      toast.error('Failed to connect Google Calendar. Please try again.');
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
+  // Fetch Google Calendar status on mount
+  useEffect(() => {
+    fetchGoogleCalendarStatus();
+  }, [token]);
+
+  const fetchGoogleCalendarStatus = async () => {
+    try {
+      const res = await axios.get(`${API}/google-calendar/status`, { headers });
+      setGoogleCalendarStatus(res.data);
+      setSyncTasks(res.data.sync_tasks);
+      setSyncRoutines(res.data.sync_routines);
+      setSyncEvents(res.data.sync_events);
+    } catch (err) {
+      console.error('Failed to fetch Google Calendar status:', err);
+    }
+  };
 
   const handleChangePassword = async (e) => {
     e.preventDefault();
