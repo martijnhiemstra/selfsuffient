@@ -144,6 +144,105 @@ export const SettingsPage = () => {
     }
   };
 
+  const handleSaveGoogleSettings = async () => {
+    if (!googleClientId || !googleClientSecret) {
+      toast.error('Please enter both Client ID and Client Secret');
+      return;
+    }
+    
+    setSavingGoogleSettings(true);
+    try {
+      await axios.post(`${API}/google-calendar/settings`, {
+        client_id: googleClientId,
+        client_secret: googleClientSecret,
+        sync_tasks: syncTasks,
+        sync_routines: syncRoutines,
+        sync_events: syncEvents
+      }, { headers });
+      toast.success('Google Calendar settings saved');
+      setGoogleClientId('');
+      setGoogleClientSecret('');
+      fetchGoogleCalendarStatus();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save settings');
+    } finally {
+      setSavingGoogleSettings(false);
+    }
+  };
+
+  const handleUpdateSyncSettings = async () => {
+    if (!googleCalendarStatus?.has_credentials) {
+      toast.error('Please save your credentials first');
+      return;
+    }
+    
+    setSavingGoogleSettings(true);
+    try {
+      // We need to send the existing credentials with updated sync settings
+      await axios.post(`${API}/google-calendar/settings`, {
+        client_id: googleCalendarStatus.client_id || 'unchanged',
+        client_secret: googleCalendarStatus.client_secret || 'unchanged',
+        sync_tasks: syncTasks,
+        sync_routines: syncRoutines,
+        sync_events: syncEvents
+      }, { headers });
+      toast.success('Sync settings updated');
+      fetchGoogleCalendarStatus();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to update settings');
+    } finally {
+      setSavingGoogleSettings(false);
+    }
+  };
+
+  const handleConnectGoogle = async () => {
+    setConnectingGoogle(true);
+    try {
+      const res = await axios.get(`${API}/google-calendar/connect`, { headers });
+      // Redirect to Google OAuth
+      window.location.href = res.data.authorization_url;
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to start Google connection');
+      setConnectingGoogle(false);
+    }
+  };
+
+  const handleDisconnectGoogle = async () => {
+    if (!window.confirm('Disconnect Google Calendar? Tasks will no longer sync.')) return;
+    
+    try {
+      await axios.post(`${API}/google-calendar/disconnect`, {}, { headers });
+      toast.success('Google Calendar disconnected');
+      fetchGoogleCalendarStatus();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to disconnect');
+    }
+  };
+
+  const handleSyncTasks = async () => {
+    setSyncingTasks(true);
+    try {
+      const res = await axios.post(`${API}/google-calendar/sync-all-tasks`, {}, { headers });
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to sync tasks');
+    } finally {
+      setSyncingTasks(false);
+    }
+  };
+
+  const handleSyncRoutines = async () => {
+    setSyncingRoutines(true);
+    try {
+      const res = await axios.post(`${API}/google-calendar/sync-all-routines`, {}, { headers });
+      toast.success(res.data.message);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to sync routines');
+    } finally {
+      setSyncingRoutines(false);
+    }
+  };
+
   return (
     <div className="p-6 md:p-12 lg:p-16 max-w-3xl" data-testid="settings-page">
       <div className="mb-8">
