@@ -122,8 +122,8 @@ async def delete_gallery_folder(
 @router.post("/projects/{project_id}/gallery/images", response_model=GalleryImageResponse)
 async def upload_gallery_image(
     project_id: str,
-    folder_id: Optional[str] = None,
     file: UploadFile = File(...),
+    folder_id: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user)
 ):
     await verify_project_access(project_id, current_user["id"])
