@@ -1,18 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '../components/ui/dialog';
 import { Checkbox } from '../components/ui/checkbox';
-import { Badge } from '../components/ui/badge';
 import { Progress } from '../components/ui/progress';
 import { 
-  Plus, Trash2, Edit, RefreshCw, CheckSquare, Square,
-  ListChecks, RotateCcw, GripVertical
+  Plus, Trash2, Edit, RefreshCw,
+  ListChecks, RotateCcw, ArrowLeft
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -21,8 +20,8 @@ const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
 export const ChecklistsPage = () => {
   const { token } = useAuth();
-  const [projects, setProjects] = useState([]);
-  const [selectedProjectId, setSelectedProjectId] = useState('all');
+  const { projectId } = useParams();
+  const [project, setProject] = useState(null);
   const [checklists, setChecklists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [checklistDialog, setChecklistDialog] = useState({ open: false, data: null });
@@ -30,31 +29,28 @@ export const ChecklistsPage = () => {
 
   const headers = { Authorization: `Bearer ${token}` };
 
-  const fetchProjects = useCallback(async () => {
+  const fetchProject = useCallback(async () => {
     try {
-      const res = await axios.get(`${API}/projects`, { headers });
-      setProjects(res.data.projects || []);
+      const res = await axios.get(`${API}/projects/${projectId}`, { headers });
+      setProject(res.data);
     } catch (err) {
-      console.error('Failed to fetch projects:', err);
+      console.error('Failed to fetch project:', err);
     }
-  }, [token]);
+  }, [token, projectId]);
 
   const fetchChecklists = useCallback(async () => {
     try {
-      const url = selectedProjectId === 'all'
-        ? `${API}/checklists`
-        : `${API}/checklists?project_id=${selectedProjectId}`;
-      const res = await axios.get(url, { headers });
+      const res = await axios.get(`${API}/checklists?project_id=${projectId}`, { headers });
       setChecklists(res.data.checklists || []);
     } catch (err) {
       console.error('Failed to fetch checklists:', err);
     }
-  }, [token, selectedProjectId]);
+  }, [token, projectId]);
 
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await fetchProjects();
+      await fetchProject();
       await fetchChecklists();
       setLoading(false);
     };
