@@ -44,7 +44,8 @@ import {
   Lock,
   Loader2,
   FolderOpen,
-  Settings
+  Settings,
+  ListChecks
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
