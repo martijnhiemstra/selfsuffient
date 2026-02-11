@@ -154,8 +154,7 @@ export const ChecklistsPage = () => {
         
         <Button onClick={() => setChecklistDialog({ open: true, data: null })} data-testid="add-checklist-btn">
           <Plus className="w-4 h-4 mr-2" /> New Checklist
-          </Button>
-        </div>
+        </Button>
       </div>
 
       {checklists.length === 0 ? (
