@@ -141,28 +141,19 @@ export const ChecklistsPage = () => {
     <div className="p-6 md:p-8 lg:p-12 space-y-6" data-testid="checklists-page">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
+          <Link 
+            to={`/projects/${projectId}`} 
+            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to {project?.name || 'Project'}
+          </Link>
           <h1 className="text-3xl font-bold text-foreground">Checklists</h1>
-          <p className="text-muted-foreground">Reusable checklists for your projects</p>
+          <p className="text-muted-foreground">Reusable checklists for {project?.name}</p>
         </div>
         
-        <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <Label className="text-sm">Project:</Label>
-            <Select value={selectedProjectId} onValueChange={setSelectedProjectId}>
-              <SelectTrigger className="w-[200px]" data-testid="project-filter">
-                <SelectValue placeholder="All Projects" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Projects</SelectItem>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Button onClick={() => setChecklistDialog({ open: true, data: null })} data-testid="add-checklist-btn">
-            <Plus className="w-4 h-4 mr-2" /> New Checklist
+        <Button onClick={() => setChecklistDialog({ open: true, data: null })} data-testid="add-checklist-btn">
+          <Plus className="w-4 h-4 mr-2" /> New Checklist
           </Button>
         </div>
       </div>
