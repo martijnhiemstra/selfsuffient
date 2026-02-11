@@ -87,6 +87,7 @@ function App() {
         </Routes>
       </BrowserRouter>
       <Toaster position="top-right" />
+      <PWAInstallPrompt />
     </AuthProvider>
   );
 }
