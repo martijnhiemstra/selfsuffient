@@ -23,9 +23,9 @@ SMTP_PORT = int(os.environ.get('SMTP_PORT', '465'))
 SMTP_USER = os.environ.get('SMTP_USER', '')
 SMTP_PASSWORD = os.environ.get('SMTP_PASSWORD', '')
 SMTP_FROM_EMAIL = os.environ.get('SMTP_FROM_EMAIL', '')
-SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'Self-Sufficient Life')
+SMTP_FROM_NAME = os.environ.get('SMTP_FROM_NAME', 'Earthly Life')
 
-APP_NAME = os.environ.get('APP_NAME', 'Self-Sufficient Life')
+APP_NAME = os.environ.get('APP_NAME', 'Earthly Life')
 APP_URL = os.environ.get('APP_URL', 'http://localhost:3000')
 
 

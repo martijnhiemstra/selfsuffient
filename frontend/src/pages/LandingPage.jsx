@@ -89,7 +89,7 @@ export const LandingPage = () => {
             <p className="label-overline mb-4 text-foreground/80">Your Digital Homestead</p>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-bold tracking-tight mb-6 text-foreground">
               Document Your<br />
-              <span className="text-primary">Self-Sufficient</span><br />
+              <span className="text-primary">Earthly</span><br />
               Journey
             </h1>
             <p className="text-lg md:text-xl text-foreground/80 mb-8 leading-relaxed max-w-xl font-medium">
