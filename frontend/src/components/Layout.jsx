@@ -23,7 +23,8 @@ import {
   X,
   Users,
   Globe,
-  Wallet
+  Wallet,
+  ListChecks
 } from 'lucide-react';
 
 export const Layout = ({ children }) => {
@@ -41,6 +42,7 @@ export const Layout = ({ children }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/projects', label: 'Projects', icon: FolderOpen },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
+    { path: '/checklists', label: 'Checklists', icon: ListChecks },
     { path: '/finance', label: 'Finance', icon: Wallet },
   ];
 
