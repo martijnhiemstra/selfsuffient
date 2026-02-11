@@ -1,5 +1,5 @@
 """Gallery routes."""
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from typing import Optional
 from datetime import datetime, timezone
 import uuid
