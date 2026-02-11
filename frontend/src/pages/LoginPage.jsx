@@ -117,7 +117,7 @@ export const LoginPage = () => {
         </Card>
 
         <p className="text-center text-sm text-muted-foreground mt-6">
-          Your personal space for self-sufficient living
+          Your personal space for sustainable, earthly living
         </p>
       </div>
     </div>
