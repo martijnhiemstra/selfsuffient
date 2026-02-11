@@ -312,9 +312,8 @@ export const ChecklistsPage = () => {
 };
 
 // Checklist Dialog
-const ChecklistDialog = ({ open, data, projects, selectedProjectId, onClose, onSave }) => {
+const ChecklistDialog = ({ open, data, projectName, onClose, onSave }) => {
   const [form, setForm] = useState({
-    project_id: '',
     name: '',
     description: ''
   });
@@ -322,23 +321,21 @@ const ChecklistDialog = ({ open, data, projects, selectedProjectId, onClose, onS
   useEffect(() => {
     if (data) {
       setForm({
-        project_id: data.project_id,
         name: data.name,
         description: data.description || ''
       });
     } else {
       setForm({
-        project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
         name: '',
         description: ''
       });
     }
-  }, [data, selectedProjectId, open]);
+  }, [data, open]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.project_id || !form.name) {
-      toast.error('Please fill all required fields');
+    if (!form.name) {
+      toast.error('Please enter a name');
       return;
     }
     onSave(form);
@@ -352,17 +349,8 @@ const ChecklistDialog = ({ open, data, projects, selectedProjectId, onClose, onS
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
-            <Label>Project *</Label>
-            <Select value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v })} disabled={!!data}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select project" />
-              </SelectTrigger>
-              <SelectContent>
-                {projects.map(p => (
-                  <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label>Project</Label>
+            <Input value={projectName || ''} disabled className="bg-muted" />
           </div>
           <div className="space-y-2">
             <Label>Name *</Label>
