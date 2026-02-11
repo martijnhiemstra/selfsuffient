@@ -1,92 +1,76 @@
 <analysis>**original_problem_statement:**
-I want an application that will help me setup a self-sufficient lifestyle.
+Initial requirements from the user included building a full-stack application for a self-sufficient lifestyle, featuring user authentication, projects (with diary, gallery, blog, library), tasks, and routines.
 
-PRODUCT REQUIREMENTS:
-- Users with authentication (Login and forgot password, no register).
-- Users can maintain projects (name, description, image, private/public).
-- Each project can have a diary with searchable/sortable entries.
-- Each project can have a gallery with recursive folders and searchable/sortable images. Gallery folders can be public.
-- Each project can have a blog with public/private entries and a public-facing page with view counts.
-- Each project can have a library (similar to a blog) with recursive folders, public/private entries, and view counts.
-- All description fields must use an HTML editor.
-- Each project must have tasks with calendar integration (month/week/day views), recurrence, and drag-and-drop support.
-- Each project has daily startup (Start of day items) and shutdown (End of day items) task lists, with completion tracked per day.
-- A public landing page shows all public projects, blogs, and libraries.
-- The user dashboard shows undone daily routines and today's tasks.
-- When a user logs in, they are redirected to their dashboard.
-- Users can enable a daily reminders email containing their tasks for the day.
-- The application must be containerized using Docker.
+This evolved with several major feature requests:
+1.  **Financial Module:** A comprehensive system to track income, expenses, investments, and calculate financial runway.
+2.  **Budgeting System:** A refactor of the initial Recurring Transactions into a more robust system using time-bound Expense Periods and Expected Items.
+3.  **Transaction Import:** A feature to import bank transactions from CSV, OFX, and QFX files.
+4.  **UI Enhancements:** Splitting the Budget and Expense Periods into separate tabs and adding conditional styling for budget items.
+5.  **Google Calendar Integration:** A one-way sync to push tasks and routines to a user's Google Calendar, with each user providing their own OAuth credentials.
+6.  **Project Checklists:** A feature for creating reusable checklists within projects.
+7.  **App Renaming:** Changing the app's name from Self-Sufficient Life to Earthly Life.
+8.  **Checklist Nesting:** Refactoring the checklist feature to be accessed from within a project, rather than as a top-level page.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A full-stack FastAPI/React application that fulfills all original product requirements and is fully containerized.
-
-Recent major changes include:
-- The monolithic backend  has been refactored into a modular structure with , , and  directories for improved maintainability.
-- The WYSIWYG editor for blogs was replaced with a simpler editor, removing embedded image support in favor of a new image attachment system.
-- Security for private gallery images has been implemented, requiring authentication to access files in non-public folders.
-- A gallery modal was added to view images in fullscreen on both private and public gallery pages.
-- Social sharing buttons have been added to public projects and blog posts.
-- A CORS issue blocking project image display was resolved by serving files through a dedicated API endpoint.
+The Earthly Life application is a full-stack FastAPI/React app. It has a robust set of features including user authentication, project management, and a comprehensive financial module with accounts, transactions, savings goals, and a complete budgeting system. A transaction import feature (CSV/OFX) is also complete and tested. The application includes a Google Calendar integration where users can connect their own accounts. The most recent addition was a project-based checklist feature.
 
 **Last working item**:
-    - Last item agent was working: The user reported a CORS error when uploading a project image in their deployed environment: . This is due to a cross-origin request between the frontend and a separate API subdomain. The agent implemented a fix by making the  in  more permissive to handle such requests.
+    - Last item agent was working: Refactoring the Checklists feature. The user requested to remove the top-level navigation link and make checklists accessible only from within a specific project's detail page. The agent updated the frontend routing and components to reflect this new nested structure ().
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? backend testing agent. The agent should simulate a preflight  request followed by a  request with a file to the project image upload endpoint () to verify the CORS policy is working as expected.
+    - Which testing method agent to use? frontend testing agent. The agent should test the full user flow: navigate from the projects page to a specific project, click the new Checklists card, and verify that the checklist page loads correctly for that project. It should then perform full CRUD tests on checklists and their items in this nested context.
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: Verify the fix for the project image upload CORS error. (P0)
-  
-  Issues Detail:
-  - Issue 1: 
-     - Attempted fixes: The agent updated  to use a more permissive  configuration, allowing all origins, methods, and headers, and restarted the backend.
-     - Next debug checklist: 
-        1. Create a Python script or use  to simulate a cross-origin file upload.
-        2. First, send an  request (preflight) to the endpoint .
-        3. Verify the response includes the necessary , , and  headers.
-        4. If the preflight succeeds, send a  request with a file to the same endpoint.
-        5. Confirm the upload is successful (HTTP 200).
-     - Why fix this issue and what will be achieved with the fix?: This will resolve a critical file upload blocker for the user in their production-like environment.
-     - Status:  IN PROGRESS
-     - Is recurring issue? N
-     - Should Test frontend/backend/both after fix? backend
-     - Blocked on other issue: None
+  - No critical pending issues.
 
 **In progress Task List**:
-- None
+  - Task 1:  Verify the refactoring of the Checklists feature. (P0)
+
+ Task Detail:
+  - Task 1: 
+     - Where to resume: The agent has modified the code and confirmed the top-level Checklists link is gone. The next step is to navigate to a project's detail page (e.g., by clicking a project card on the  page) and verify that the new Checklists feature card appears and correctly links to .
+     - What will be achieved with this?: This completes the user's request to logically group checklists under their respective projects, improving the application's information architecture.
+     - Status:  IN PROGRESS
+     - Should Test frontend/backend/both after fix? frontend
+     - Blocked on something: No
 
 **Upcoming and Future Tasks**
 - **Upcoming Tasks:**
-    - (P0) Replace the  in the Diary and Library pages with the new , aligning their functionality with the Blog page (i.e., removing image embedding).
+    - (P0) **Implement Mobile App Support (PWA):** Begin converting the existing React application into a Progressive Web App (PWA) to make it installable on mobile devices with offline capabilities, as discussed with the user.
+    - (P1) **Update App Tagline:** The tagline Your self-sufficient lifestyle dashboard on the login page is a remnant of the old app name. Confirm with the user and update it to align with Earthly Life.
 - **Future Tasks:**
+    - (P1) **Cleanup Obsolete Code**: Remove the now-redundant  database collection and any associated backend model code.
+    - (P1) **Transaction Import - Duplicate Detection**: Enhance the import feature to detect and flag potential duplicate transactions that might already exist.
     - (P1) Implement project export/import functionality.
-    - (P2) Develop a mobile application.
+    - (P2) Develop a full mobile application (React Native or Capacitor).
     - (P2) Add multi-language support.
     - (P2) Implement two-factor authentication (2FA).
     - (P2) Add project collaboration features.
 
 **Completed work in this session**
-- **Backend Refactoring:** The monolithic  was successfully broken down into a modular structure (, , ).
-- **Editor Overhaul:** Replaced the WYSIWYG editor for blogs with a  and added a separate image attachment feature.
-- **Image Security:** Secured images in private gallery folders, making them accessible only with a valid authentication token.
-- **Gallery Modal:** Implemented a fullscreen image viewer modal for gallery images.
-- **Social Sharing:** Added share buttons for public projects and blog entries.
-- **Bug Fixes:**
-    - Fixed an issue where saving blogs with large images failed by increasing model character limits.
-    - Resolved a frontend compile error related to incorrect Tiptap extension imports.
-    - Fixed broken project images on various pages by creating a dedicated file-serving API endpoint.
-- **Watermark Removal:** Removed the Emergent watermark from the application UI.
+- **Checklist Feature Refactor (in-progress):** Moved the Checklists feature to be nested within individual projects.
+- **Project Checklists:** Implemented a full CRUD feature for project-specific checklists with progress tracking and a reset functionality.
+- **App Renaming:** Changed the app name from Self-Sufficient Life to Earthly Life across the entire codebase.
+- **Google Calendar Integration:** Built a one-way sync feature, allowing users to connect their own Google account via OAuth credentials entered in the Settings page.
+- **Finance UI Enhancements:**
+    - Created a dedicated Expense Periods tab.
+    - Implemented conditional styling (green/bold) for under-budget items.
+    - Added in-place editing for Expected Items within the Expense Periods tab.
+    - Fixed a  bug in the Monthly overview tab.
+- **Transaction Import:** Implemented and tested a feature to import transactions from CSV and OFX files.
+- **Budgeting System Refactor:** Completed the frontend refactor from Recurring Transactions to the new Budgeting system and removed all obsolete backend code and API endpoints.
 
 **Earlier issues found/mentioned but not fixed**
-   - Issue 1: Numerous frontend linting errors and warnings exist across multiple files (e.g., , ). The agent acknowledged these but classified them as pre-existing and did not fix them.
+   - Issue 1: Numerous frontend linting warnings ( missing dependencies, etc.) exist across multiple files. This does not break functionality but impacts code quality.
      - Debug checklist: Run yarn run v1.22.22
-info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. in the  directory to see all issues. Fix them according to the ESLint rules.
-     - Why to solve this issue and what will be achieved with this?: Fixing these improves code quality, maintainability, and prevents potential runtime bugs.
+info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this command. in  and address the warnings.
+     - Why to solve this issue and what will be achieved with this?: Improves code quality and prevents potential subtle bugs in React hooks.
      - Should Test frontend/backend/both after fix: frontend
      - Is recurring issue? Y
+   - Issue 2: User reported  and Nginx  errors. These are server configuration issues on the user's deployment environment, not application bugs. The agent has provided guidance.
 
 **Known issue recurrence from previous fork**
   - N/A
@@ -95,67 +79,77 @@ info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this comm
 
 
 **Key Technical Concepts**
-- **Backend:** FastAPI, MongoDB (via ), Pydantic, JWT. Now with a modular route and service architecture.
-- **Frontend:** React, React Router, Axios, Tailwind CSS, Shadcn/UI, TipTap (for ).
-- **Containerization:** Docker, Docker Compose.
-- **File Serving:** Static files (like project/gallery images) are now served through a dedicated, secure API endpoint () to handle CORS and authentication properly.
+- **Nested Frontend Routing:** A top-level feature () was refactored into a nested route () to tie it to a parent resource, improving information architecture.
+- **User-Scoped OAuth 2.0:** Implemented a Google Calendar integration where each user provides their own Client ID/Secret, which are then used for their specific OAuth flow. Credentials and tokens are stored per-user.
+- **File Parsing (Backend):** Utilized  and  libraries to handle transaction data from user-uploaded files for the import feature.
 
 **key DB schema**
-  - : {..., **images: List[BlogImage]**} (Embedded document)
-  - : {id, url, filename}
-  - Description fields for , , and  have had their  increased from 10,000 to 1,000,000.
-
-**changes in tech stack**
-- Added  and  to the frontend dependencies for the new .
+- : 
+- : 
+- : Now stores user-specific settings like , , and encrypted  (refresh token).
 
 **All files of reference**
-- : Core application file, now refactored to mount routers and configure middleware.
-- : Contains the updated secure file-serving endpoint logic.
-- : Updated to handle  for image attachments.
-- : The new simplified Tiptap editor component.
-- : Rewritten to use  and the new image attachment system.
-- : Updated to handle secure image loading and the new image modal.
-- : Contains the  helper function, updated to handle auth tokens for private images.
+- : Modified to add a link to the nested checklist page.
+- : Created and then significantly refactored to work within a project context.
+- : Modified to update the checklist route from top-level to nested.
+- : Modified to remove the top-level checklist navigation link.
+- , : New files for the checklist feature.
+- : Modified to add the Google Calendar integration UI.
+- , : New files for Google Calendar integration.
+- , , : Files modified to rename the app to Earthly Life.
 
 **Areas that need refactoring**:
-- The frontend has a significant number of linting errors that should be addressed.
-- The  component should be deprecated and replaced with  in the Diary and Library pages to maintain consistency, as requested by the user.
+- The frontend has a significant number of linting warnings that should be addressed for code quality.
+- The  database collection is now obsolete and can be dropped.
 
 **key api endpoints**
-- : Endpoint for project image uploads, subject of the current CORS issue.
-- : Now accepts  to handle blog content and image attachments.
-- : New secure endpoint to serve uploaded files. It checks authentication for private gallery images via a  query parameter.
+- **Checklists:**
+  - 
+  - 
+  - 
+  - 
+  - 
+- **Google Calendar:**
+  - 
+  - 
+  - 
+  - 
+- **Transaction Import:**
+  - 
+  - 
+  - 
 
 **Critical Info for New Agent**
-- The immediate priority is to verify the CORS fix for project image uploads. The user's environment uses different domains for the app and API ( and ), which is the root cause. The implemented fix in  is to allow any origin (). You must test if this is effective.
-- The security for private gallery images now depends on the frontend passing the auth token as a query parameter to the  endpoint. This logic is implemented in .
-- The user has explicitly requested to replace the WYSIWYG editor in other parts of the app (Diary, Library) with the new . This should be the next task after the CORS issue is confirmed to be resolved.
+- Your immediate priority is to finalize and verify the refactoring of the **Checklists feature**. The goal was to make it accessible only from within a project. You need to test the user flow: go to the Projects page, click on a project, find the new Checklists card, and ensure it leads to a functional checklist page scoped to that project.
+- The user has approved moving forward with making the application a **Progressive Web App (PWA)**. This should be the next major task after the checklist verification is complete.
+- Be aware that the user has reported server-side errors in their own deployment (, ). These are configuration issues with their environment, not application bugs. If reported again, guide the user on how to fix their server/proxy configuration.
 
 **documents and test reports created in this job**
 - 
 - 
+-  (Updated with recent features)
 
 **Last 10 User Messages and any pending HUMAN messages** 
-1.  **User:** Reports a CORS error when uploading a project image in their deployed environment. (PENDING - fix implemented, needs verification)
-2.  **Agent:** Provides a summary of the blog editor replacement and private image security fix.
-3.  **User:** Requests to replace the WYSIWYG editor with a simpler one, remove embedded images from blogs, and add image attachments instead. (COMPLETED)
-4.  **Agent:** Provides a summary of the gallery image modal implementation.
-5.  **User:** Reports a frontend compile error. (COMPLETED)
-6.  **Agent:** Provides a summary of the image display and social sharing implementation.
-7.  **User:** Requests a modal to view gallery images when clicked. (COMPLETED)
-8.  **User:** Asks if private gallery images are protected from anonymous users. (COMPLETED - agent implemented security)
-9.  **User:** Asks if a new Docker build is required for deployment. (COMPLETED - agent confirmed)
-10. **Agent:** Provides a summary of the backend refactoring.
+1.  **User:** Remove the top-level checklist menu and make it accessible only within a selected project. (IN PROGRESS)
+2.  **User:** Asked to confirm the plan for checklists and mobile app. (ACKNOWLEDGED)
+3.  **User:** Is it possible to use this app as a mobile app? (ANSWERED - Agent proposed PWA).
+4.  **User:** Allow projects to have a reusable checklist with items that can be marked as done. (COMPLETED)
+5.  **User:** What are the default credentials? (ANSWERED)
+6.  **User:** Change the app title from Self-Sufficient Life to Earthly Life. (COMPLETED)
+7.  **User:** In the  tab, allow editing of expected items via a modal. (COMPLETED)
+8.  **User:** The By Category section in the Monthly tab shows NaN. (COMPLETED)
+9.  **User:** Is it possible to integrate with Google Calendar for task syncing? (COMPLETED)
+10. **User:** On the finance page, add a separate Expense Periodes tab and conditionally style budget items. (COMPLETED)
 
 **Project Health Check:**
-- **Broken:** The project image upload feature is potentially broken in the user's deployed environment due to a CORS issue. The fix is implemented but unverified.
+- **Broken:** None. The Checklist page is in a transitional state but not broken, just pending verification of the new flow.
 - **Mocked:** None.
 
 **3rd Party Integrations**
-- None.
+- **Google Calendar API**: Integrated for one-way event syncing. Uses user-provided OAuth 2.0 credentials (Client ID/Secret) for authorization. The implementation uses the  and  libraries.
 
 **Testing status**
-  - Testing agent used after significant changes: YES (after backend refactor and after image/sharing features).
+  - Testing agent used after significant changes: YES (for Budgeting and Transaction Import features).
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: None.
   - Known regressions: None.
@@ -163,7 +157,8 @@ info Visit https://yarnpkg.com/en/docs/cli/run for documentation about this comm
 **Credentials to test flow:**
 - **Default Email:** 
 - **Default Password:** 
+- **Google Calendar:** No default credentials exist. The user must provide their own via the Settings page.
 
 **What agent forgot to execute**
-- The agent did not fix numerous pre-existing frontend linting errors reported by the linter.
-- The agent noted the color picker was missing from the  toolbar UI but did not investigate or fix it.</analysis>
+- The agent acknowledged the old tagline (self-sufficient living) on the login page but did not get explicit confirmation from the user to change it. This is a pending minor UI task.
+- The agent has not scheduled the removal of the now-obsolete  database collection.</analysis>
