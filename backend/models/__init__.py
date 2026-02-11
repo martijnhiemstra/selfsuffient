@@ -37,6 +37,10 @@ from .budget import (
     ExpectedItemCreate, ExpectedItemUpdate, ExpectedItemResponse, ExpectedItemListResponse,
     MonthlyBudgetItem, MonthlyBudgetComparison
 )
+from .checklist import (
+    ChecklistCreate, ChecklistUpdate, ChecklistResponse, ChecklistListResponse,
+    ChecklistItemCreate, ChecklistItemUpdate, ChecklistItemResponse
+)
 
 __all__ = [
     # Auth
