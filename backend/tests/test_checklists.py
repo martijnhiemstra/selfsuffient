@@ -31,7 +31,7 @@ class TestChecklistAPI:
         if login_response.status_code != 200:
             pytest.skip(f"Authentication failed: {login_response.status_code}")
         
-        token = login_response.json().get("token")
+        token = login_response.json().get("access_token")
         self.session.headers.update({"Authorization": f"Bearer {token}"})
         
         # Get a project to use for testing
