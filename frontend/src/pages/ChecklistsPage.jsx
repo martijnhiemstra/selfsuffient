@@ -295,8 +295,7 @@ export const ChecklistsPage = () => {
       <ChecklistDialog
         open={checklistDialog.open}
         data={checklistDialog.data}
-        projects={projects}
-        selectedProjectId={selectedProjectId}
+        projectName={project?.name}
         onClose={() => setChecklistDialog({ open: false, data: null })}
         onSave={handleSaveChecklist}
       />
