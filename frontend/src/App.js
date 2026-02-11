@@ -69,6 +69,9 @@ function App() {
           {/* Finance */}
           <Route path="/finance" element={<ProtectedRoute><Layout><FinancePage /></Layout></ProtectedRoute>} />
 
+          {/* Checklists */}
+          <Route path="/checklists" element={<ProtectedRoute><Layout><ChecklistsPage /></Layout></ProtectedRoute>} />
+
           {/* My Public Site */}
           <Route path="/my-public-site" element={<ProtectedRoute><Layout><MyPublicSitePage /></Layout></ProtectedRoute>} />
 
