@@ -55,11 +55,7 @@ export const ChecklistsPage = () => {
       setLoading(false);
     };
     loadData();
-  }, []);
-
-  useEffect(() => {
-    fetchChecklists();
-  }, [selectedProjectId]);
+  }, [projectId]);
 
   const handleSaveChecklist = async (data) => {
     try {
@@ -67,7 +63,7 @@ export const ChecklistsPage = () => {
         await axios.put(`${API}/checklists/${checklistDialog.data.id}`, data, { headers });
         toast.success('Checklist updated');
       } else {
-        await axios.post(`${API}/checklists`, data, { headers });
+        await axios.post(`${API}/checklists`, { ...data, project_id: projectId }, { headers });
         toast.success('Checklist created');
       }
       setChecklistDialog({ open: false, data: null });
