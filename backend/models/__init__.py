@@ -80,4 +80,7 @@ __all__ = [
     "ExpensePeriodCreate", "ExpensePeriodUpdate", "ExpensePeriodResponse", "ExpensePeriodListResponse",
     "ExpectedItemCreate", "ExpectedItemUpdate", "ExpectedItemResponse", "ExpectedItemListResponse",
     "MonthlyBudgetItem", "MonthlyBudgetComparison",
+    # Checklist
+    "ChecklistCreate", "ChecklistUpdate", "ChecklistResponse", "ChecklistListResponse",
+    "ChecklistItemCreate", "ChecklistItemUpdate", "ChecklistItemResponse",
 ]
