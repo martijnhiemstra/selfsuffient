@@ -5,6 +5,7 @@ import { Toaster } from "./components/ui/sonner";
 import { AuthProvider } from "./context/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Layout } from "./components/Layout";
+import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
 import { fetchAppConfig } from "./utils";
 
 // Pages
