@@ -2137,6 +2137,8 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
       });
       setAiAnalyzed(false);
       setIsAnalyzing(false);
+      setDuplicatesChecked(false);
+      setIsCheckingDuplicates(false);
     }
   }, [open, selectedProjectId]);
 
