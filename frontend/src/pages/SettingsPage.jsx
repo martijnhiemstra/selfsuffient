@@ -698,6 +698,140 @@ export const SettingsPage = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* OpenAI Integration */}
+      <Card className="border border-border/50 mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Brain className="w-5 h-5" />
+            AI Transaction Analysis
+          </CardTitle>
+          <CardDescription>
+            Use AI to automatically categorize imported transactions and detect recurring payments
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Status */}
+          {openaiSettings?.has_api_key ? (
+            <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                  <div>
+                    <p className="font-medium text-green-800 dark:text-green-200">OpenAI API Key Configured</p>
+                    <p className="text-sm text-green-600 dark:text-green-400">
+                      Key: {openaiSettings.api_key_preview} • Model: {openaiSettings.model}
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleDeleteOpenaiSettings}
+                  disabled={deletingOpenai}
+                >
+                  {deletingOpenai ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Trash2 className="w-4 h-4 mr-2" />
+                  )}
+                  Remove
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-muted/50 rounded-lg p-4">
+              <p className="text-sm text-muted-foreground">
+                Add your OpenAI API key to enable AI-powered transaction categorization during imports.
+                Your API key is stored encrypted and used only for your account.
+              </p>
+            </div>
+          )}
+
+          {/* API Key Form */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">{openaiSettings?.has_api_key ? 'Update API Key' : 'Add API Key'}</h4>
+              <a 
+                href="https://platform.openai.com/api-keys" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-sm text-primary hover:underline flex items-center gap-1"
+              >
+                Get API Key <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="openaiApiKey">API Key</Label>
+              <Input
+                id="openaiApiKey"
+                type="password"
+                value={openaiApiKey}
+                onChange={(e) => setOpenaiApiKey(e.target.value)}
+                placeholder="sk-..."
+                data-testid="openai-api-key"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="openaiModel">Model</Label>
+              <Select value={openaiModel} onValueChange={setOpenaiModel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="gpt-4o-mini">GPT-4o Mini (Fast, cost-effective)</SelectItem>
+                  <SelectItem value="gpt-4o">GPT-4o (Best quality, higher cost)</SelectItem>
+                  <SelectItem value="gpt-4-turbo">GPT-4 Turbo (High quality, balanced)</SelectItem>
+                  <SelectItem value="gpt-3.5-turbo">GPT-3.5 Turbo (Fastest, lowest cost)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Choose based on your preference for speed vs accuracy. GPT-4o Mini is recommended for most users.
+              </p>
+            </div>
+            
+            <div className="flex gap-2">
+              <Button 
+                onClick={handleTestOpenaiKey} 
+                variant="outline"
+                disabled={testingOpenai || !openaiApiKey}
+              >
+                {testingOpenai ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <TestTube className="w-4 h-4 mr-2" />
+                )}
+                Test Key
+              </Button>
+              <Button 
+                onClick={handleSaveOpenaiSettings} 
+                disabled={savingOpenai || !openaiApiKey}
+              >
+                {savingOpenai ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <Key className="w-4 h-4 mr-2" />
+                )}
+                Save API Key
+              </Button>
+            </div>
+          </div>
+
+          <Separator />
+          
+          <div className="text-sm text-muted-foreground space-y-2">
+            <p className="font-medium text-foreground">How it works:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>When importing transactions, click "Analyze with AI" to categorize them</li>
+              <li>AI will suggest categories, detect recurring payments, and flag unusual amounts</li>
+              <li>Review and adjust suggestions before confirming the import</li>
+              <li>API usage is charged to your OpenAI account based on the model selected</li>
+            </ul>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };
