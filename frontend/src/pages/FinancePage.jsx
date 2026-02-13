@@ -2245,6 +2245,31 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
     }
   };
 
+  const handleAiAnalyze = async () => {
+    setIsAnalyzing(true);
+    try {
+      const res = await axios.post(`${API}/finance/import/analyze`, {
+        transactions: previewData,
+        total: previewData.length,
+        columns: columns,
+        warnings: warnings
+      }, { headers });
+      
+      setPreviewData(res.data.transactions);
+      setAiAnalyzed(true);
+      toast.success('AI analysis complete! Review the suggestions below.');
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || 'AI analysis failed';
+      if (errorMsg.includes('not configured')) {
+        toast.error('Please configure your OpenAI API key in Settings first.');
+      } else {
+        toast.error(errorMsg);
+      }
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const toggleSelectAll = () => {
     if (selectedTransactions.length === previewData.length) {
       setSelectedTransactions([]);
