@@ -36,8 +36,11 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 │   │   ├── checklist.py    # Project checklists
 │   │   ├── gallery.py      # Gallery with folder support
 │   │   ├── google_calendar.py # Google Calendar sync
-│   │   └── import_transactions.py # Transaction imports
-│   └── services/           # Business logic helpers
+│   │   ├── import_transactions.py # Transaction imports with AI
+│   │   └── openai_settings.py # NEW: User OpenAI API key management
+│   └── services/
+│       ├── google_calendar.py
+│       └── openai_analyzer.py  # NEW: AI transaction analysis
 ├── frontend/
 │   ├── src/
 │   │   ├── App.js
@@ -46,7 +49,8 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 │   │   ├── serviceWorkerRegistration.js  # PWA service worker
 │   │   └── pages/
 │   │       ├── ChecklistsPage.jsx    # Nested under projects
-│   │       └── FinancePage.jsx       # Full budgeting system
+│   │       ├── FinancePage.jsx       # Full budgeting + AI import
+│   │       └── SettingsPage.jsx      # OpenAI API key config
 │   └── public/
 │       ├── manifest.json      # PWA manifest
 │       ├── service-worker.js  # Service worker for offline
@@ -80,6 +84,16 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - Financial runway calculation
 - Transaction import (CSV, OFX, QFX files)
 
+### AI Transaction Analysis ✅ - Feb 13, 2026
+- **User-provided OpenAI API keys** - Each user configures their own key in Settings
+- **Model selection** - GPT-4o-mini, GPT-4o, GPT-4-turbo, GPT-3.5-turbo
+- **During import preview**, users can click "Analyze with AI" to:
+  - Auto-categorize transactions (income/expense, category)
+  - Detect recurring transactions (subscriptions, bills, salary)
+  - Flag unusual amounts compared to historical patterns
+- **Encrypted storage** of API keys per user
+- **Test key** functionality to validate before saving
+
 ### Project Checklists ✅
 - Reusable checklists within projects
 - Checklist items with toggle completion
@@ -98,12 +112,10 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - Multiple icon sizes (72px - 512px)
 - Apple touch icon support
 - Install prompt component
-- Splash screen on load
-- Standalone display mode
 
 ## Recent Bug Fixes
-- **Gallery Upload Bug** (Feb 11, 2026) - Fixed issue where images uploaded in a subfolder appeared in root. Changed `folder_id` parameter from query param to Form field.
-- **App Tagline** (Feb 11, 2026) - Updated from "self-sufficient living" to "sustainable, earthly living"
+- **Gallery Upload Bug** (Feb 11, 2026) - Fixed folder_id not being passed during subfolder uploads
+- **Google Libraries Missing** (Feb 13, 2026) - Added google-api-python-client and related packages to requirements.txt
 
 ## Upcoming Tasks (P0-P1)
 1. (P1) Cleanup obsolete `recurring_transactions` database collection
@@ -121,7 +133,9 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Password:** admin123
 
 ## Key API Endpoints
-- **Checklists:** `/api/checklists`, `/api/checklists/{id}`, `/api/checklist-items/{id}`
-- **Finance:** `/api/finance/accounts`, `/api/finance/transactions`, `/api/finance/savings-goals`
-- **Import:** `/api/import/preview`, `/api/import/confirm`
+- **OpenAI Settings:** `/api/openai/settings` (GET/POST/DELETE), `/api/openai/test`, `/api/openai/models`
+- **AI Import Analysis:** `/api/finance/import/analyze`
+- **Checklists:** `/api/checklists`, `/api/checklists/{id}`
+- **Finance:** `/api/finance/accounts`, `/api/finance/transactions`
+- **Import:** `/api/finance/import/preview`, `/api/finance/import/confirm`
 - **Google Calendar:** `/api/google-calendar/auth`, `/api/google-calendar/sync`
