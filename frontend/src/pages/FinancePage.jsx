@@ -2275,6 +2275,41 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
     }
   };
 
+  const handleCheckDuplicates = async () => {
+    setIsCheckingDuplicates(true);
+    try {
+      const accountParam = importSettings.account_id ? `?account_id=${importSettings.account_id}` : '';
+      const res = await axios.post(`${API}/finance/import/check-duplicates${accountParam}`, {
+        transactions: previewData,
+        total: previewData.length,
+        columns: columns,
+        warnings: warnings,
+        ai_analyzed: aiAnalyzed
+      }, { headers });
+      
+      setPreviewData(res.data.transactions);
+      setWarnings(res.data.warnings || []);
+      setDuplicatesChecked(true);
+      
+      // Auto-deselect duplicates
+      const nonDupIndices = res.data.transactions
+        .map((tx, i) => tx.is_potential_duplicate ? null : i)
+        .filter(i => i !== null);
+      setSelectedTransactions(nonDupIndices);
+      
+      const dupCount = res.data.transactions.filter(tx => tx.is_potential_duplicate).length;
+      if (dupCount > 0) {
+        toast.warning(`Found ${dupCount} potential duplicate(s). They've been deselected.`);
+      } else {
+        toast.success('No duplicates found!');
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to check duplicates');
+    } finally {
+      setIsCheckingDuplicates(false);
+    }
+  };
+
   const toggleSelectAll = () => {
     if (selectedTransactions.length === previewData.length) {
       setSelectedTransactions([]);
