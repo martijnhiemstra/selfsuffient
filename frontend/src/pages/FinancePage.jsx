@@ -15,7 +15,8 @@ import {
   Plus, Trash2, Edit, Wallet, TrendingUp, 
   PiggyBank, Calculator, AlertTriangle, RefreshCw,
   ArrowUpCircle, ArrowDownCircle, Landmark, Coins, Package,
-  CheckCircle2, Circle, CalendarRange, Upload, FileSpreadsheet, X
+  CheckCircle2, Circle, CalendarRange, Upload, FileSpreadsheet, X,
+  Sparkles, Loader2, CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
