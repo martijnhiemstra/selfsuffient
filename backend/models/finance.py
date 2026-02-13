@@ -259,6 +259,14 @@ class ImportedTransaction(BaseModel):
     payee: Optional[str] = None
     ref_number: Optional[str] = None  # Check number, reference ID, etc.
     transaction_type: Optional[str] = None  # Credit/Debit/etc.
+    # AI analysis fields
+    ai_category: Optional[str] = None
+    ai_type: Optional[str] = None  # "income" or "expense"
+    ai_is_recurring: Optional[bool] = None
+    ai_recurring_frequency: Optional[str] = None
+    ai_is_unusual: Optional[bool] = None
+    ai_unusual_reason: Optional[str] = None
+    ai_confidence: Optional[float] = None
 
 
 class CSVColumnMapping(BaseModel):
@@ -285,6 +293,7 @@ class ImportPreviewResponse(BaseModel):
     total: int
     columns: Optional[List[str]] = None  # For CSV, the detected columns
     warnings: List[str] = []
+    ai_analyzed: bool = False  # Whether AI analysis was performed
 
 
 class ImportConfirmRequest(BaseModel):
