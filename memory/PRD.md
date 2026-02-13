@@ -118,8 +118,8 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Google Libraries Missing** (Feb 13, 2026) - Added google-api-python-client and related packages to requirements.txt
 
 ## Upcoming Tasks (P0-P1)
-1. (P1) Cleanup obsolete `recurring_transactions` database collection
-2. (P1) Transaction Import - Duplicate detection enhancement
+1. ~~(P1) Cleanup obsolete `recurring_transactions` database collection~~ - DONE (collection doesn't exist)
+2. ~~(P1) Transaction Import - Duplicate detection enhancement~~ - DONE
 3. (P1) Project export/import functionality
 
 ## Future/Backlog Tasks (P2)
