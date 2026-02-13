@@ -2537,6 +2537,29 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                     </>
                   )}
                 </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleCheckDuplicates}
+                  disabled={isCheckingDuplicates || duplicatesChecked}
+                >
+                  {isCheckingDuplicates ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Checking...
+                    </>
+                  ) : duplicatesChecked ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                      Duplicates Checked
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="w-4 h-4 mr-2" />
+                      Check Duplicates
+                    </>
+                  )}
+                </Button>
                 <Button variant="outline" size="sm" onClick={toggleSelectAll}>
                   {selectedTransactions.length === previewData.length ? 'Deselect All' : 'Select All'}
                 </Button>
