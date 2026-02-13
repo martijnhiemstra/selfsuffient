@@ -337,7 +337,7 @@ async def analyze_transactions_with_ai(
     Analyze imported transactions using AI.
     Requires user to have an OpenAI API key configured.
     """
-    from services.openai_analyzer import OpenAITransactionAnalyzer, decrypt_api_key
+    from services.openai_analyzer import OpenAITransactionAnalyzer
     from routes.openai_settings import decrypt_api_key
     
     # Check if user has OpenAI API key
