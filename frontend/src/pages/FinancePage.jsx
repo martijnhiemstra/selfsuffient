@@ -2107,6 +2107,8 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
   const [isLoading, setIsLoading] = useState(false);
   const [aiAnalyzed, setAiAnalyzed] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [duplicatesChecked, setDuplicatesChecked] = useState(false);
+  const [isCheckingDuplicates, setIsCheckingDuplicates] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
 
