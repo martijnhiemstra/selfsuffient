@@ -88,6 +88,11 @@ export const SettingsPage = () => {
     fetchGoogleCalendarStatus();
   }, [token]);
 
+  // Fetch OpenAI settings on mount
+  useEffect(() => {
+    fetchOpenaiSettings();
+  }, [token]);
+
   const fetchGoogleCalendarStatus = async () => {
     try {
       const res = await axios.get(`${API}/google-calendar/status`, { headers });
@@ -97,6 +102,79 @@ export const SettingsPage = () => {
       setSyncEvents(res.data.sync_events);
     } catch (err) {
       console.error('Failed to fetch Google Calendar status:', err);
+    }
+  };
+
+  const fetchOpenaiSettings = async () => {
+    try {
+      const res = await axios.get(`${API}/openai/settings`, { headers });
+      setOpenaiSettings(res.data);
+      if (res.data.model) {
+        setOpenaiModel(res.data.model);
+      }
+    } catch (err) {
+      console.error('Failed to fetch OpenAI settings:', err);
+    }
+  };
+
+  const handleSaveOpenaiSettings = async () => {
+    if (!openaiApiKey) {
+      toast.error('Please enter your OpenAI API key');
+      return;
+    }
+    
+    setSavingOpenai(true);
+    try {
+      await axios.post(`${API}/openai/settings`, {
+        api_key: openaiApiKey,
+        model: openaiModel
+      }, { headers });
+      toast.success('OpenAI settings saved!');
+      setOpenaiApiKey('');
+      fetchOpenaiSettings();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save OpenAI settings');
+    } finally {
+      setSavingOpenai(false);
+    }
+  };
+
+  const handleTestOpenaiKey = async () => {
+    if (!openaiApiKey) {
+      toast.error('Please enter your OpenAI API key to test');
+      return;
+    }
+    
+    setTestingOpenai(true);
+    try {
+      const res = await axios.post(`${API}/openai/test`, {
+        api_key: openaiApiKey,
+        model: openaiModel
+      }, { headers });
+      if (res.data.valid) {
+        toast.success(res.data.message);
+      } else {
+        toast.error(res.data.message);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to test API key');
+    } finally {
+      setTestingOpenai(false);
+    }
+  };
+
+  const handleDeleteOpenaiSettings = async () => {
+    if (!window.confirm('Are you sure you want to remove your OpenAI API key?')) return;
+    
+    setDeletingOpenai(true);
+    try {
+      await axios.delete(`${API}/openai/settings`, { headers });
+      toast.success('OpenAI settings removed');
+      setOpenaiSettings(null);
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to remove settings');
+    } finally {
+      setDeletingOpenai(false);
     }
   };
 
