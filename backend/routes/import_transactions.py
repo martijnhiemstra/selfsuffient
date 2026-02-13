@@ -247,6 +247,102 @@ async def preview_ofx_import(
     )
 
 
+@router.post("/check-duplicates", response_model=ImportPreviewResponse)
+async def check_duplicates(
+    data: ImportPreviewResponse,
+    account_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Check imported transactions for potential duplicates.
+    Compares against existing transactions by date, amount, and description similarity.
+    """
+    if not data.transactions:
+        return data
+    
+    # Get date range from imported transactions
+    dates = [tx.date for tx in data.transactions]
+    min_date = min(dates)
+    max_date = max(dates)
+    
+    # Fetch existing transactions in the date range (with some buffer)
+    query = {
+        "user_id": current_user["id"],
+        "date": {"$gte": min_date, "$lte": max_date}
+    }
+    if account_id:
+        query["account_id"] = account_id
+    
+    existing_transactions = await db.finance_transactions.find(
+        query,
+        {"_id": 0, "id": 1, "date": 1, "amount": 1, "notes": 1}
+    ).to_list(1000)
+    
+    if not existing_transactions:
+        return data
+    
+    # Build lookup for fast duplicate checking
+    existing_by_date = {}
+    for tx in existing_transactions:
+        date_key = tx["date"]
+        if date_key not in existing_by_date:
+            existing_by_date[date_key] = []
+        existing_by_date[date_key].append(tx)
+    
+    # Check each imported transaction for duplicates
+    updated_transactions = []
+    for tx in data.transactions:
+        is_duplicate = False
+        duplicate_id = None
+        duplicate_reason = None
+        
+        # Check transactions on the same date
+        if tx.date in existing_by_date:
+            for existing in existing_by_date[tx.date]:
+                # Exact amount match
+                if abs(existing["amount"] - tx.amount) < 0.01:
+                    is_duplicate = True
+                    duplicate_id = existing["id"]
+                    
+                    # Check description similarity
+                    existing_desc = (existing.get("notes") or "").lower()
+                    import_desc = (tx.description or tx.memo or tx.payee or "").lower()
+                    
+                    if import_desc and existing_desc:
+                        # Simple word overlap check
+                        existing_words = set(existing_desc.split())
+                        import_words = set(import_desc.split())
+                        if existing_words & import_words:
+                            duplicate_reason = f"Same date, amount, and similar description"
+                        else:
+                            duplicate_reason = f"Same date and amount (${abs(tx.amount):.2f})"
+                    else:
+                        duplicate_reason = f"Same date and amount (${abs(tx.amount):.2f})"
+                    
+                    break
+        
+        # Create updated transaction with duplicate info
+        tx_dict = tx.model_dump()
+        tx_dict["is_potential_duplicate"] = is_duplicate
+        tx_dict["duplicate_of_id"] = duplicate_id
+        tx_dict["duplicate_reason"] = duplicate_reason
+        updated_transactions.append(ImportedTransaction(**tx_dict))
+    
+    # Count duplicates for warning
+    dup_count = sum(1 for tx in updated_transactions if tx.is_potential_duplicate)
+    warnings = list(data.warnings) if data.warnings else []
+    if dup_count > 0:
+        warnings.insert(0, f"Found {dup_count} potential duplicate(s) - these are pre-deselected")
+    
+    return ImportPreviewResponse(
+        transactions=updated_transactions,
+        total=data.total,
+        columns=data.columns,
+        warnings=warnings,
+        ai_analyzed=data.ai_analyzed
+    )
+
+
 @router.post("/confirm", response_model=MessageResponse)
 async def confirm_import(
     data: ImportConfirmRequest,
