@@ -2104,6 +2104,8 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
     category_id: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [aiAnalyzed, setAiAnalyzed] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
 
