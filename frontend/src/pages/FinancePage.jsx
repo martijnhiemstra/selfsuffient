@@ -2595,13 +2595,16 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                         <TableHead>AI Insights</TableHead>
                       </>
                     )}
+                    {duplicatesChecked && (
+                      <TableHead>Status</TableHead>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {previewData.map((tx, i) => (
                     <TableRow 
                       key={i} 
-                      className={`${selectedTransactions.includes(i) ? '' : 'opacity-50'} ${tx.ai_is_unusual ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}
+                      className={`${selectedTransactions.includes(i) ? '' : 'opacity-50'} ${tx.is_potential_duplicate ? 'bg-yellow-50 dark:bg-yellow-900/20' : ''} ${tx.ai_is_unusual ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}
                       onClick={() => toggleTransaction(i)}
                       style={{ cursor: 'pointer' }}
                     >
