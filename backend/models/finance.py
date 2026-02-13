@@ -259,6 +259,10 @@ class ImportedTransaction(BaseModel):
     payee: Optional[str] = None
     ref_number: Optional[str] = None  # Check number, reference ID, etc.
     transaction_type: Optional[str] = None  # Credit/Debit/etc.
+    # Duplicate detection
+    is_potential_duplicate: Optional[bool] = None
+    duplicate_of_id: Optional[str] = None
+    duplicate_reason: Optional[str] = None
     # AI analysis fields
     ai_category: Optional[str] = None
     ai_type: Optional[str] = None  # "income" or "expense"
