@@ -326,3 +326,97 @@ async def get_sample_csv():
             "Supports formats: 1234.56, 1,234.56, 1.234,56"
         ]
     }
+
+
+@router.post("/analyze", response_model=ImportPreviewResponse)
+async def analyze_transactions_with_ai(
+    data: ImportPreviewResponse,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Analyze imported transactions using AI.
+    Requires user to have an OpenAI API key configured.
+    """
+    from services.openai_analyzer import OpenAITransactionAnalyzer, decrypt_api_key
+    from routes.openai_settings import decrypt_api_key
+    
+    # Check if user has OpenAI API key
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    if not user.get("openai_api_key"):
+        raise HTTPException(
+            status_code=400, 
+            detail="OpenAI API key not configured. Please add your API key in Settings."
+        )
+    
+    try:
+        api_key = decrypt_api_key(user["openai_api_key"])
+    except Exception:
+        raise HTTPException(status_code=400, detail="Failed to decrypt API key. Please re-enter it in Settings.")
+    
+    model = user.get("openai_model", "gpt-4o-mini")
+    
+    # Get user's categories for better matching
+    categories = await db.finance_categories.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "name": 1}
+    ).to_list(100)
+    category_names = [c["name"] for c in categories] if categories else None
+    
+    # Get recent transactions for context
+    recent_transactions = await db.finance_transactions.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "date": 1, "amount": 1, "notes": 1}
+    ).sort("date", -1).limit(50).to_list(50)
+    
+    historical = [
+        {"date": t["date"], "amount": t["amount"], "description": t.get("notes", "")}
+        for t in recent_transactions
+    ]
+    
+    # Prepare transactions for analysis
+    tx_dicts = [
+        {
+            "date": tx.date,
+            "amount": tx.amount,
+            "description": tx.description,
+            "memo": tx.memo,
+            "payee": tx.payee
+        }
+        for tx in data.transactions
+    ]
+    
+    try:
+        analyzer = OpenAITransactionAnalyzer(api_key, model)
+        analyses = await analyzer.analyze_transactions(
+            tx_dicts,
+            existing_categories=category_names,
+            historical_transactions=historical
+        )
+        
+        # Update transactions with AI analysis
+        updated_transactions = []
+        for i, tx in enumerate(data.transactions):
+            if i < len(analyses):
+                analysis = analyses[i]
+                tx.ai_category = analysis.suggested_category
+                tx.ai_type = analysis.transaction_type
+                tx.ai_is_recurring = analysis.is_recurring
+                tx.ai_recurring_frequency = analysis.recurring_frequency
+                tx.ai_is_unusual = analysis.is_unusual
+                tx.ai_unusual_reason = analysis.unusual_reason
+                tx.ai_confidence = analysis.confidence
+            updated_transactions.append(tx)
+        
+        return ImportPreviewResponse(
+            transactions=updated_transactions,
+            total=data.total,
+            columns=data.columns,
+            warnings=data.warnings,
+            ai_analyzed=True
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
