@@ -6,6 +6,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Separator } from '../components/ui/separator';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
 import { 
   User, 
   Lock, 
@@ -19,7 +26,11 @@ import {
   Link,
   Unlink,
   RefreshCw,
-  ExternalLink
+  ExternalLink,
+  Brain,
+  Key,
+  Trash2,
+  TestTube
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -47,6 +58,14 @@ export const SettingsPage = () => {
   const [connectingGoogle, setConnectingGoogle] = useState(false);
   const [syncingTasks, setSyncingTasks] = useState(false);
   const [syncingRoutines, setSyncingRoutines] = useState(false);
+
+  // OpenAI state
+  const [openaiSettings, setOpenaiSettings] = useState(null);
+  const [openaiApiKey, setOpenaiApiKey] = useState('');
+  const [openaiModel, setOpenaiModel] = useState('gpt-4o-mini');
+  const [savingOpenai, setSavingOpenai] = useState(false);
+  const [testingOpenai, setTestingOpenai] = useState(false);
+  const [deletingOpenai, setDeletingOpenai] = useState(false);
 
   const headers = { Authorization: `Bearer ${token}` };
 
