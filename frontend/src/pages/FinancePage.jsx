@@ -2473,9 +2473,34 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                   {selectedTransactions.length} selected for import
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={toggleSelectAll}>
-                {selectedTransactions.length === previewData.length ? 'Deselect All' : 'Select All'}
-              </Button>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleAiAnalyze}
+                  disabled={isAnalyzing || aiAnalyzed}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : aiAnalyzed ? (
+                    <>
+                      <CheckCircle className="w-4 h-4 mr-2 text-green-600" />
+                      AI Analyzed
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Analyze with AI
+                    </>
+                  )}
+                </Button>
+                <Button variant="outline" size="sm" onClick={toggleSelectAll}>
+                  {selectedTransactions.length === previewData.length ? 'Deselect All' : 'Select All'}
+                </Button>
+              </div>
             </div>
 
             {warnings.length > 0 && (
@@ -2501,13 +2526,19 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                     <TableHead>Date</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
+                    {aiAnalyzed && (
+                      <>
+                        <TableHead>AI Category</TableHead>
+                        <TableHead>AI Insights</TableHead>
+                      </>
+                    )}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {previewData.map((tx, i) => (
                     <TableRow 
                       key={i} 
-                      className={selectedTransactions.includes(i) ? '' : 'opacity-50'}
+                      className={`${selectedTransactions.includes(i) ? '' : 'opacity-50'} ${tx.ai_is_unusual ? 'bg-orange-50 dark:bg-orange-900/20' : ''}`}
                       onClick={() => toggleTransaction(i)}
                       style={{ cursor: 'pointer' }}
                     >
@@ -2518,12 +2549,44 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                         />
                       </TableCell>
                       <TableCell>{tx.date}</TableCell>
-                      <TableCell className="max-w-[300px] truncate">
+                      <TableCell className="max-w-[200px] truncate">
                         {tx.description || tx.memo || tx.payee || '—'}
                       </TableCell>
                       <TableCell className={`text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {formatCurrency(tx.amount)}
                       </TableCell>
+                      {aiAnalyzed && (
+                        <>
+                          <TableCell>
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
+                              tx.ai_type === 'income' 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                            }`}>
+                              {tx.ai_category || 'Unknown'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1 flex-wrap">
+                              {tx.ai_is_recurring && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+                                  🔄 {tx.ai_recurring_frequency || 'Recurring'}
+                                </span>
+                              )}
+                              {tx.ai_is_unusual && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" title={tx.ai_unusual_reason}>
+                                  ⚠️ Unusual
+                                </span>
+                              )}
+                              {tx.ai_confidence && (
+                                <span className="text-xs text-muted-foreground">
+                                  {Math.round(tx.ai_confidence * 100)}%
+                                </span>
+                              )}
+                            </div>
+                          </TableCell>
+                        </>
+                      )}
                     </TableRow>
                   ))}
                 </TableBody>
