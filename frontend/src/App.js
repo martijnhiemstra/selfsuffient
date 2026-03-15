@@ -30,6 +30,7 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { MyPublicSitePage } from "./pages/MyPublicSitePage";
 import { FinancePage } from "./pages/FinancePage";
 import { ChecklistsPage } from "./pages/ChecklistsPage";
+import { GardenDesignerPage } from "./pages/GardenDesignerPage";
 
 function App() {
   // Fetch app config on mount to get max upload size
