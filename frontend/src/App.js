@@ -74,6 +74,9 @@ function App() {
           {/* Checklists - within project context */}
           <Route path="/projects/:projectId/checklists" element={<ProtectedRoute><Layout><ChecklistsPage /></Layout></ProtectedRoute>} />
 
+          {/* Garden Designer - within project context */}
+          <Route path="/projects/:projectId/garden-designer" element={<ProtectedRoute><Layout><GardenDesignerPage /></Layout></ProtectedRoute>} />
+
           {/* My Public Site */}
           <Route path="/my-public-site" element={<ProtectedRoute><Layout><MyPublicSitePage /></Layout></ProtectedRoute>} />
 
