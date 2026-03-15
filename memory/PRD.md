@@ -117,16 +117,24 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Gallery Upload Bug** (Feb 11, 2026) - Fixed folder_id not being passed during subfolder uploads
 - **Google Libraries Missing** (Feb 13, 2026) - Added google-api-python-client and related packages to requirements.txt
 
+### AI Garden Designer - Feb 15, 2026
+- **Phase 1 (Canvas):** Interactive Konva.js drawing tool with configurable grid scale, snap-to-grid, polygon closure detection, real-time measurements (area, perimeter)
+- **Phase 2 (Input Form):** GPS coordinates, wind direction, garden goal selection, plant preferences, existing features, custom notes
+- **Phase 3 (AI Generation):** Backend service using user's OpenAI API key. Frontend integrates generate button with loading state, error handling (API key missing), and full results display: design summary, sun/wind/climate analysis, plant list table, garden zones, planting tips, seasonal tasks
+- **Phase 4 (Visual Output):** Upcoming - render plant placements on canvas
+
 ## Upcoming Tasks (P0-P1)
-1. ~~(P1) Cleanup obsolete `recurring_transactions` database collection~~ - DONE (collection doesn't exist)
-2. ~~(P1) Transaction Import - Duplicate detection enhancement~~ - DONE
+1. (P0) AI Garden Designer - Phase 4: Render AI-generated plant list as icons/shapes on Konva canvas at suggested coordinates
+2. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
 
 ## Future/Backlog Tasks (P2)
-1. Full mobile app (React Native or Capacitor)
-2. Multi-language support
-3. Two-factor authentication (2FA)
-4. Project collaboration features
+1. Update app tagline to align with "Earthly Life"
+2. Full mobile app (React Native or Capacitor)
+3. Multi-language support
+4. Two-factor authentication (2FA)
+5. Project collaboration features
+6. Frontend linting warnings cleanup
 
 ## Test Credentials
 - **Email:** admin@selfsufficient.app
