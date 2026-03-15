@@ -235,6 +235,51 @@ export const GardenDesignerPage = () => {
     }));
   };
 
+  // Generation state
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generatedDesign, setGeneratedDesign] = useState(null);
+  const [generationError, setGenerationError] = useState(null);
+
+  // Generate garden design
+  const handleGenerateDesign = async () => {
+    setIsGenerating(true);
+    setGenerationError(null);
+    
+    try {
+      const response = await axios.post(`${API}/garden/generate`, {
+        project_id: projectId,
+        boundary: {
+          points: points,
+          scale: gridScale
+        },
+        details: {
+          latitude: parseFloat(gardenDetails.latitude),
+          longitude: parseFloat(gardenDetails.longitude),
+          wind_direction: gardenDetails.windDirection,
+          garden_goal: gardenDetails.gardenGoal,
+          plant_preferences: gardenDetails.plantPreferences,
+          custom_plants: gardenDetails.customPlants || null,
+          existing_features: gardenDetails.existingFeatures.length > 0 ? gardenDetails.existingFeatures : null,
+          custom_features: gardenDetails.customFeatures || null,
+          notes: gardenDetails.notes || null
+        }
+      }, { headers });
+      
+      setGeneratedDesign(response.data);
+      toast.success('Garden design generated successfully!');
+    } catch (err) {
+      const errorMsg = err.response?.data?.detail || 'Failed to generate design';
+      setGenerationError(errorMsg);
+      if (errorMsg.includes('API key')) {
+        toast.error('Please configure your OpenAI API key in Settings first.');
+      } else {
+        toast.error(errorMsg);
+      }
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   // Check if form is valid for generation
   const isFormValid = () => {
     return (
