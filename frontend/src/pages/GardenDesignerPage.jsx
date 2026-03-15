@@ -7,6 +7,9 @@ import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Slider } from '../components/ui/slider';
+import { Textarea } from '../components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Badge } from '../components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -24,7 +27,18 @@ import {
   MousePointer2,
   Pencil,
   Move,
-  Info
+  Info,
+  MapPin,
+  Wind,
+  Target,
+  Leaf,
+  TreeDeciduous,
+  Home,
+  Sun,
+  Compass,
+  Sparkles,
+  ChevronRight,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
