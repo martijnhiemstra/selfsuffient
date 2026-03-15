@@ -300,7 +300,7 @@ export const GardenDesignerPage = () => {
         Math.pow(snappedY - firstPoint.y * gridSize, 2)
       );
       
-      if (distance < 20) {
+      if (distance < 30) {  // Increased detection radius
         setIsClosed(true);
         setIsDrawing(false);
         setTool('select');
