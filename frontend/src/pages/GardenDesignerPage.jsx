@@ -44,12 +44,37 @@ import {
   List,
   Calendar,
   Droplets,
+  Eye,
+  EyeOff,
   TreeDeciduous as Tree
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+
+// Plant category colors for canvas rendering
+const CATEGORY_COLORS = {
+  vegetable: { fill: '#ef4444', stroke: '#dc2626', label: 'Vegetables' },
+  herb: { fill: '#22c55e', stroke: '#16a34a', label: 'Herbs' },
+  fruit_tree: { fill: '#f97316', stroke: '#ea580c', label: 'Fruit Trees' },
+  berry: { fill: '#a855f7', stroke: '#9333ea', label: 'Berries' },
+  nut_tree: { fill: '#78716c', stroke: '#57534e', label: 'Nut Trees' },
+  leafy: { fill: '#84cc16', stroke: '#65a30d', label: 'Leafy Greens' },
+  legume: { fill: '#eab308', stroke: '#ca8a04', label: 'Legumes' },
+  root: { fill: '#b45309', stroke: '#92400e', label: 'Root Vegetables' },
+  flower: { fill: '#ec4899', stroke: '#db2777', label: 'Flowers' },
+  medicinal: { fill: '#14b8a6', stroke: '#0d9488', label: 'Medicinal' },
+};
+
+// Zone type colors for overlay
+const ZONE_COLORS = {
+  sun: 'rgba(250, 204, 21, 0.15)',
+  partial_shade: 'rgba(251, 146, 60, 0.15)',
+  shade: 'rgba(156, 163, 175, 0.15)',
+  windbreak: 'rgba(96, 165, 250, 0.15)',
+  water: 'rgba(34, 211, 238, 0.15)',
+};
 
 // Calculate area of a polygon using Shoelace formula
 const calculatePolygonArea = (points, scale) => {
@@ -245,6 +270,7 @@ export const GardenDesignerPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedDesign, setGeneratedDesign] = useState(null);
   const [generationError, setGenerationError] = useState(null);
+  const [showDesignOverlay, setShowDesignOverlay] = useState(false);
 
   // Generate garden design
   const handleGenerateDesign = async () => {
@@ -705,6 +731,69 @@ export const GardenDesignerPage = () => {
               <p className="text-primary"><strong>Tip:</strong> Points snap to grid intersections</p>
             </CardContent>
           </Card>
+
+          {/* Design Overlay Toggle & Legend */}
+          {generatedDesign && (
+            <Card data-testid="design-overlay-card">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Sparkles className="w-4 h-4" />
+                  Garden Design
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Button
+                  variant={showDesignOverlay ? 'default' : 'outline'}
+                  size="sm"
+                  className="w-full"
+                  onClick={() => setShowDesignOverlay(!showDesignOverlay)}
+                  data-testid="toggle-overlay-btn"
+                >
+                  {showDesignOverlay ? (
+                    <><EyeOff className="w-4 h-4 mr-2" />Hide Plants</>
+                  ) : (
+                    <><Eye className="w-4 h-4 mr-2" />Show Plants</>
+                  )}
+                </Button>
+
+                {showDesignOverlay && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-medium text-muted-foreground">Plant Legend</p>
+                    <div className="space-y-1">
+                      {Object.entries(CATEGORY_COLORS)
+                        .filter(([cat]) => generatedDesign.design?.plants?.some(p => p.category === cat))
+                        .map(([cat, colors]) => (
+                          <div key={cat} className="flex items-center gap-2 text-xs">
+                            <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: colors.fill }} />
+                            <span>{colors.label}</span>
+                            <span className="text-muted-foreground ml-auto">
+                              {generatedDesign.design.plants.filter(p => p.category === cat).length}
+                            </span>
+                          </div>
+                        ))}
+                    </div>
+                    <div className="border-t pt-2 mt-2">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">Zones</p>
+                      <div className="space-y-1">
+                        {generatedDesign.design?.zones?.map((zone, idx) => (
+                          <div key={idx} className="flex items-center gap-2 text-xs">
+                            <div className="w-3 h-3 rounded flex-shrink-0" style={{
+                              backgroundColor: zone.type === 'sun' ? '#fbbf24' :
+                                zone.type === 'partial_shade' ? '#fb923c' :
+                                zone.type === 'shade' ? '#9ca3af' :
+                                zone.type === 'windbreak' ? '#60a5fa' : '#22d3ee',
+                              opacity: 0.6
+                            }} />
+                            <span className="truncate">{zone.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
 
         {/* Canvas Area */}
@@ -834,6 +923,61 @@ export const GardenDesignerPage = () => {
                             text={`${length.toFixed(1)}m`}
                             fontSize={10}
                             fill="#374151"
+                          />
+                        </Group>
+                      );
+                    })}
+
+                    {/* AI Design Overlay - Zones */}
+                    {showDesignOverlay && generatedDesign?.design?.zones?.map((zone, idx) => {
+                      if (!zone.points || zone.points.length < 3) return null;
+                      const minX = Math.min(...points.map(p => p.x));
+                      const minY = Math.min(...points.map(p => p.y));
+                      const zonePixels = zone.points.flatMap(p => [
+                        (minX + p.x / gridScale) * gridSize,
+                        (minY + p.y / gridScale) * gridSize
+                      ]);
+                      return (
+                        <Line
+                          key={`zone-${idx}`}
+                          points={zonePixels}
+                          fill={ZONE_COLORS[zone.type] || 'rgba(200,200,200,0.1)'}
+                          stroke={zone.type === 'sun' ? '#eab308' : zone.type === 'shade' ? '#9ca3af' : zone.type === 'windbreak' ? '#60a5fa' : '#94a3b8'}
+                          strokeWidth={1}
+                          closed={true}
+                          dash={[4, 4]}
+                        />
+                      );
+                    })}
+
+                    {/* AI Design Overlay - Plants */}
+                    {showDesignOverlay && generatedDesign?.design?.plants?.map((plant, idx) => {
+                      const minX = Math.min(...points.map(p => p.x));
+                      const minY = Math.min(...points.map(p => p.y));
+                      const px = (minX + plant.x / gridScale) * gridSize;
+                      const py = (minY + plant.y / gridScale) * gridSize;
+                      const pr = Math.max((plant.radius / gridScale) * gridSize, 8);
+                      const colors = CATEGORY_COLORS[plant.category] || { fill: '#6b7280', stroke: '#4b5563' };
+                      return (
+                        <Group key={`plant-${idx}`}>
+                          <Circle
+                            x={px}
+                            y={py}
+                            radius={pr}
+                            fill={colors.fill}
+                            opacity={0.7}
+                            stroke={colors.stroke}
+                            strokeWidth={1.5}
+                          />
+                          <Text
+                            x={px - 30}
+                            y={py + pr + 3}
+                            width={60}
+                            text={plant.name}
+                            fontSize={9}
+                            fill="#1f2937"
+                            align="center"
+                            fontStyle="bold"
                           />
                         </Group>
                       );
@@ -1470,8 +1614,12 @@ export const GardenDesignerPage = () => {
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back to Details
                 </Button>
-                <Button variant="outline" onClick={() => setActiveTab('draw')}>
-                  View Boundary
+                <Button 
+                  onClick={() => { setShowDesignOverlay(true); setActiveTab('draw'); }}
+                  data-testid="view-on-canvas-btn"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View on Canvas
                 </Button>
               </div>
             </div>
