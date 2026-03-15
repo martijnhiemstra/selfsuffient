@@ -123,6 +123,15 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Phase 3 (AI Generation):** Backend service using user's OpenAI API key. Frontend integrates generate button with loading state, error handling (API key missing), and full results display: design summary, sun/wind/climate analysis, plant list table, garden zones, planting tips, seasonal tasks
 - **Phase 4 (Visual Output):** Renders AI-generated plants as colored circles on the Konva canvas at suggested coordinates, with name labels. Garden zones shown as semi-transparent dashed polygons. Color-coded legend by category with counts. Toggle show/hide overlay. "View on Canvas" button from results switches to canvas view.
 
+### GitHub Actions CI/CD - Mar 15, 2026
+- GitHub Actions workflow for building and pushing Docker images to GitHub Container Registry (ghcr.io)
+- Triggers on push and pull requests to `main` and `development` branches
+- Builds two separate images: backend (FastAPI) and frontend (React/Nginx)
+- Tagging: branch name (`main`/`development`) + `latest` + short SHA. PRs get `pr-{number}` tag
+- Docker layer caching via GitHub Actions cache for fast builds
+- Backend Dockerfile: runtime env vars for DB, SMTP, JWT, etc.
+- Frontend Dockerfile: build-time ARGs for `REACT_APP_BACKEND_URL`
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality

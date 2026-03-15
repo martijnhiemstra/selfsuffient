@@ -1,5 +1,5 @@
 # Frontend Dockerfile
-FROM node:20-alpine as builder
+FROM node:20-alpine AS builder
 
 WORKDIR /app
 
@@ -13,7 +13,11 @@ RUN yarn install --frozen-lockfile || yarn install
 # Copy application code
 COPY . .
 
-# Build the application
+# Build-time arguments (supply via --build-arg or docker-compose args)
+# Required:
+#   REACT_APP_BACKEND_URL - Backend API URL (baked into static build)
+# Optional:
+#   REACT_APP_APP_NAME    - Application name
 ARG REACT_APP_BACKEND_URL
 ARG REACT_APP_APP_NAME
 ENV REACT_APP_BACKEND_URL=$REACT_APP_BACKEND_URL
