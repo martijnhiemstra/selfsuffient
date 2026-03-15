@@ -432,7 +432,44 @@ export const GardenDesignerPage = () => {
         <h1 className="text-2xl font-bold">Garden Designer</h1>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Progress Steps */}
+      <div className="flex items-center justify-center gap-2">
+        <div 
+          className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${
+            activeTab === 'draw' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+          }`}
+          onClick={() => setActiveTab('draw')}
+        >
+          <span className="w-6 h-6 rounded-full bg-background/20 flex items-center justify-center text-sm font-medium">1</span>
+          <span className="font-medium">Draw Boundary</span>
+          {isClosed && <span className="text-green-400">✓</span>}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        <div 
+          className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${
+            activeTab === 'details' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+          } ${!isClosed ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => isClosed && setActiveTab('details')}
+        >
+          <span className="w-6 h-6 rounded-full bg-background/20 flex items-center justify-center text-sm font-medium">2</span>
+          <span className="font-medium">Garden Details</span>
+          {isFormValid() && <span className="text-green-400">✓</span>}
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+        <div 
+          className={`flex items-center gap-2 px-4 py-2 rounded-full cursor-pointer transition-all ${
+            activeTab === 'generate' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+          } ${!isFormValid() ? 'opacity-50 cursor-not-allowed' : ''}`}
+          onClick={() => isFormValid() && setActiveTab('generate')}
+        >
+          <span className="w-6 h-6 rounded-full bg-background/20 flex items-center justify-center text-sm font-medium">3</span>
+          <span className="font-medium">Generate Design</span>
+        </div>
+      </div>
+
+      {/* Tab Content */}
+      {activeTab === 'draw' && (
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Tools Panel */}
         <div className="lg:col-span-1 space-y-4">
           {/* Scale Settings */}
