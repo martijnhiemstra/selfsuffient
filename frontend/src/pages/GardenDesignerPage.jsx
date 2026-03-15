@@ -107,6 +107,9 @@ export const GardenDesignerPage = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Current step/tab
+  const [activeTab, setActiveTab] = useState('draw'); // 'draw', 'details', 'generate'
+
   // Canvas state
   const [stageSize, setStageSize] = useState({ width: 800, height: 600 });
   const [points, setPoints] = useState([]);
@@ -122,7 +125,128 @@ export const GardenDesignerPage = () => {
   // Tool mode
   const [tool, setTool] = useState('draw'); // 'draw', 'select', 'move'
 
+  // Garden Details Form State (Phase 2)
+  const [gardenDetails, setGardenDetails] = useState({
+    // Location
+    latitude: '',
+    longitude: '',
+    // Wind
+    windDirection: '',
+    // Garden type/goal
+    gardenGoal: '',
+    // Plant preferences
+    plantPreferences: [],
+    customPlants: '',
+    // Existing features
+    existingFeatures: [],
+    customFeatures: '',
+    // Additional notes
+    notes: ''
+  });
+
+  // Predefined plant options
+  const plantOptions = [
+    { id: 'vegetables', label: 'Vegetables', examples: 'tomatoes, peppers, carrots' },
+    { id: 'herbs', label: 'Herbs', examples: 'basil, rosemary, thyme' },
+    { id: 'fruits', label: 'Fruit trees', examples: 'apple, pear, cherry' },
+    { id: 'berries', label: 'Berries', examples: 'strawberries, blueberries, raspberries' },
+    { id: 'nuts', label: 'Nut trees', examples: 'walnut, hazelnut, almond' },
+    { id: 'leafy', label: 'Leafy greens', examples: 'lettuce, spinach, kale' },
+    { id: 'legumes', label: 'Legumes', examples: 'beans, peas, lentils' },
+    { id: 'root', label: 'Root vegetables', examples: 'potatoes, beets, onions' },
+    { id: 'flowers', label: 'Edible flowers', examples: 'nasturtium, calendula, lavender' },
+    { id: 'medicinal', label: 'Medicinal plants', examples: 'echinacea, chamomile, mint' },
+  ];
+
+  // Predefined existing feature options
+  const featureOptions = [
+    { id: 'house', label: 'House/Building', icon: Home },
+    { id: 'shed', label: 'Shed/Outbuilding', icon: Home },
+    { id: 'trees', label: 'Existing trees', icon: TreeDeciduous },
+    { id: 'pond', label: 'Pond/Water feature', icon: Leaf },
+    { id: 'slope', label: 'Slope/Hill', icon: Compass },
+    { id: 'fence', label: 'Fence/Wall', icon: Grid3X3 },
+  ];
+
+  // Wind direction options
+  const windDirections = [
+    { value: 'N', label: 'North', angle: 0 },
+    { value: 'NE', label: 'Northeast', angle: 45 },
+    { value: 'E', label: 'East', angle: 90 },
+    { value: 'SE', label: 'Southeast', angle: 135 },
+    { value: 'S', label: 'South', angle: 180 },
+    { value: 'SW', label: 'Southwest', angle: 225 },
+    { value: 'W', label: 'West', angle: 270 },
+    { value: 'NW', label: 'Northwest', angle: 315 },
+  ];
+
+  // Garden goal options
+  const gardenGoals = [
+    { 
+      value: 'simple', 
+      label: 'Simple Kitchen Garden', 
+      description: 'Basic herbs and vegetables for daily cooking',
+      icon: Leaf
+    },
+    { 
+      value: 'mixed', 
+      label: 'Mixed Garden', 
+      description: 'Combination of vegetables, herbs, and some fruit',
+      icon: TreeDeciduous
+    },
+    { 
+      value: 'forest', 
+      label: 'Full Forest Garden', 
+      description: 'Multi-layered food forest with trees, shrubs, and ground cover',
+      icon: TreeDeciduous
+    },
+    { 
+      value: 'permaculture', 
+      label: 'Permaculture Design', 
+      description: 'Self-sustaining ecosystem with companion planting',
+      icon: Sparkles
+    },
+  ];
+
   const headers = { Authorization: `Bearer ${token}` };
+
+  // Update garden details
+  const updateGardenDetails = (field, value) => {
+    setGardenDetails(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Toggle plant preference
+  const togglePlantPreference = (plantId) => {
+    setGardenDetails(prev => ({
+      ...prev,
+      plantPreferences: prev.plantPreferences.includes(plantId)
+        ? prev.plantPreferences.filter(p => p !== plantId)
+        : [...prev.plantPreferences, plantId]
+    }));
+  };
+
+  // Toggle existing feature
+  const toggleFeature = (featureId) => {
+    setGardenDetails(prev => ({
+      ...prev,
+      existingFeatures: prev.existingFeatures.includes(featureId)
+        ? prev.existingFeatures.filter(f => f !== featureId)
+        : [...prev.existingFeatures, featureId]
+    }));
+  };
+
+  // Check if form is valid for generation
+  const isFormValid = () => {
+    return (
+      isClosed &&
+      points.length >= 3 &&
+      gardenDetails.latitude &&
+      gardenDetails.longitude &&
+      gardenDetails.windDirection &&
+      gardenDetails.gardenGoal &&
+      gardenDetails.plantPreferences.length > 0
+    );
+  };
 
   // Fetch project info
   useEffect(() => {
