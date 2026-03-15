@@ -1159,47 +1159,324 @@ export const GardenDesignerPage = () => {
         </div>
       )}
 
-      {/* Step 3: Generate (Placeholder for Phase 3) */}
+      {/* Step 3: Generate & Results */}
       {activeTab === 'generate' && (
-        <Card className="max-w-2xl mx-auto">
-          <CardHeader className="text-center">
-            <CardTitle className="flex items-center justify-center gap-2">
-              <Sparkles className="w-6 h-6" />
-              Ready to Generate Your Garden Design
-            </CardTitle>
-            <CardDescription>
-              AI will analyze your inputs and create a personalized garden layout
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
-              <div><strong>Garden Size:</strong> {area.toFixed(1)} m² ({boundingBox.width.toFixed(1)}m × {boundingBox.height.toFixed(1)}m)</div>
-              <div><strong>Location:</strong> {gardenDetails.latitude}, {gardenDetails.longitude}</div>
-              <div><strong>Wind:</strong> From the {windDirections.find(w => w.value === gardenDetails.windDirection)?.label}</div>
-              <div><strong>Type:</strong> {gardenGoals.find(g => g.value === gardenDetails.gardenGoal)?.label}</div>
-              <div><strong>Plants:</strong> {gardenDetails.plantPreferences.map(id => 
-                plantOptions.find(p => p.id === id)?.label
-              ).join(', ')}</div>
-              {gardenDetails.customPlants && <div><strong>Specific:</strong> {gardenDetails.customPlants}</div>}
-            </div>
+        <div className="space-y-6">
+          {/* Generation Controls */}
+          {!generatedDesign && (
+            <Card className="max-w-2xl mx-auto" data-testid="generate-card">
+              <CardHeader className="text-center">
+                <CardTitle className="flex items-center justify-center gap-2">
+                  <Sparkles className="w-6 h-6" />
+                  {isGenerating ? 'Generating Your Garden Design...' : 'Ready to Generate Your Garden Design'}
+                </CardTitle>
+                <CardDescription>
+                  {isGenerating 
+                    ? 'AI is analyzing your inputs and creating a personalized layout. This may take a minute.'
+                    : 'AI will analyze your inputs and create a personalized garden layout'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+                  <div><strong>Garden Size:</strong> {area.toFixed(1)} m² ({boundingBox.width.toFixed(1)}m x {boundingBox.height.toFixed(1)}m)</div>
+                  <div><strong>Location:</strong> {gardenDetails.latitude}, {gardenDetails.longitude}</div>
+                  <div><strong>Wind:</strong> From the {windDirections.find(w => w.value === gardenDetails.windDirection)?.label}</div>
+                  <div><strong>Type:</strong> {gardenGoals.find(g => g.value === gardenDetails.gardenGoal)?.label}</div>
+                  <div><strong>Plants:</strong> {gardenDetails.plantPreferences.map(id => 
+                    plantOptions.find(p => p.id === id)?.label
+                  ).join(', ')}</div>
+                  {gardenDetails.customPlants && <div><strong>Specific:</strong> {gardenDetails.customPlants}</div>}
+                </div>
 
-            <div className="text-center text-muted-foreground">
-              <p>Phase 3 (AI Generation) will be implemented next.</p>
-              <p className="text-sm mt-2">This will use your OpenAI API key to generate the design.</p>
-            </div>
+                {isGenerating && (
+                  <div className="flex flex-col items-center gap-4 py-8" data-testid="generation-loading">
+                    <Loader2 className="w-12 h-12 animate-spin text-primary" />
+                    <div className="text-center space-y-1">
+                      <p className="font-medium">Designing your garden...</p>
+                      <p className="text-sm text-muted-foreground">Analyzing sun path, wind patterns, and companion planting</p>
+                    </div>
+                  </div>
+                )}
 
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={() => setActiveTab('details')}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back to Details
-              </Button>
-              <Button className="flex-1" disabled>
-                <Sparkles className="w-4 h-4 mr-2" />
-                Generate Design (Coming in Phase 3)
-              </Button>
+                {generationError && (
+                  <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4 text-center" data-testid="generation-error">
+                    <p className="text-destructive font-medium">{generationError}</p>
+                    {generationError.includes('API key') && (
+                      <Button variant="link" className="mt-2" onClick={() => navigate('/settings')}>
+                        Go to Settings to configure your API key
+                      </Button>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setActiveTab('details')} disabled={isGenerating}>
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back to Details
+                  </Button>
+                  <Button 
+                    className="flex-1" 
+                    disabled={isGenerating}
+                    onClick={handleGenerateDesign}
+                    data-testid="generate-design-btn"
+                  >
+                    {isGenerating ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Generating...
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 mr-2" />
+                        Generate Garden Design
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Results Display */}
+          {generatedDesign && (
+            <div className="space-y-6" data-testid="garden-results">
+              {/* Success Header */}
+              <Card className="border-green-500/50 bg-green-50/50 dark:bg-green-900/10">
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <CheckCircle className="w-6 h-6 text-green-600" />
+                      <div>
+                        <h3 className="font-semibold text-lg">Garden Design Generated</h3>
+                        <p className="text-sm text-muted-foreground">
+                          {generatedDesign.design?.plants?.length || 0} plants placed across {generatedDesign.design?.zones?.length || 0} zones
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => { setGeneratedDesign(null); setGenerationError(null); }}>
+                        <RotateCcw className="w-4 h-4 mr-2" />
+                        Regenerate
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Design Summary */}
+              {generatedDesign.design?.design_summary && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Sparkles className="w-5 h-5" />
+                      Design Summary
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm leading-relaxed">{generatedDesign.design.design_summary}</p>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Analysis Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {generatedDesign.design?.sun_analysis && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Sun className="w-4 h-4 text-yellow-500" />
+                        Sun Analysis
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{generatedDesign.design.sun_analysis}</p>
+                    </CardContent>
+                  </Card>
+                )}
+                {generatedDesign.design?.wind_analysis && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Wind className="w-4 h-4 text-blue-500" />
+                        Wind Analysis
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{generatedDesign.design.wind_analysis}</p>
+                    </CardContent>
+                  </Card>
+                )}
+                {generatedDesign.design?.climate_info && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="flex items-center gap-2 text-sm">
+                        <Droplets className="w-4 h-4 text-teal-500" />
+                        Climate Info
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-xs leading-relaxed text-muted-foreground">{generatedDesign.design.climate_info}</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+
+              {/* Plant List */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <List className="w-5 h-5" />
+                    Plant List ({generatedDesign.design?.plants?.length || 0} plants)
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm" data-testid="plant-list-table">
+                      <thead>
+                        <tr className="border-b text-left">
+                          <th className="pb-2 font-medium">Plant</th>
+                          <th className="pb-2 font-medium">Category</th>
+                          <th className="pb-2 font-medium">Position</th>
+                          <th className="pb-2 font-medium">Sun</th>
+                          <th className="pb-2 font-medium">Water</th>
+                          <th className="pb-2 font-medium">Height</th>
+                          <th className="pb-2 font-medium">Notes</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {generatedDesign.design?.plants?.map((plant, idx) => (
+                          <tr key={idx} className="border-b last:border-0 hover:bg-muted/30">
+                            <td className="py-2 font-medium">{plant.name}</td>
+                            <td className="py-2">
+                              <Badge variant="outline" className="text-xs">
+                                {plant.category?.replace('_', ' ')}
+                              </Badge>
+                            </td>
+                            <td className="py-2 text-muted-foreground">
+                              ({plant.x?.toFixed(1)}m, {plant.y?.toFixed(1)}m)
+                            </td>
+                            <td className="py-2">
+                              <Badge variant={plant.sun_requirement === 'full_sun' ? 'default' : 'secondary'} className="text-xs">
+                                {plant.sun_requirement?.replace('_', ' ')}
+                              </Badge>
+                            </td>
+                            <td className="py-2">
+                              <Badge variant={plant.water_need === 'high' ? 'default' : 'secondary'} className="text-xs">
+                                {plant.water_need}
+                              </Badge>
+                            </td>
+                            <td className="py-2 text-xs text-muted-foreground">{plant.height?.replace('_', ' ')}</td>
+                            <td className="py-2 text-xs text-muted-foreground max-w-[200px] truncate" title={plant.notes}>{plant.notes}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Zones */}
+              {generatedDesign.design?.zones?.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Grid3X3 className="w-5 h-5" />
+                      Garden Zones ({generatedDesign.design.zones.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {generatedDesign.design.zones.map((zone, idx) => (
+                        <div key={idx} className="border rounded-lg p-3">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className={`w-3 h-3 rounded-full ${
+                              zone.type === 'sun' ? 'bg-yellow-400' :
+                              zone.type === 'partial_shade' ? 'bg-orange-300' :
+                              zone.type === 'shade' ? 'bg-gray-400' :
+                              zone.type === 'windbreak' ? 'bg-blue-400' :
+                              'bg-teal-400'
+                            }`} />
+                            <span className="font-medium text-sm">{zone.name}</span>
+                            <Badge variant="outline" className="text-xs ml-auto">{zone.type?.replace('_', ' ')}</Badge>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{zone.description}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Planting Tips */}
+              {generatedDesign.design?.planting_tips?.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Leaf className="w-5 h-5" />
+                      Planting Tips
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ul className="space-y-2">
+                      {generatedDesign.design.planting_tips.map((tip, idx) => (
+                        <li key={idx} className="flex items-start gap-2 text-sm">
+                          <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                          <span>{tip}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Seasonal Tasks */}
+              {generatedDesign.design?.seasonal_tasks && Object.keys(generatedDesign.design.seasonal_tasks).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <Calendar className="w-5 h-5" />
+                      Seasonal Tasks
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      {Object.entries(generatedDesign.design.seasonal_tasks).map(([season, tasks]) => (
+                        <div key={season} className="space-y-2">
+                          <h4 className="font-medium capitalize text-sm flex items-center gap-2">
+                            {season === 'spring' && <span className="text-green-500">&#9679;</span>}
+                            {season === 'summer' && <span className="text-yellow-500">&#9679;</span>}
+                            {season === 'autumn' && <span className="text-orange-500">&#9679;</span>}
+                            {season === 'winter' && <span className="text-blue-500">&#9679;</span>}
+                            {season}
+                          </h4>
+                          <ul className="space-y-1">
+                            {tasks?.map((task, idx) => (
+                              <li key={idx} className="text-xs text-muted-foreground flex items-start gap-1.5">
+                                <span className="text-muted-foreground/50 mt-0.5">-</span>
+                                <span>{task}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Action Buttons */}
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" onClick={() => setActiveTab('details')}>
+                  <ArrowLeft className="w-4 h-4 mr-2" />
+                  Back to Details
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('draw')}>
+                  View Boundary
+                </Button>
+              </div>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </div>
       )}
     </div>
   );

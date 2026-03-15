@@ -23,7 +23,7 @@ from services.google_calendar import (
 router = APIRouter()
 
 # Get the frontend URL for redirects
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://eco-living-app.preview.emergentagent.com')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://earthly-garden-draft.preview.emergentagent.com')
 
 
 class GoogleCalendarSettings(BaseModel):
