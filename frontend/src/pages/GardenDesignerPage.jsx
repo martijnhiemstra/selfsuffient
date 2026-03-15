@@ -38,7 +38,13 @@ import {
   Compass,
   Sparkles,
   ChevronRight,
-  X
+  X,
+  Loader2,
+  CheckCircle,
+  List,
+  Calendar,
+  Droplets,
+  TreeDeciduous as Tree
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
