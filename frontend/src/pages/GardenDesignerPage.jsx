@@ -805,8 +805,351 @@ export const GardenDesignerPage = () => {
               Scale: 1 square = {gridScale}m × {gridScale}m
             </span>
           </div>
+
+          {/* Next Step Button */}
+          {isClosed && (
+            <div className="flex justify-end mt-4">
+              <Button onClick={() => setActiveTab('details')}>
+                Continue to Garden Details
+                <ChevronRight className="w-4 h-4 ml-2" />
+              </Button>
+            </div>
+          )}
         </div>
       </div>
+      )}
+
+      {/* Step 2: Garden Details Form */}
+      {activeTab === 'details' && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column - Location & Environment */}
+          <div className="space-y-6">
+            {/* GPS Location */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Location (GPS Coordinates)
+                </CardTitle>
+                <CardDescription>
+                  Enter your garden's coordinates for accurate sun path calculation
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="latitude">Latitude</Label>
+                    <Input
+                      id="latitude"
+                      type="number"
+                      step="any"
+                      placeholder="e.g., 52.3676"
+                      value={gardenDetails.latitude}
+                      onChange={(e) => updateGardenDetails('latitude', e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="longitude">Longitude</Label>
+                    <Input
+                      id="longitude"
+                      type="number"
+                      step="any"
+                      placeholder="e.g., 4.9041"
+                      value={gardenDetails.longitude}
+                      onChange={(e) => updateGardenDetails('longitude', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  <strong>Tip:</strong> You can find your coordinates on Google Maps by right-clicking your location
+                </p>
+                {gardenDetails.latitude && gardenDetails.longitude && (
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Sun className="w-4 h-4 text-yellow-500" />
+                      <span>AI will calculate sun path, angles, and climate for this location</span>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Wind Direction */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wind className="w-5 h-5" />
+                  Prevailing Wind Direction
+                </CardTitle>
+                <CardDescription>
+                  Select the direction wind usually comes from
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-4 gap-2">
+                  {windDirections.map((dir) => (
+                    <Button
+                      key={dir.value}
+                      variant={gardenDetails.windDirection === dir.value ? 'default' : 'outline'}
+                      className="flex flex-col h-auto py-3"
+                      onClick={() => updateGardenDetails('windDirection', dir.value)}
+                    >
+                      <Compass 
+                        className="w-5 h-5 mb-1" 
+                        style={{ transform: `rotate(${dir.angle}deg)` }}
+                      />
+                      <span className="text-xs">{dir.label}</span>
+                    </Button>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Garden Goal */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Target className="w-5 h-5" />
+                  Garden Goal
+                </CardTitle>
+                <CardDescription>
+                  What type of garden do you want to create?
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {gardenGoals.map((goal) => {
+                  const Icon = goal.icon;
+                  return (
+                    <div
+                      key={goal.value}
+                      className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
+                        gardenDetails.gardenGoal === goal.value
+                          ? 'border-primary bg-primary/5'
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                      onClick={() => updateGardenDetails('gardenGoal', goal.value)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <Icon className={`w-5 h-5 mt-0.5 ${
+                          gardenDetails.gardenGoal === goal.value ? 'text-primary' : 'text-muted-foreground'
+                        }`} />
+                        <div>
+                          <div className="font-medium">{goal.label}</div>
+                          <div className="text-sm text-muted-foreground">{goal.description}</div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Plants & Features */}
+          <div className="space-y-6">
+            {/* Plant Preferences */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Leaf className="w-5 h-5" />
+                  What do you want to grow?
+                </CardTitle>
+                <CardDescription>
+                  Select all that apply
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex flex-wrap gap-2">
+                  {plantOptions.map((plant) => (
+                    <Badge
+                      key={plant.id}
+                      variant={gardenDetails.plantPreferences.includes(plant.id) ? 'default' : 'outline'}
+                      className="cursor-pointer py-2 px-3"
+                      onClick={() => togglePlantPreference(plant.id)}
+                    >
+                      {gardenDetails.plantPreferences.includes(plant.id) && (
+                        <span className="mr-1">✓</span>
+                      )}
+                      {plant.label}
+                    </Badge>
+                  ))}
+                </div>
+                
+                {gardenDetails.plantPreferences.length > 0 && (
+                  <div className="bg-muted/50 rounded-lg p-3 text-sm">
+                    <strong>Selected:</strong>{' '}
+                    {gardenDetails.plantPreferences.map(id => 
+                      plantOptions.find(p => p.id === id)?.label
+                    ).join(', ')}
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label htmlFor="customPlants">Specific plants (optional)</Label>
+                  <Textarea
+                    id="customPlants"
+                    placeholder="List any specific plants you want, e.g., Roma tomatoes, Gala apples, Meyer lemons..."
+                    value={gardenDetails.customPlants}
+                    onChange={(e) => updateGardenDetails('customPlants', e.target.value)}
+                    rows={3}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Existing Features */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Home className="w-5 h-5" />
+                  Existing Features on Land
+                </CardTitle>
+                <CardDescription>
+                  What's already on your property? (optional)
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-2">
+                  {featureOptions.map((feature) => {
+                    const Icon = feature.icon;
+                    return (
+                      <Button
+                        key={feature.id}
+                        variant={gardenDetails.existingFeatures.includes(feature.id) ? 'default' : 'outline'}
+                        className="justify-start h-auto py-3"
+                        onClick={() => toggleFeature(feature.id)}
+                      >
+                        <Icon className="w-4 h-4 mr-2" />
+                        {feature.label}
+                      </Button>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="customFeatures">Other features (optional)</Label>
+                  <Textarea
+                    id="customFeatures"
+                    placeholder="Describe any other features: greenhouse, compost area, chicken coop, etc."
+                    value={gardenDetails.customFeatures}
+                    onChange={(e) => updateGardenDetails('customFeatures', e.target.value)}
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Additional Notes */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Info className="w-5 h-5" />
+                  Additional Notes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Textarea
+                  placeholder="Any other information the AI should consider: soil type, water availability, time constraints, budget, etc."
+                  value={gardenDetails.notes}
+                  onChange={(e) => updateGardenDetails('notes', e.target.value)}
+                  rows={4}
+                />
+              </CardContent>
+            </Card>
+
+            {/* Summary & Continue */}
+            <Card className={isFormValid() ? 'border-green-500 bg-green-50 dark:bg-green-900/20' : ''}>
+              <CardContent className="pt-6">
+                <div className="space-y-3">
+                  <h4 className="font-medium">Summary</h4>
+                  <div className="text-sm space-y-1">
+                    <div className="flex items-center gap-2">
+                      {isClosed ? '✓' : '○'} Garden boundary: {area.toFixed(1)} m² ({points.length} points)
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {gardenDetails.latitude && gardenDetails.longitude ? '✓' : '○'} Location set
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {gardenDetails.windDirection ? '✓' : '○'} Wind direction: {gardenDetails.windDirection || 'Not set'}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {gardenDetails.gardenGoal ? '✓' : '○'} Garden type: {
+                        gardenGoals.find(g => g.value === gardenDetails.gardenGoal)?.label || 'Not selected'
+                      }
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {gardenDetails.plantPreferences.length > 0 ? '✓' : '○'} Plants: {
+                        gardenDetails.plantPreferences.length > 0 
+                          ? `${gardenDetails.plantPreferences.length} categories`
+                          : 'None selected'
+                      }
+                    </div>
+                  </div>
+
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="outline" onClick={() => setActiveTab('draw')}>
+                      <ArrowLeft className="w-4 h-4 mr-2" />
+                      Back to Drawing
+                    </Button>
+                    <Button 
+                      className="flex-1"
+                      disabled={!isFormValid()}
+                      onClick={() => setActiveTab('generate')}
+                    >
+                      <Sparkles className="w-4 h-4 mr-2" />
+                      Generate Garden Design
+                      <ChevronRight className="w-4 h-4 ml-2" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      )}
+
+      {/* Step 3: Generate (Placeholder for Phase 3) */}
+      {activeTab === 'generate' && (
+        <Card className="max-w-2xl mx-auto">
+          <CardHeader className="text-center">
+            <CardTitle className="flex items-center justify-center gap-2">
+              <Sparkles className="w-6 h-6" />
+              Ready to Generate Your Garden Design
+            </CardTitle>
+            <CardDescription>
+              AI will analyze your inputs and create a personalized garden layout
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="bg-muted/50 rounded-lg p-4 space-y-2 text-sm">
+              <div><strong>Garden Size:</strong> {area.toFixed(1)} m² ({boundingBox.width.toFixed(1)}m × {boundingBox.height.toFixed(1)}m)</div>
+              <div><strong>Location:</strong> {gardenDetails.latitude}, {gardenDetails.longitude}</div>
+              <div><strong>Wind:</strong> From the {windDirections.find(w => w.value === gardenDetails.windDirection)?.label}</div>
+              <div><strong>Type:</strong> {gardenGoals.find(g => g.value === gardenDetails.gardenGoal)?.label}</div>
+              <div><strong>Plants:</strong> {gardenDetails.plantPreferences.map(id => 
+                plantOptions.find(p => p.id === id)?.label
+              ).join(', ')}</div>
+              {gardenDetails.customPlants && <div><strong>Specific:</strong> {gardenDetails.customPlants}</div>}
+            </div>
+
+            <div className="text-center text-muted-foreground">
+              <p>Phase 3 (AI Generation) will be implemented next.</p>
+              <p className="text-sm mt-2">This will use your OpenAI API key to generate the design.</p>
+            </div>
+
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setActiveTab('details')}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Details
+              </Button>
+              <Button className="flex-1" disabled>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Design (Coming in Phase 3)
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };
