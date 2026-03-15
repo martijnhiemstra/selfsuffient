@@ -178,6 +178,7 @@ export const ProjectDetailPage = () => {
     { id: 'tasks', label: 'Tasks', icon: Calendar, description: 'Plan and track activities', path: `/projects/${projectId}/tasks` },
     { id: 'startup', label: 'Daily Routines', icon: Sun, description: 'Startup & shutdown lists', path: `/projects/${projectId}/routines` },
     { id: 'checklists', label: 'Checklists', icon: ListChecks, description: 'Reusable task checklists', path: `/projects/${projectId}/checklists` },
+    { id: 'garden-designer', label: 'Garden Designer', icon: Flower2, description: 'AI-powered garden planning', path: `/projects/${projectId}/garden-designer` },
   ];
 
   return (
