@@ -39,7 +39,7 @@ export const ForgotPasswordPage = () => {
               <Leaf className="w-6 h-6 text-primary-foreground" />
             </div>
             <h1 className="text-2xl font-display font-bold tracking-tight">
-              Self-Sufficient Life
+              Earthly Life
             </h1>
           </div>
 
@@ -73,7 +73,7 @@ export const ForgotPasswordPage = () => {
             <Leaf className="w-6 h-6 text-primary-foreground" />
           </div>
           <h1 className="text-2xl font-display font-bold tracking-tight">
-            Self-Sufficient Life
+            Earthly Life
           </h1>
         </div>
 

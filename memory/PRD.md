@@ -1,7 +1,7 @@
-# Self-Sufficient Life - Product Requirements Document
+# Earthly Life - Product Requirements Document
 
 ## Overview
-A full-stack application to help users setup and maintain a self-sufficient lifestyle, with project management, diaries, galleries, blogs, libraries, task management, and daily routines.
+A full-stack application to help users setup and maintain a sustainable, self-sufficient lifestyle, with project management, diaries, galleries, blogs, libraries, task management, daily routines, and financial tracking.
 
 ## Original Problem Statement
 Build an application that helps users setup a self-sufficient lifestyle with:
@@ -25,39 +25,42 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Containerization**: Docker, Docker Compose
 - **Scheduled Tasks**: Cron (inside backend container)
 
-## Code Architecture (After Refactoring - Jan 2026)
+## Code Architecture
 ```
 /app/
-├── docker-compose.yml
-├── DOCKER.md
 ├── backend/
-│   ├── server.py           # Main FastAPI app entry point (~80 lines)
+│   ├── server.py           # Main FastAPI app entry point
 │   ├── config.py           # Configuration and database connection
 │   ├── models/             # Pydantic models
-│   │   ├── __init__.py, auth.py, project.py, diary.py, gallery.py,
-│   │   └── blog.py, library.py, task.py, routine.py, public.py
 │   ├── routes/             # API route handlers
-│   │   ├── __init__.py, auth.py, admin.py, projects.py, diary.py,
-│   │   └── gallery.py, blog.py, library.py, tasks.py, routines.py,
-│   │       public.py, dashboard.py, health.py
-│   ├── services/           # Business logic helpers
-│   │   └── __init__.py, auth.py, email.py, project.py
-│   ├── daily_reminders.py  # Cron job script
-│   └── Dockerfile, requirements.txt
+│   │   ├── checklist.py    # Project checklists
+│   │   ├── gallery.py      # Gallery with folder support
+│   │   ├── google_calendar.py # Google Calendar sync
+│   │   ├── import_transactions.py # Transaction imports with AI
+│   │   └── openai_settings.py # NEW: User OpenAI API key management
+│   └── services/
+│       ├── google_calendar.py
+│       └── openai_analyzer.py  # NEW: AI transaction analysis
 ├── frontend/
 │   ├── src/
-│   │   ├── App.js, config.js, utils.js
+│   │   ├── App.js
 │   │   ├── components/
-│   │   │   ├── ShareButton.jsx    # Social sharing component
-│   │   │   └── ...
-│   │   ├── context/, hooks/, pages/
-│   ├── public/, Dockerfile, package.json
+│   │   │   └── PWAInstallPrompt.jsx  # PWA install prompt
+│   │   ├── serviceWorkerRegistration.js  # PWA service worker
+│   │   └── pages/
+│   │       ├── ChecklistsPage.jsx    # Nested under projects
+│   │       ├── FinancePage.jsx       # Full budgeting + AI import
+│   │       └── SettingsPage.jsx      # OpenAI API key config
+│   └── public/
+│       ├── manifest.json      # PWA manifest
+│       ├── service-worker.js  # Service worker for offline
+│       └── icons/             # PWA icons (72-512px)
 └── memory/PRD.md
 ```
 
 ## Completed Features ✅
 
-### Core Features (Original Requirements)
+### Core Features
 1. **Authentication** ✅ - JWT login, password reset via SMTP
 2. **Projects** ✅ - Full CRUD with image upload, public/private
 3. **Diary** ✅ - Searchable/sortable entries
@@ -71,119 +74,75 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 11. **Daily Reminders** ✅ - Opt-in email via cron
 12. **Docker** ✅ - Full containerization
 
-### Recent Updates (Jan 16-17, 2026)
+### Financial Module ✅
+- Account management (multiple accounts with balances)
+- Transaction tracking (income/expenses with categories)
+- Savings goals with progress tracking
+- Expense Periods with budgeting
+- Budget comparison view
+- Monthly overview with category breakdown
+- Financial runway calculation
+- Transaction import (CSV, OFX, QFX files)
 
-#### Watermark Removed ✅
-- Removed emergent-main.js script from index.html
+### AI Transaction Analysis ✅ - Feb 13, 2026
+- **User-provided OpenAI API keys** - Each user configures their own key in Settings
+- **Model selection** - GPT-4o-mini, GPT-4o, GPT-4-turbo, GPT-3.5-turbo
+- **During import preview**, users can click "Analyze with AI" to:
+  - Auto-categorize transactions (income/expense, category)
+  - Detect recurring transactions (subscriptions, bills, salary)
+  - Flag unusual amounts compared to historical patterns
+- **Encrypted storage** of API keys per user
+- **Test key** functionality to validate before saving
 
-#### Backend Refactoring ✅
-- Split 2100+ line monolithic server.py into modular structure
-- Created separate models/, routes/, services/ directories
+### Project Checklists ✅
+- Reusable checklists within projects
+- Checklist items with toggle completion
+- Progress tracking (completed/total)
+- Reset functionality
+- Nested route: `/projects/:projectId/checklists`
 
-#### Image Display Fix ✅
-- Created `/api/files/{path}` endpoint with proper CORS headers
-- Created `getImageUrl()` utility in frontend for URL transformation
-- Added `CORSStaticFilesMiddleware` for static files CORS support
-- Fixed image display on: Landing page, Projects page, Project detail, Gallery, Dashboard
+### Google Calendar Integration ✅
+- User-provided OAuth credentials
+- One-way sync (tasks/routines to Google Calendar)
+- Stored per-user credentials
 
-#### Social Sharing Features ✅
-- **ShareButton component**: Dropdown with Twitter/X, Facebook, LinkedIn, Email, Copy Link
-- **ShareIcons component**: Compact inline sharing icons
-- Added to:
-  - Public project pages (Share button in header)
-  - Landing page project cards (Share icons)
-  - Blog/Library entry cards (Share icons)
+### Progressive Web App (PWA) ✅ - Feb 11, 2026
+- Web app manifest with app info and icons
+- Service worker for offline caching
+- Multiple icon sizes (72px - 512px)
+- Apple touch icon support
+- Install prompt component
 
-#### Gallery Image Modal ✅ (Jan 17, 2026)
-- Click on gallery images to view in fullscreen modal
-- Features:
-  - Large image display with dark overlay background
-  - Filename and image counter (e.g., "1 of 5")
-  - Download button to save image
-  - Close button (X) and click outside to close
-  - Previous/Next navigation arrows (when multiple images)
-  - Thumbnail strip at bottom for quick navigation
-  - Keyboard navigation: Arrow keys (left/right), Escape to close
-- Works on both secure Gallery page and public project Gallery tab
+## Recent Bug Fixes
+- **Gallery Upload Bug** (Feb 11, 2026) - Fixed folder_id not being passed during subfolder uploads
+- **Google Libraries Missing** (Feb 13, 2026) - Added google-api-python-client and related packages to requirements.txt
 
-#### Private Gallery Image Security ✅ (Jan 17, 2026)
-- Images in private folders are now protected from anonymous access
-- Access control checks:
-  - Image folder's `is_public` flag
-  - User authentication via token (query param or header)
-  - Project ownership verification
-- Token passed via query parameter for `<img>` tag compatibility
-- Public folder/project images remain accessible to everyone
+### AI Garden Designer - Feb 15, 2026
+- **Phase 1 (Canvas):** Interactive Konva.js drawing tool with configurable grid scale, snap-to-grid, polygon closure detection, real-time measurements (area, perimeter)
+- **Phase 2 (Input Form):** GPS coordinates, wind direction, garden goal selection, plant preferences, existing features, custom notes
+- **Phase 3 (AI Generation):** Backend service using user's OpenAI API key. Frontend integrates generate button with loading state, error handling (API key missing), and full results display: design summary, sun/wind/climate analysis, plant list table, garden zones, planting tips, seasonal tasks
+- **Phase 4 (Visual Output):** Renders AI-generated plants as colored circles on the Konva canvas at suggested coordinates, with name labels. Garden zones shown as semi-transparent dashed polygons. Color-coded legend by category with counts. Toggle show/hide overlay. "View on Canvas" button from results switches to canvas view.
 
-#### Simplified Editor & Blog Image Attachments ✅ (Jan 17, 2026)
-- Replaced RichTextEditor with SimpleEditor (no embedded images)
-- SimpleEditor features:
-  - Headings (H1, H2, H3)
-  - Text formatting (Bold, Italic, Underline, Strikethrough)
-  - Text color picker (20 preset colors)
-  - Lists (bullet, numbered) and blockquotes
-  - Text alignment (left, center, right)
-  - Links
-  - Undo/Redo
-- Blog entries now support attached images (separate from content)
-- New endpoints: POST/DELETE `/api/projects/{id}/blog/{entry_id}/images`
-- Images stored in `/uploads/blog/{project_id}/{entry_id}/`
-- Blog model updated with `images` array field
-- **Diary & Library pages also updated to use SimpleEditor**
+## Upcoming Tasks (P0-P1)
+1. (P1) PWA refinement and offline capabilities
+3. (P1) Project export/import functionality
 
-#### CORS Fix for Cross-Origin Uploads ✅ (Jan 17, 2026)
-- Implemented `CORSAllMiddleware` custom middleware in server.py
-- Handles OPTIONS preflight requests with proper headers
-- All responses include CORS headers for cross-origin access
-- Verified working with cross-origin requests from different domains
-
-#### Maximum Upload Image Size (5MB) ✅ (Jan 17, 2026)
-- Added `MAX_UPLOAD_SIZE` (5MB) constant in config.py
-- Backend validates file size on all image upload endpoints:
-  - Project image upload (`/api/projects/{id}/image`)
-  - Gallery image upload (`/api/projects/{id}/gallery/images`)
-  - Blog image upload (`/api/projects/{id}/blog/{entry_id}/images`)
-- Returns HTTP 413 with clear error message for oversized files
-- New `/api/config` endpoint exposes max upload size to frontend
-- Frontend validation in `utils.js`: `validateImageFile()`, `getMaxUploadSizeMB()`
-- Upload dialogs display "Supported: JPEG, PNG, GIF, WEBP (max 5MB)"
-- Error toast displayed immediately when user selects oversized file
-
-## Key API Endpoints
-- **Auth**: `/api/auth/{login, forgot-password, reset-password, me, settings, change-password}`
-- **Admin**: `/api/admin/users` (CRUD)
-- **Projects**: `/api/projects` (CRUD with image upload)
-- **Diary**: `/api/projects/{id}/diary` (CRUD)
-- **Gallery**: `/api/projects/{id}/gallery/{folders, images}` (CRUD)
-- **Blog**: `/api/projects/{id}/blog` (CRUD) + `/blog/{entry_id}/images` (image attachments)
-- **Library**: `/api/projects/{id}/library/{folders, entries}` (CRUD)
-- **Tasks**: `/api/projects/{id}/tasks` (CRUD)
-- **Routines**: `/api/projects/{id}/routines/{startup, shutdown}` (CRUD + complete)
-- **Dashboard**: `/api/dashboard/{data, all-tasks}`
-- **Public**: `/api/public/{projects, users/{id}/profile}`
-- **Files**: `/api/files/{path}` - Serves files with access control (supports `?token=` for auth)
-- **Health**: `/api/health`
-- **Config**: `/api/config` - Returns app configuration (max_upload_size_mb, max_upload_size_bytes, allowed_image_types)
+## Future/Backlog Tasks (P2)
+1. Update app tagline to align with "Earthly Life"
+2. Full mobile app (React Native or Capacitor)
+3. Multi-language support
+4. Two-factor authentication (2FA)
+5. Project collaboration features
+6. Frontend linting warnings cleanup
 
 ## Test Credentials
-- **Admin Email**: admin@selfsufficient.app
-- **Admin Password**: admin123
+- **Email:** admin@selfsufficient.app
+- **Password:** admin123
 
-## Test Reports
-- `/app/test_reports/iteration_10.json` - Backend refactoring tests (33 passed)
-- `/app/test_reports/iteration_11.json` - Image fix & sharing tests (29 passed)
-- `/app/test_reports/iteration_12.json` - CORS, max upload size, SimpleEditor tests (all passed)
-- `/app/tests/test_image_and_sharing.py` - Pytest test suite
-- `/app/tests/test_upload_size_and_cors.py` - CORS and upload size tests
-
-## Future Enhancements (Backlog)
-1. Export/import functionality for projects
-2. Mobile app version
-3. Analytics dashboard for content views
-4. Multi-language support
-5. Two-factor authentication
-6. Project collaboration features
-
-## Documentation
-- `/app/DOCKER.md` - Docker setup and deployment guide
-- `/app/.env.example` - Environment variables template
+## Key API Endpoints
+- **OpenAI Settings:** `/api/openai/settings` (GET/POST/DELETE), `/api/openai/test`, `/api/openai/models`
+- **AI Import Analysis:** `/api/finance/import/analyze`
+- **Checklists:** `/api/checklists`, `/api/checklists/{id}`
+- **Finance:** `/api/finance/accounts`, `/api/finance/transactions`
+- **Import:** `/api/finance/import/preview`, `/api/finance/import/confirm`
+- **Google Calendar:** `/api/google-calendar/auth`, `/api/google-calendar/sync`

@@ -1,5 +1,5 @@
 """
-Self-Sufficient Life - Main Application Entry Point
+Earthly Life - Main Application Entry Point
 
 A full-stack application for managing self-sufficient lifestyle projects,
 including diary entries, galleries, blogs, libraries, tasks, and daily routines.

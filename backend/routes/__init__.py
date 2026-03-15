@@ -17,6 +17,13 @@ from .routines import router as routines_router
 from .public import router as public_router
 from .dashboard import router as dashboard_router
 from .health import router as health_router
+from .finance import router as finance_router
+from .budget import router as budget_router
+from .import_transactions import router as import_router
+from .google_calendar import router as google_calendar_router
+from .checklist import router as checklist_router
+from .openai_settings import router as openai_router
+from .garden_designer import router as garden_router
 
 api_router.include_router(auth_router, prefix="/auth", tags=["Authentication"])
 api_router.include_router(admin_router, prefix="/admin", tags=["Admin"])
@@ -30,3 +37,11 @@ api_router.include_router(routines_router, tags=["Routines"])
 api_router.include_router(public_router, prefix="/public", tags=["Public"])
 api_router.include_router(dashboard_router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(health_router, tags=["Health"])
+api_router.include_router(finance_router, prefix="/finance", tags=["Finance"])
+api_router.include_router(budget_router, prefix="/budget", tags=["Budget"])
+api_router.include_router(import_router, prefix="/finance/import", tags=["Import"])
+api_router.include_router(google_calendar_router, prefix="/google-calendar", tags=["Google Calendar"])
+api_router.include_router(checklist_router, tags=["Checklists"])
+api_router.include_router(openai_router, tags=["OpenAI"])
+api_router.include_router(garden_router, prefix="/garden", tags=["Garden Designer"])
+

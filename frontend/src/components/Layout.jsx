@@ -22,7 +22,8 @@ import {
   Menu,
   X,
   Users,
-  Globe
+  Globe,
+  Wallet
 } from 'lucide-react';
 
 export const Layout = ({ children }) => {
@@ -40,6 +41,7 @@ export const Layout = ({ children }) => {
     { path: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/projects', label: 'Projects', icon: FolderOpen },
     { path: '/calendar', label: 'Calendar', icon: Calendar },
+    { path: '/finance', label: 'Finance', icon: Wallet },
   ];
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');

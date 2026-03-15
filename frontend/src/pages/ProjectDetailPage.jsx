@@ -44,7 +44,9 @@ import {
   Lock,
   Loader2,
   FolderOpen,
-  Settings
+  Settings,
+  ListChecks,
+  Flower2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -175,6 +177,8 @@ export const ProjectDetailPage = () => {
     { id: 'library', label: 'Library', icon: Library, description: 'Store experiences & knowledge', path: `/projects/${projectId}/library` },
     { id: 'tasks', label: 'Tasks', icon: Calendar, description: 'Plan and track activities', path: `/projects/${projectId}/tasks` },
     { id: 'startup', label: 'Daily Routines', icon: Sun, description: 'Startup & shutdown lists', path: `/projects/${projectId}/routines` },
+    { id: 'checklists', label: 'Checklists', icon: ListChecks, description: 'Reusable task checklists', path: `/projects/${projectId}/checklists` },
+    { id: 'garden-designer', label: 'Garden Designer', icon: Flower2, description: 'AI-powered garden planning', path: `/projects/${projectId}/garden-designer` },
   ];
 
   return (

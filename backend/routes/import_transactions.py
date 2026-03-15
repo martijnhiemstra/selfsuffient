@@ -1,0 +1,518 @@
+"""Transaction import routes - CSV and OFX file parsing."""
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
+from typing import Optional, List
+from datetime import datetime, timezone
+import uuid
+import csv
+import io
+import re
+
+from config import db
+from models import (
+    ImportedTransaction, CSVColumnMapping, ImportPreviewResponse,
+    ImportConfirmRequest, TransactionResponse, MessageResponse
+)
+from services import get_current_user
+
+router = APIRouter()
+
+
+def parse_date(date_str: str, date_format: str = "%Y-%m-%d") -> str:
+    """Parse date string and return ISO format YYYY-MM-DD"""
+    # Common date formats to try
+    formats_to_try = [
+        date_format,
+        "%Y-%m-%d",
+        "%d/%m/%Y",
+        "%m/%d/%Y",
+        "%d.%m.%Y",
+        "%Y/%m/%d",
+        "%d-%m-%Y",
+        "%m-%d-%Y",
+        "%Y%m%d",
+    ]
+    
+    date_str = date_str.strip()
+    
+    for fmt in formats_to_try:
+        try:
+            dt = datetime.strptime(date_str, fmt)
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            continue
+    
+    raise ValueError(f"Cannot parse date: {date_str}")
+
+
+def parse_amount(amount_str: str) -> float:
+    """Parse amount string handling various formats"""
+    # Remove currency symbols and whitespace
+    amount_str = re.sub(r'[€$£¥₹\s]', '', amount_str.strip())
+    
+    # Handle European format (1.234,56 -> 1234.56)
+    if ',' in amount_str and '.' in amount_str:
+        # Determine which is decimal separator
+        if amount_str.rfind(',') > amount_str.rfind('.'):
+            # European: 1.234,56
+            amount_str = amount_str.replace('.', '').replace(',', '.')
+        else:
+            # US: 1,234.56
+            amount_str = amount_str.replace(',', '')
+    elif ',' in amount_str:
+        # Could be European decimal or US thousands
+        # If comma is followed by exactly 2 digits at end, treat as decimal
+        if re.match(r'^-?[\d.]*,\d{2}$', amount_str):
+            amount_str = amount_str.replace(',', '.')
+        else:
+            amount_str = amount_str.replace(',', '')
+    
+    return float(amount_str)
+
+
+@router.post("/preview/csv", response_model=ImportPreviewResponse)
+async def preview_csv_import(
+    file: UploadFile = File(...),
+    delimiter: str = Form(","),
+    has_header: bool = Form(True),
+    date_column: Optional[str] = Form(None),
+    amount_column: Optional[str] = Form(None),
+    description_column: Optional[str] = Form(None),
+    date_format: str = Form("%Y-%m-%d"),
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Preview CSV file import. 
+    First call without column mappings to get column names,
+    then call again with mappings to get parsed transactions.
+    """
+    if not file.filename.lower().endswith('.csv'):
+        raise HTTPException(status_code=400, detail="File must be a CSV file")
+    
+    content = await file.read()
+    try:
+        text = content.decode('utf-8')
+    except UnicodeDecodeError:
+        try:
+            text = content.decode('latin-1')
+        except:
+            raise HTTPException(status_code=400, detail="Cannot decode file. Please use UTF-8 or Latin-1 encoding.")
+    
+    # Parse CSV
+    reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+    rows = list(reader)
+    
+    if len(rows) == 0:
+        raise HTTPException(status_code=400, detail="CSV file is empty")
+    
+    columns = []
+    data_rows = rows
+    
+    if has_header:
+        columns = [col.strip() for col in rows[0]]
+        data_rows = rows[1:]
+    else:
+        # Generate column names
+        columns = [f"Column {i+1}" for i in range(len(rows[0]))]
+    
+    # If no column mappings provided, just return columns for user to map
+    if not date_column or not amount_column:
+        return ImportPreviewResponse(
+            transactions=[],
+            total=len(data_rows),
+            columns=columns,
+            warnings=["Please map the date and amount columns to continue."]
+        )
+    
+    # Parse transactions
+    transactions = []
+    warnings = []
+    
+    try:
+        date_idx = columns.index(date_column)
+        amount_idx = columns.index(amount_column)
+        desc_idx = columns.index(description_column) if description_column and description_column in columns else None
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=f"Column not found: {str(e)}")
+    
+    for row_num, row in enumerate(data_rows, start=2 if has_header else 1):
+        if len(row) <= max(date_idx, amount_idx, desc_idx or 0):
+            warnings.append(f"Row {row_num}: Not enough columns, skipping")
+            continue
+        
+        try:
+            date = parse_date(row[date_idx], date_format)
+            amount = parse_amount(row[amount_idx])
+            description = row[desc_idx].strip() if desc_idx is not None else None
+            
+            transactions.append(ImportedTransaction(
+                date=date,
+                amount=amount,
+                description=description,
+                memo=description
+            ))
+        except ValueError as e:
+            warnings.append(f"Row {row_num}: {str(e)}")
+        except Exception as e:
+            warnings.append(f"Row {row_num}: Error parsing - {str(e)}")
+    
+    return ImportPreviewResponse(
+        transactions=transactions,
+        total=len(transactions),
+        columns=columns,
+        warnings=warnings[:20]  # Limit warnings to first 20
+    )
+
+
+@router.post("/preview/ofx", response_model=ImportPreviewResponse)
+async def preview_ofx_import(
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Preview OFX/QFX file import."""
+    filename = file.filename.lower()
+    if not (filename.endswith('.ofx') or filename.endswith('.qfx')):
+        raise HTTPException(status_code=400, detail="File must be an OFX or QFX file")
+    
+    try:
+        from ofxparse import OfxParser
+    except ImportError:
+        raise HTTPException(status_code=500, detail="OFX parsing library not installed")
+    
+    content = await file.read()
+    
+    try:
+        # Try to parse OFX
+        ofx = OfxParser.parse(io.BytesIO(content))
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Cannot parse OFX file: {str(e)}")
+    
+    transactions = []
+    warnings = []
+    
+    # OFX can have multiple accounts
+    if hasattr(ofx, 'account') and ofx.account:
+        accounts = [ofx.account]
+    elif hasattr(ofx, 'accounts') and ofx.accounts:
+        accounts = ofx.accounts
+    else:
+        raise HTTPException(status_code=400, detail="No accounts found in OFX file")
+    
+    for account in accounts:
+        if not hasattr(account, 'statement') or not account.statement:
+            continue
+        
+        statement = account.statement
+        if not hasattr(statement, 'transactions'):
+            continue
+        
+        for tx in statement.transactions:
+            try:
+                date = tx.date.strftime("%Y-%m-%d") if tx.date else None
+                if not date:
+                    warnings.append(f"Transaction skipped: missing date")
+                    continue
+                
+                amount = float(tx.amount) if tx.amount else 0
+                
+                # Build description from available fields
+                desc_parts = []
+                if hasattr(tx, 'payee') and tx.payee:
+                    desc_parts.append(str(tx.payee))
+                if hasattr(tx, 'memo') and tx.memo:
+                    desc_parts.append(str(tx.memo))
+                
+                transactions.append(ImportedTransaction(
+                    date=date,
+                    amount=amount,
+                    description=" - ".join(desc_parts) if desc_parts else None,
+                    memo=str(tx.memo) if hasattr(tx, 'memo') and tx.memo else None,
+                    payee=str(tx.payee) if hasattr(tx, 'payee') and tx.payee else None,
+                    ref_number=str(tx.checknum) if hasattr(tx, 'checknum') and tx.checknum else None,
+                    transaction_type=str(tx.type) if hasattr(tx, 'type') and tx.type else None
+                ))
+            except Exception as e:
+                warnings.append(f"Transaction error: {str(e)}")
+    
+    if not transactions:
+        raise HTTPException(status_code=400, detail="No transactions found in OFX file")
+    
+    # Sort by date
+    transactions.sort(key=lambda x: x.date)
+    
+    return ImportPreviewResponse(
+        transactions=transactions,
+        total=len(transactions),
+        columns=None,
+        warnings=warnings[:20]
+    )
+
+
+@router.post("/check-duplicates", response_model=ImportPreviewResponse)
+async def check_duplicates(
+    data: ImportPreviewResponse,
+    account_id: Optional[str] = None,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Check imported transactions for potential duplicates.
+    Compares against existing transactions by date, amount, and description similarity.
+    """
+    if not data.transactions:
+        return data
+    
+    # Get date range from imported transactions
+    dates = [tx.date for tx in data.transactions]
+    min_date = min(dates)
+    max_date = max(dates)
+    
+    # Fetch existing transactions in the date range (with some buffer)
+    query = {
+        "user_id": current_user["id"],
+        "date": {"$gte": min_date, "$lte": max_date}
+    }
+    if account_id:
+        query["account_id"] = account_id
+    
+    existing_transactions = await db.finance_transactions.find(
+        query,
+        {"_id": 0, "id": 1, "date": 1, "amount": 1, "notes": 1}
+    ).to_list(1000)
+    
+    if not existing_transactions:
+        return data
+    
+    # Build lookup for fast duplicate checking
+    existing_by_date = {}
+    for tx in existing_transactions:
+        date_key = tx["date"]
+        if date_key not in existing_by_date:
+            existing_by_date[date_key] = []
+        existing_by_date[date_key].append(tx)
+    
+    # Check each imported transaction for duplicates
+    updated_transactions = []
+    for tx in data.transactions:
+        is_duplicate = False
+        duplicate_id = None
+        duplicate_reason = None
+        
+        # Check transactions on the same date
+        if tx.date in existing_by_date:
+            for existing in existing_by_date[tx.date]:
+                # Exact amount match
+                if abs(existing["amount"] - tx.amount) < 0.01:
+                    is_duplicate = True
+                    duplicate_id = existing["id"]
+                    
+                    # Check description similarity
+                    existing_desc = (existing.get("notes") or "").lower()
+                    import_desc = (tx.description or tx.memo or tx.payee or "").lower()
+                    
+                    if import_desc and existing_desc:
+                        # Simple word overlap check
+                        existing_words = set(existing_desc.split())
+                        import_words = set(import_desc.split())
+                        if existing_words & import_words:
+                            duplicate_reason = f"Same date, amount, and similar description"
+                        else:
+                            duplicate_reason = f"Same date and amount (${abs(tx.amount):.2f})"
+                    else:
+                        duplicate_reason = f"Same date and amount (${abs(tx.amount):.2f})"
+                    
+                    break
+        
+        # Create updated transaction with duplicate info
+        tx_dict = tx.model_dump()
+        tx_dict["is_potential_duplicate"] = is_duplicate
+        tx_dict["duplicate_of_id"] = duplicate_id
+        tx_dict["duplicate_reason"] = duplicate_reason
+        updated_transactions.append(ImportedTransaction(**tx_dict))
+    
+    # Count duplicates for warning
+    dup_count = sum(1 for tx in updated_transactions if tx.is_potential_duplicate)
+    warnings = list(data.warnings) if data.warnings else []
+    if dup_count > 0:
+        warnings.insert(0, f"Found {dup_count} potential duplicate(s) - these are pre-deselected")
+    
+    return ImportPreviewResponse(
+        transactions=updated_transactions,
+        total=data.total,
+        columns=data.columns,
+        warnings=warnings,
+        ai_analyzed=data.ai_analyzed
+    )
+
+
+@router.post("/confirm", response_model=MessageResponse)
+async def confirm_import(
+    data: ImportConfirmRequest,
+    current_user: dict = Depends(get_current_user)
+):
+    """Confirm and save imported transactions."""
+    # Verify project access
+    project = await db.projects.find_one({"id": data.project_id, "user_id": current_user["id"]})
+    if not project:
+        raise HTTPException(status_code=404, detail="Project not found")
+    
+    # Verify account
+    account = await db.finance_accounts.find_one({"id": data.account_id, "user_id": current_user["id"]})
+    if not account:
+        raise HTTPException(status_code=404, detail="Account not found")
+    
+    # Verify category
+    category = await db.finance_categories.find_one({"id": data.default_category_id, "user_id": current_user["id"]})
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    
+    now = datetime.now(timezone.utc).isoformat()
+    created_count = 0
+    
+    for tx in data.transactions:
+        tx_id = str(uuid.uuid4())
+        
+        # Build notes from available fields
+        notes_parts = []
+        if tx.description:
+            notes_parts.append(tx.description)
+        if tx.payee and tx.payee not in (tx.description or ''):
+            notes_parts.append(f"Payee: {tx.payee}")
+        if tx.ref_number:
+            notes_parts.append(f"Ref: {tx.ref_number}")
+        
+        tx_doc = {
+            "id": tx_id,
+            "user_id": current_user["id"],
+            "date": tx.date,
+            "amount": tx.amount,
+            "account_id": data.account_id,
+            "project_id": data.project_id,
+            "category_id": data.default_category_id,
+            "notes": " | ".join(notes_parts) if notes_parts else None,
+            "linked_transaction_id": None,
+            "savings_goal_id": None,
+            "created_at": now,
+            "updated_at": now
+        }
+        
+        await db.finance_transactions.insert_one(tx_doc)
+        created_count += 1
+    
+    return MessageResponse(message=f"Successfully imported {created_count} transactions")
+
+
+@router.get("/sample-csv")
+async def get_sample_csv():
+    """Return a sample CSV format for reference."""
+    return {
+        "sample_format": "date,amount,description",
+        "sample_rows": [
+            "2024-01-15,-50.00,Grocery shopping",
+            "2024-01-16,2500.00,Salary deposit",
+            "2024-01-17,-120.50,Electric bill"
+        ],
+        "supported_date_formats": [
+            "YYYY-MM-DD (2024-01-15)",
+            "DD/MM/YYYY (15/01/2024)",
+            "MM/DD/YYYY (01/15/2024)",
+            "DD.MM.YYYY (15.01.2024)"
+        ],
+        "amount_notes": [
+            "Positive numbers = income",
+            "Negative numbers = expense",
+            "Supports formats: 1234.56, 1,234.56, 1.234,56"
+        ]
+    }
+
+
+@router.post("/analyze", response_model=ImportPreviewResponse)
+async def analyze_transactions_with_ai(
+    data: ImportPreviewResponse,
+    current_user: dict = Depends(get_current_user)
+):
+    """
+    Analyze imported transactions using AI.
+    Requires user to have an OpenAI API key configured.
+    """
+    from services.openai_analyzer import OpenAITransactionAnalyzer
+    from routes.openai_settings import decrypt_api_key
+    
+    # Check if user has OpenAI API key
+    user = await db.users.find_one({"id": current_user["id"]}, {"_id": 0})
+    if not user.get("openai_api_key"):
+        raise HTTPException(
+            status_code=400, 
+            detail="OpenAI API key not configured. Please add your API key in Settings."
+        )
+    
+    try:
+        api_key = decrypt_api_key(user["openai_api_key"])
+    except Exception:
+        raise HTTPException(status_code=400, detail="Failed to decrypt API key. Please re-enter it in Settings.")
+    
+    model = user.get("openai_model", "gpt-4o-mini")
+    
+    # Get user's categories for better matching
+    categories = await db.finance_categories.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "name": 1}
+    ).to_list(100)
+    category_names = [c["name"] for c in categories] if categories else None
+    
+    # Get recent transactions for context
+    recent_transactions = await db.finance_transactions.find(
+        {"user_id": current_user["id"]},
+        {"_id": 0, "date": 1, "amount": 1, "notes": 1}
+    ).sort("date", -1).limit(50).to_list(50)
+    
+    historical = [
+        {"date": t["date"], "amount": t["amount"], "description": t.get("notes", "")}
+        for t in recent_transactions
+    ]
+    
+    # Prepare transactions for analysis
+    tx_dicts = [
+        {
+            "date": tx.date,
+            "amount": tx.amount,
+            "description": tx.description,
+            "memo": tx.memo,
+            "payee": tx.payee
+        }
+        for tx in data.transactions
+    ]
+    
+    try:
+        analyzer = OpenAITransactionAnalyzer(api_key, model)
+        analyses = await analyzer.analyze_transactions(
+            tx_dicts,
+            existing_categories=category_names,
+            historical_transactions=historical
+        )
+        
+        # Update transactions with AI analysis
+        updated_transactions = []
+        for i, tx in enumerate(data.transactions):
+            if i < len(analyses):
+                analysis = analyses[i]
+                tx.ai_category = analysis.suggested_category
+                tx.ai_type = analysis.transaction_type
+                tx.ai_is_recurring = analysis.is_recurring
+                tx.ai_recurring_frequency = analysis.recurring_frequency
+                tx.ai_is_unusual = analysis.is_unusual
+                tx.ai_unusual_reason = analysis.unusual_reason
+                tx.ai_confidence = analysis.confidence
+            updated_transactions.append(tx)
+        
+        return ImportPreviewResponse(
+            transactions=updated_transactions,
+            total=data.total,
+            columns=data.columns,
+            warnings=data.warnings,
+            ai_analyzed=True
+        )
+        
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+
