@@ -121,11 +121,10 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Phase 1 (Canvas):** Interactive Konva.js drawing tool with configurable grid scale, snap-to-grid, polygon closure detection, real-time measurements (area, perimeter)
 - **Phase 2 (Input Form):** GPS coordinates, wind direction, garden goal selection, plant preferences, existing features, custom notes
 - **Phase 3 (AI Generation):** Backend service using user's OpenAI API key. Frontend integrates generate button with loading state, error handling (API key missing), and full results display: design summary, sun/wind/climate analysis, plant list table, garden zones, planting tips, seasonal tasks
-- **Phase 4 (Visual Output):** Upcoming - render plant placements on canvas
+- **Phase 4 (Visual Output):** Renders AI-generated plants as colored circles on the Konva canvas at suggested coordinates, with name labels. Garden zones shown as semi-transparent dashed polygons. Color-coded legend by category with counts. Toggle show/hide overlay. "View on Canvas" button from results switches to canvas view.
 
 ## Upcoming Tasks (P0-P1)
-1. (P0) AI Garden Designer - Phase 4: Render AI-generated plant list as icons/shapes on Konva canvas at suggested coordinates
-2. (P1) PWA refinement and offline capabilities
+1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
 
 ## Future/Backlog Tasks (P2)
