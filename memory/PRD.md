@@ -132,6 +132,14 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - Backend Dockerfile: runtime env vars for DB, SMTP, JWT, etc.
 - Frontend Dockerfile: build-time ARGs for `REACT_APP_BACKEND_URL`
 
+### Settings & Admin Restructure - Mar 16, 2026
+- **Settings page** split into 4 tabs: Profile (info + password), Notifications (daily reminders), Calendar (Google Calendar sync), AI (renamed from "AI Transaction Analysis" to "AI Settings")
+- Calendar and AI tabs lazy-load data only when selected
+- **New Admin page** (`/admin`) with 2 tabs: Email Configuration, User Management
+- Admin page only visible to admin users via dropdown menu
+- User Management tab lazy-loads user list only when selected
+- Removed standalone Manage Users page; consolidated into Admin page
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
