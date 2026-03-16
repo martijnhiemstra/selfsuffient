@@ -23,7 +23,8 @@ import {
   X,
   Users,
   Globe,
-  Wallet
+  Wallet,
+  Shield
 } from 'lucide-react';
 
 export const Layout = ({ children }) => {
@@ -111,9 +112,9 @@ export const Layout = ({ children }) => {
                 {isAdmin && (
                   <>
                     <DropdownMenuItem asChild>
-                      <Link to="/admin/users" className="cursor-pointer" data-testid="admin-users-link">
-                        <Users className="w-4 h-4 mr-2" />
-                        Manage Users
+                      <Link to="/admin" className="cursor-pointer" data-testid="admin-link">
+                        <Shield className="w-4 h-4 mr-2" />
+                        Admin
                       </Link>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />

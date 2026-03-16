@@ -18,7 +18,7 @@ import { PublicProjectPage } from "./pages/PublicProjectPage";
 import { PublicUserPage } from "./pages/PublicUserPage";
 import { ProjectsPage } from "./pages/ProjectsPage";
 import { ProjectDetailPage } from "./pages/ProjectDetailPage";
-import { AdminUsersPage } from "./pages/AdminUsersPage";
+import { AdminPage } from "./pages/AdminPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { DiaryPage } from "./pages/DiaryPage";
 import { GalleryPage } from "./pages/GalleryPage";
@@ -84,7 +84,7 @@ function App() {
           <Route path="/settings" element={<ProtectedRoute><Layout><SettingsPage /></Layout></ProtectedRoute>} />
 
           {/* Admin Routes */}
-          <Route path="/admin/users" element={<ProtectedRoute adminOnly><Layout><AdminUsersPage /></Layout></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute adminOnly><Layout><AdminPage /></Layout></ProtectedRoute>} />
 
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/" replace />} />
