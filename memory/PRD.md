@@ -140,6 +140,14 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - User Management tab lazy-loads user list only when selected
 - Removed standalone Manage Users page; consolidated into Admin page
 
+### Expense Periods Search & Bug Fix - Mar 24, 2026
+- Added date range search (From/To month) to Expense Periods tab with Clear button and result counter
+- Fixed update bug: period name and totals now immediately reflect after editing (added await to fetch calls)
+
+### Garden Designer Disabled - Mar 24, 2026
+- Disabled Garden Designer page: route and import commented out in App.js, link removed from project detail
+- Code preserved in GardenDesignerPage.jsx for future re-enablement
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
