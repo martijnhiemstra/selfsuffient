@@ -30,7 +30,8 @@ import { CalendarPage } from "./pages/CalendarPage";
 import { MyPublicSitePage } from "./pages/MyPublicSitePage";
 import { FinancePage } from "./pages/FinancePage";
 import { ChecklistsPage } from "./pages/ChecklistsPage";
-import { GardenDesignerPage } from "./pages/GardenDesignerPage";
+// GardenDesignerPage: disabled but code preserved for future use
+// import { GardenDesignerPage } from "./pages/GardenDesignerPage";
 
 function App() {
   // Fetch app config on mount to get max upload size
@@ -74,8 +75,8 @@ function App() {
           {/* Checklists - within project context */}
           <Route path="/projects/:projectId/checklists" element={<ProtectedRoute><Layout><ChecklistsPage /></Layout></ProtectedRoute>} />
 
-          {/* Garden Designer - within project context */}
-          <Route path="/projects/:projectId/garden-designer" element={<ProtectedRoute><Layout><GardenDesignerPage /></Layout></ProtectedRoute>} />
+          {/* Garden Designer - disabled but code preserved for future use */}
+          {/* <Route path="/projects/:projectId/garden-designer" element={<ProtectedRoute><Layout><GardenDesignerPage /></Layout></ProtectedRoute>} /> */}
 
           {/* My Public Site */}
           <Route path="/my-public-site" element={<ProtectedRoute><Layout><MyPublicSitePage /></Layout></ProtectedRoute>} />

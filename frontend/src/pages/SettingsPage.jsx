@@ -429,8 +429,8 @@ export const SettingsPage = () => {
                 </div>
               )}
 
-              {/* Credentials Form */}
-              {!googleCalendarStatus?.connected && (
+              {/* Credentials Form - only show when no credentials saved yet, or when explicitly updating */}
+              {!googleCalendarStatus?.connected && !googleCalendarStatus?.has_credentials && (
                 <>
                   <Separator />
                   <div className="space-y-4">

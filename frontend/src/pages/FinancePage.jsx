@@ -40,6 +40,8 @@ export const FinancePage = () => {
   const [transactions, setTransactions] = useState([]);
   const [savingsGoals, setSavingsGoals] = useState([]);
   const [expensePeriods, setExpensePeriods] = useState([]);
+  const [periodSearchStart, setPeriodSearchStart] = useState('');
+  const [periodSearchEnd, setPeriodSearchEnd] = useState('');
   const [budgetComparison, setBudgetComparison] = useState(null);
   const [loading, setLoading] = useState(true);
   
@@ -285,8 +287,8 @@ export const FinancePage = () => {
         toast.success('Period created');
       }
       setPeriodDialog({ open: false, data: null });
-      fetchExpensePeriods();
-      fetchBudgetComparison();
+      await fetchExpensePeriods();
+      await fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save period');
     }
@@ -297,8 +299,8 @@ export const FinancePage = () => {
     try {
       await axios.delete(`${API}/budget/periods/${id}`, { headers });
       toast.success('Period deleted');
-      fetchExpensePeriods();
-      fetchBudgetComparison();
+      await fetchExpensePeriods();
+      await fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to delete period');
     }
@@ -314,8 +316,8 @@ export const FinancePage = () => {
         toast.success('Item created');
       }
       setExpectedItemDialog({ open: false, data: null, periodId: null });
-      fetchExpensePeriods();
-      fetchBudgetComparison();
+      await fetchExpensePeriods();
+      await fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to save item');
     }
@@ -326,8 +328,8 @@ export const FinancePage = () => {
     try {
       await axios.delete(`${API}/budget/items/${id}`, { headers });
       toast.success('Item deleted');
-      fetchExpensePeriods();
-      fetchBudgetComparison();
+      await fetchExpensePeriods();
+      await fetchBudgetComparison();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to delete item');
     }
@@ -372,6 +374,14 @@ export const FinancePage = () => {
       </div>
     );
   }
+
+  // Filter expense periods by date range
+  const filteredExpensePeriods = expensePeriods.filter(period => {
+    if (periodSearchStart && period.end_month < periodSearchStart) return false;
+    if (periodSearchEnd && period.start_month > periodSearchEnd) return false;
+    return true;
+  });
+
 
   return (
     <div className="p-6 md:p-8 lg:p-12 space-y-6" data-testid="finance-page">
@@ -815,15 +825,56 @@ export const FinancePage = () => {
             </Button>
           </div>
           
-          {expensePeriods.length === 0 ? (
+          {/* Date Range Search */}
+          <div className="flex items-end gap-3 flex-wrap">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">From</Label>
+              <Input
+                type="month"
+                value={periodSearchStart}
+                onChange={(e) => setPeriodSearchStart(e.target.value)}
+                className="w-[170px]"
+                data-testid="period-search-start"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">To</Label>
+              <Input
+                type="month"
+                value={periodSearchEnd}
+                onChange={(e) => setPeriodSearchEnd(e.target.value)}
+                className="w-[170px]"
+                data-testid="period-search-end"
+              />
+            </div>
+            {(periodSearchStart || periodSearchEnd) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => { setPeriodSearchStart(''); setPeriodSearchEnd(''); }}
+                data-testid="period-search-clear"
+              >
+                Clear
+              </Button>
+            )}
+            {(periodSearchStart || periodSearchEnd) && (
+              <span className="text-sm text-muted-foreground">
+                Showing {filteredExpensePeriods.length} of {expensePeriods.length} periods
+              </span>
+            )}
+          </div>
+
+          {filteredExpensePeriods.length === 0 ? (
             <Card>
               <CardContent className="p-8 text-center text-muted-foreground">
-                No expense periods yet. Create a period to start budgeting your income and expenses.
+                {expensePeriods.length === 0
+                  ? 'No expense periods yet. Create a period to start budgeting your income and expenses.'
+                  : 'No expense periods match the selected date range.'}
               </CardContent>
             </Card>
           ) : (
             <div className="space-y-4">
-              {expensePeriods.map(period => (
+              {filteredExpensePeriods.map(period => (
                 <ExpensePeriodCard
                   key={period.id}
                   period={period}
