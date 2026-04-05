@@ -140,6 +140,11 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - User Management tab lazy-loads user list only when selected
 - Removed standalone Manage Users page; consolidated into Admin page
 
+### Image Lightbox Viewer - Apr 5, 2026
+- **ImageLightbox component** (`/app/frontend/src/components/ImageLightbox.jsx`): Full-screen overlay with prev/next navigation, keyboard support (Escape, ArrowLeft, ArrowRight), thumbnail strip, download button, and image counter
+- Integrated into Gallery (replaces old Dialog viewer), Blog (view entry images), and Library (view entry images)
+- All images are clickable to open lightbox
+
 ### Centralized Image Uploader & Library Images - Apr 5, 2026
 - **ImageUploader component** (`/app/frontend/src/components/ImageUploader.jsx`): Reusable dialog with client-side crop (react-image-crop) + resize/compress (browser-image-compression, ~80% JPEG quality)
   - Cover mode (project covers): forced 3:2 aspect ratio crop, max 1200px
