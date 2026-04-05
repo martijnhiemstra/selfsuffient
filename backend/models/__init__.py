@@ -13,7 +13,7 @@ from .gallery import (
 from .blog import BlogEntryCreate, BlogEntryUpdate, BlogEntryResponse, BlogListResponse, BlogImageResponse
 from .library import (
     LibraryFolderCreate, LibraryFolderUpdate, LibraryFolderResponse,
-    LibraryEntryCreate, LibraryEntryUpdate, LibraryEntryResponse, LibraryListResponse
+    LibraryEntryCreate, LibraryEntryUpdate, LibraryEntryResponse, LibraryImageResponse, LibraryListResponse
 )
 from .task import TaskCreate, TaskUpdate, TaskResponse, TaskListResponse
 from .routine import (
@@ -58,7 +58,7 @@ __all__ = [
     "BlogEntryCreate", "BlogEntryUpdate", "BlogEntryResponse", "BlogListResponse", "BlogImageResponse",
     # Library
     "LibraryFolderCreate", "LibraryFolderUpdate", "LibraryFolderResponse",
-    "LibraryEntryCreate", "LibraryEntryUpdate", "LibraryEntryResponse", "LibraryListResponse",
+    "LibraryEntryCreate", "LibraryEntryUpdate", "LibraryEntryResponse", "LibraryImageResponse", "LibraryListResponse",
     # Task
     "TaskCreate", "TaskUpdate", "TaskResponse", "TaskListResponse",
     # Routine

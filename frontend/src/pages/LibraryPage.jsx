@@ -48,11 +48,16 @@ import {
   Home,
   Globe,
   Lock,
-  Eye
+  Eye,
+  Upload,
+  ImageIcon,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { SimpleEditor } from '../components/SimpleEditor';
+import { ImageUploader } from '../components/ImageUploader';
+import { getImageUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -75,6 +80,8 @@ export const LibraryPage = () => {
   const [folderName, setFolderName] = useState('');
   const [itemToDelete, setItemToDelete] = useState(null);
   const [editingEntry, setEditingEntry] = useState(null);
+  const [libraryImageUploaderOpen, setLibraryImageUploaderOpen] = useState(false);
+  const [uploadingEntryId, setUploadingEntryId] = useState(null);
   
   const [entryForm, setEntryForm] = useState({
     title: '',
@@ -219,6 +226,37 @@ export const LibraryPage = () => {
       is_public: entry.is_public
     });
     setEntryDialogOpen(true);
+  };
+
+  const handleLibraryImageUpload = async (file) => {
+    if (!uploadingEntryId) return;
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      await axios.post(
+        `${API}/projects/${projectId}/library/entries/${uploadingEntryId}/images`,
+        formData,
+        { headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' } }
+      );
+      toast.success('Image uploaded!');
+      fetchLibrary();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to upload image');
+    }
+  };
+
+  const handleDeleteLibraryImage = async (entryId, imageId) => {
+    if (!window.confirm('Delete this image?')) return;
+    try {
+      await axios.delete(
+        `${API}/projects/${projectId}/library/entries/${entryId}/images/${imageId}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      toast.success('Image deleted');
+      fetchLibrary();
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to delete image');
+    }
   };
 
   const resetEntryForm = () => {
@@ -424,6 +462,38 @@ export const LibraryPage = () => {
                         className="prose-content text-sm text-muted-foreground line-clamp-2"
                         dangerouslySetInnerHTML={{ __html: entry.description?.slice(0, 200) || 'No description' }}
                       />
+                      {/* Entry Images */}
+                      {entry.images?.length > 0 && (
+                        <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
+                          {entry.images.map((img) => (
+                            <div key={img.id} className="relative group flex-shrink-0">
+                              <img
+                                src={getImageUrl(img.url, token)}
+                                alt={img.filename}
+                                className="w-20 h-20 object-cover rounded-lg border"
+                              />
+                              <Button
+                                variant="destructive"
+                                size="icon"
+                                className="absolute -top-1 -right-1 h-5 w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleDeleteLibraryImage(entry.id, img.id)}
+                              >
+                                <X className="w-3 h-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-2 text-xs"
+                        onClick={() => { setUploadingEntryId(entry.id); setLibraryImageUploaderOpen(true); }}
+                        data-testid={`upload-library-image-${entry.id}`}
+                      >
+                        <ImageIcon className="w-3 h-3 mr-1" />
+                        Add Image {entry.images?.length > 0 ? `(${entry.images.length})` : ''}
+                      </Button>
                     </CardContent>
                   </Card>
                 ))}
@@ -530,6 +600,16 @@ export const LibraryPage = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Library Image Uploader */}
+      <ImageUploader
+        open={libraryImageUploaderOpen}
+        onClose={() => { setLibraryImageUploaderOpen(false); setUploadingEntryId(null); }}
+        onUpload={handleLibraryImageUpload}
+        mode="free"
+        maxWidth={1600}
+        title="Upload Library Image"
+      />
     </div>
   );
 };

@@ -44,8 +44,18 @@ class LibraryEntryResponse(BaseModel):
     description: str
     is_public: bool
     views: int = 0
+    images: List['LibraryImageResponse'] = []
     created_at: str
     updated_at: str
+
+
+class LibraryImageResponse(BaseModel):
+    id: str
+    entry_id: str
+    project_id: str
+    filename: str
+    url: str
+    created_at: str
 
 
 class LibraryListResponse(BaseModel):

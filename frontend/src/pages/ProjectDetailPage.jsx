@@ -8,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import { Switch } from '../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { ImageUploader } from '../components/ImageUploader';
 import {
   Dialog,
   DialogContent,
@@ -67,6 +68,7 @@ export const ProjectDetailPage = () => {
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [imageUploaderOpen, setImageUploaderOpen] = useState(false);
 
   useEffect(() => {
     fetchProject();
@@ -113,18 +115,7 @@ export const ProjectDetailPage = () => {
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file before upload
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      toast.error(validation.error);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
+  const handleImageUpload = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
@@ -249,16 +240,9 @@ export const ProjectDetailPage = () => {
                 <FolderOpen className="w-16 h-16 text-muted-foreground/30" />
               </div>
               <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
                 <Button 
                   variant="secondary"
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setImageUploaderOpen(true)}
                   disabled={uploading}
                   data-testid="upload-image-button"
                 >
@@ -273,6 +257,15 @@ export const ProjectDetailPage = () => {
             </div>
           </Card>
         </div>
+
+        <ImageUploader
+          open={imageUploaderOpen}
+          onClose={() => setImageUploaderOpen(false)}
+          onUpload={handleImageUpload}
+          mode="cover"
+          maxWidth={1200}
+          title="Project Cover Image"
+        />
 
         {/* Project Info */}
         <div className="lg:col-span-2">

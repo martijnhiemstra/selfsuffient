@@ -1,18 +1,37 @@
 """Library routes."""
-from fastapi import APIRouter, Depends, HTTPException
-from typing import Optional
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from typing import Optional, List
 from datetime import datetime, timezone
+from pathlib import Path
 import uuid
+import os
 
 from config import db
 from models import (
     LibraryFolderCreate, LibraryFolderUpdate, LibraryFolderResponse,
     LibraryEntryCreate, LibraryEntryUpdate, LibraryEntryResponse,
-    LibraryListResponse, MessageResponse
+    LibraryImageResponse, LibraryListResponse, MessageResponse
 )
 from services import get_current_user, verify_project_access
 
 router = APIRouter()
+
+UPLOADS_DIR = Path("uploads")
+MAX_UPLOAD_SIZE_MB = int(os.environ.get("MAX_UPLOAD_SIZE_MB", "5"))
+MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024
+
+
+async def get_entry_images(entry_id: str) -> List[dict]:
+    images = await db.library_images.find({"entry_id": entry_id}, {"_id": 0}).to_list(100)
+    return images
+
+
+async def build_entry_response(entry: dict) -> LibraryEntryResponse:
+    images = await get_entry_images(entry["id"])
+    return LibraryEntryResponse(
+        **{k: v for k, v in entry.items() if k != "_id"},
+        images=[LibraryImageResponse(**img) for img in images]
+    )
 
 
 @router.post("/projects/{project_id}/library/folders", response_model=LibraryFolderResponse)
@@ -70,9 +89,13 @@ async def list_library_contents(
     folders = await db.library_folders.find(folder_query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
     entries = await db.library_entries.find(entry_query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
     
+    entry_responses = []
+    for e in entries:
+        entry_responses.append(await build_entry_response(e))
+    
     return LibraryListResponse(
         folders=[LibraryFolderResponse(**f) for f in folders],
-        entries=[LibraryEntryResponse(**e) for e in entries]
+        entries=entry_responses
     )
 
 
@@ -145,7 +168,7 @@ async def create_library_entry(
     }
     
     await db.library_entries.insert_one(entry_doc)
-    return LibraryEntryResponse(**{k: v for k, v in entry_doc.items() if k != "_id"})
+    return await build_entry_response({k: v for k, v in entry_doc.items() if k != "_id"})
 
 
 @router.get("/projects/{project_id}/library/entries/{entry_id}", response_model=LibraryEntryResponse)
@@ -160,7 +183,7 @@ async def get_library_entry(
     if not entry:
         raise HTTPException(status_code=404, detail="Library entry not found")
     
-    return LibraryEntryResponse(**entry)
+    return await build_entry_response(entry)
 
 
 @router.put("/projects/{project_id}/library/entries/{entry_id}", response_model=LibraryEntryResponse)
@@ -181,7 +204,7 @@ async def update_library_entry(
     
     await db.library_entries.update_one({"id": entry_id}, {"$set": update_data})
     updated = await db.library_entries.find_one({"id": entry_id}, {"_id": 0})
-    return LibraryEntryResponse(**updated)
+    return await build_entry_response(updated)
 
 
 @router.delete("/projects/{project_id}/library/entries/{entry_id}", response_model=MessageResponse)
@@ -195,6 +218,14 @@ async def delete_library_entry(
     result = await db.library_entries.delete_one({"id": entry_id, "project_id": project_id})
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Library entry not found")
+    
+    # Delete associated images
+    images = await db.library_images.find({"entry_id": entry_id}).to_list(100)
+    for img in images:
+        img_path = UPLOADS_DIR / img["url"].split("/uploads/")[-1]
+        if img_path.exists():
+            img_path.unlink()
+    await db.library_images.delete_many({"entry_id": entry_id})
     
     return MessageResponse(message="Library entry deleted")
 
@@ -223,3 +254,73 @@ async def get_library_folder_path(
         current_folder_id = folder.get("parent_id")
     
     return {"path": path}
+
+
+@router.post("/projects/{project_id}/library/entries/{entry_id}/images", response_model=LibraryImageResponse)
+async def upload_library_image(
+    project_id: str,
+    entry_id: str,
+    file: UploadFile = File(...),
+    current_user: dict = Depends(get_current_user)
+):
+    """Upload an image attachment to a library entry"""
+    await verify_project_access(project_id, current_user["id"])
+
+    entry = await db.library_entries.find_one({"id": entry_id, "project_id": project_id})
+    if not entry:
+        raise HTTPException(status_code=404, detail="Library entry not found")
+
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(status_code=400, detail="Invalid file type. Allowed: JPEG, PNG, GIF, WEBP")
+
+    content = await file.read()
+    if len(content) > MAX_UPLOAD_SIZE:
+        raise HTTPException(status_code=413, detail=f"File too large. Maximum size is {MAX_UPLOAD_SIZE_MB}MB")
+
+    image_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
+    lib_dir = UPLOADS_DIR / "library" / project_id / entry_id
+    lib_dir.mkdir(parents=True, exist_ok=True)
+
+    file_ext = file.filename.split(".")[-1] if "." in file.filename else "jpg"
+    filename = f"{image_id}.{file_ext}"
+    file_path = lib_dir / filename
+
+    with open(file_path, "wb") as f:
+        f.write(content)
+
+    image_doc = {
+        "id": image_id,
+        "entry_id": entry_id,
+        "project_id": project_id,
+        "filename": file.filename,
+        "url": f"/uploads/library/{project_id}/{entry_id}/{filename}",
+        "created_at": now
+    }
+
+    await db.library_images.insert_one(image_doc)
+    return LibraryImageResponse(**{k: v for k, v in image_doc.items() if k != "_id"})
+
+
+@router.delete("/projects/{project_id}/library/entries/{entry_id}/images/{image_id}", response_model=MessageResponse)
+async def delete_library_image(
+    project_id: str,
+    entry_id: str,
+    image_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Delete an image from a library entry"""
+    await verify_project_access(project_id, current_user["id"])
+
+    image = await db.library_images.find_one({"id": image_id, "entry_id": entry_id, "project_id": project_id})
+    if not image:
+        raise HTTPException(status_code=404, detail="Image not found")
+
+    img_path = UPLOADS_DIR / image["url"].split("/uploads/")[-1]
+    if img_path.exists():
+        img_path.unlink()
+
+    await db.library_images.delete_one({"id": image_id})
+    return MessageResponse(message="Image deleted")

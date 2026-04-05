@@ -7,6 +7,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
+import { ImageUploader } from '../components/ImageUploader';
 import {
   Dialog,
   DialogContent,
@@ -74,6 +75,7 @@ export const BlogPage = () => {
   const [viewingEntry, setViewingEntry] = useState(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [blogImageUploaderOpen, setBlogImageUploaderOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -159,18 +161,7 @@ export const BlogPage = () => {
     }
   };
 
-  const handleImageUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    // Validate file
-    const validation = validateImageFile(file);
-    if (!validation.valid) {
-      toast.error(validation.error);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
+  const handleImageUpload = async (file) => {
     if (editingEntry) {
       // Upload directly to existing entry
       setUploading(true);
@@ -194,9 +185,6 @@ export const BlogPage = () => {
       const preview = URL.createObjectURL(file);
       setEntryImages([...entryImages, { id: `temp-${Date.now()}`, file, preview, filename: file.name }]);
     }
-    
-    // Clear file input
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleDeleteImage = async (image) => {
@@ -294,14 +282,6 @@ export const BlogPage = () => {
                 <div className="space-y-2">
                   <Label>Images</Label>
                   <div className="border border-input rounded-lg p-4">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleImageUpload}
-                      className="hidden"
-                    />
-                    
                     {entryImages.length > 0 && (
                       <div className="grid grid-cols-3 gap-2 mb-4">
                         {entryImages.map((image) => (
@@ -328,7 +308,7 @@ export const BlogPage = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={() => fileInputRef.current?.click()}
+                      onClick={() => setBlogImageUploaderOpen(true)}
                       disabled={uploading}
                       className="w-full"
                     >
@@ -339,9 +319,6 @@ export const BlogPage = () => {
                       )}
                       Add Image
                     </Button>
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
-                      Supported: JPEG, PNG, GIF, WEBP (max {getMaxUploadSizeMB()}MB)
-                    </p>
                   </div>
                 </div>
                 
@@ -553,6 +530,15 @@ export const BlogPage = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      <ImageUploader
+        open={blogImageUploaderOpen}
+        onClose={() => setBlogImageUploaderOpen(false)}
+        onUpload={handleImageUpload}
+        mode="free"
+        maxWidth={1600}
+        title="Upload Blog Image"
+      />
     </div>
   );
 };

@@ -24,6 +24,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '../components/ui/alert-dialog';
+import { ImageUploader } from '../components/ImageUploader';
 import {
   Select,
   SelectContent,
@@ -151,21 +152,11 @@ export const GalleryPage = () => {
     }
   };
 
-  const handleUploadImage = async (e) => {
-    e.preventDefault();
-    if (!selectedFile) return;
-    
-    // Validate file before upload
-    const validation = validateImageFile(selectedFile);
-    if (!validation.valid) {
-      toast.error(validation.error);
-      return;
-    }
-    
+  const handleUploadImage = async (file) => {
     setUploading(true);
     try {
       const formData = new FormData();
-      formData.append('file', selectedFile);
+      formData.append('file', file);
       if (currentFolderId) formData.append('folder_id', currentFolderId);
       
       await axios.post(
@@ -175,7 +166,6 @@ export const GalleryPage = () => {
       );
       toast.success('Image uploaded!');
       setUploadDialogOpen(false);
-      setSelectedFile(null);
       fetchGallery();
     } catch (error) {
       toast.error(error.response?.data?.detail || 'Failed to upload image');
@@ -491,40 +481,14 @@ export const GalleryPage = () => {
       </Dialog>
 
       {/* Upload Image Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
-        <DialogContent>
-          <form onSubmit={handleUploadImage}>
-            <DialogHeader>
-              <DialogTitle className="font-display">Upload Image</DialogTitle>
-              <DialogDescription>Upload an image {currentFolderId ? 'to this folder' : 'to the root'}</DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-              <Label htmlFor="imageFile">Select Image</Label>
-              <Input 
-                id="imageFile"
-                type="file"
-                accept="image/*"
-                onChange={(e) => setSelectedFile(e.target.files[0])}
-                className="mt-2"
-                data-testid="image-file-input"
-              />
-              {selectedFile && (
-                <p className="text-sm text-muted-foreground mt-2">Selected: {selectedFile.name}</p>
-              )}
-              <p className="text-xs text-muted-foreground mt-2">
-                Supported: JPEG, PNG, GIF, WEBP (max {getMaxUploadSizeMB()}MB)
-              </p>
-            </div>
-            <DialogFooter>
-              <Button type="button" variant="outline" onClick={() => { setUploadDialogOpen(false); setSelectedFile(null); }}>Cancel</Button>
-              <Button type="submit" disabled={uploading || !selectedFile} data-testid="upload-btn">
-                {uploading && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
-                Upload
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
+      <ImageUploader
+        open={uploadDialogOpen}
+        onClose={() => setUploadDialogOpen(false)}
+        onUpload={handleUploadImage}
+        mode="free"
+        maxWidth={1920}
+        title="Upload Gallery Image"
+      />
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
