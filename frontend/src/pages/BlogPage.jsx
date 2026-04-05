@@ -8,6 +8,7 @@ import { Label } from '../components/ui/label';
 import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
 import { ImageUploader } from '../components/ImageUploader';
+import { ImageLightbox } from '../components/ImageLightbox';
 import {
   Dialog,
   DialogContent,
@@ -76,6 +77,8 @@ export const BlogPage = () => {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [blogImageUploaderOpen, setBlogImageUploaderOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -515,12 +518,14 @@ export const BlogPage = () => {
                 <div className="space-y-2">
                   <h4 className="text-sm font-medium text-muted-foreground">Attached Images</h4>
                   <div className="grid grid-cols-2 gap-2">
-                    {viewingEntry.images.map((img) => (
+                    {viewingEntry.images.map((img, idx) => (
                       <img
                         key={img.id}
                         src={getImageUrl(img.url, token)}
                         alt={img.filename}
-                        className="w-full rounded-lg"
+                        className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => { setLightboxIndex(idx); setLightboxOpen(true); }}
+                        data-testid={`blog-image-${img.id}`}
                       />
                     ))}
                   </div>
@@ -539,6 +544,16 @@ export const BlogPage = () => {
         maxWidth={1600}
         title="Upload Blog Image"
       />
+
+      {viewingEntry?.images?.length > 0 && (
+        <ImageLightbox
+          images={viewingEntry.images}
+          currentIndex={lightboxIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          getImageSrc={(img) => getImageUrl(img.url, token)}
+        />
+      )}
     </div>
   );
 };

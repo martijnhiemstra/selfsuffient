@@ -57,6 +57,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { SimpleEditor } from '../components/SimpleEditor';
 import { ImageUploader } from '../components/ImageUploader';
+import { ImageLightbox } from '../components/ImageLightbox';
 import { getImageUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -82,6 +83,9 @@ export const LibraryPage = () => {
   const [editingEntry, setEditingEntry] = useState(null);
   const [libraryImageUploaderOpen, setLibraryImageUploaderOpen] = useState(false);
   const [uploadingEntryId, setUploadingEntryId] = useState(null);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxImages, setLightboxImages] = useState([]);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   
   const [entryForm, setEntryForm] = useState({
     title: '',
@@ -465,12 +469,13 @@ export const LibraryPage = () => {
                       {/* Entry Images */}
                       {entry.images?.length > 0 && (
                         <div className="flex gap-2 mt-3 overflow-x-auto pb-2">
-                          {entry.images.map((img) => (
+                          {entry.images.map((img, idx) => (
                             <div key={img.id} className="relative group flex-shrink-0">
                               <img
                                 src={getImageUrl(img.url, token)}
                                 alt={img.filename}
-                                className="w-20 h-20 object-cover rounded-lg border"
+                                className="w-20 h-20 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
+                                onClick={() => { setLightboxImages(entry.images); setLightboxIndex(idx); setLightboxOpen(true); }}
                               />
                               <Button
                                 variant="destructive"
@@ -609,6 +614,15 @@ export const LibraryPage = () => {
         mode="free"
         maxWidth={1600}
         title="Upload Library Image"
+      />
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        images={lightboxImages}
+        currentIndex={lightboxIndex}
+        open={lightboxOpen}
+        onClose={() => setLightboxOpen(false)}
+        getImageSrc={(img) => getImageUrl(img.url, token)}
       />
     </div>
   );
