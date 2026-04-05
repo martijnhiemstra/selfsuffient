@@ -140,6 +140,13 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - User Management tab lazy-loads user list only when selected
 - Removed standalone Manage Users page; consolidated into Admin page
 
+### Centralized Image Uploader & Library Images - Apr 5, 2026
+- **ImageUploader component** (`/app/frontend/src/components/ImageUploader.jsx`): Reusable dialog with client-side crop (react-image-crop) + resize/compress (browser-image-compression, ~80% JPEG quality)
+  - Cover mode (project covers): forced 3:2 aspect ratio crop, max 1200px
+  - Free mode (gallery/blog/library): optional free-form crop, configurable max width
+- Integrated into: ProjectDetailPage (cover), GalleryPage (1920px), BlogPage (1600px), LibraryPage (1600px)
+- **Library image support**: New backend endpoints for upload/delete images on library entries, `library_images` MongoDB collection, images shown inline on entry cards
+
 ### Expense Periods Search & Bug Fix - Mar 24, 2026
 - Added date range search (From/To month) to Expense Periods tab with Clear button and result counter
 - Fixed update bug: period name and totals now immediately reflect after editing (added await to fetch calls)
