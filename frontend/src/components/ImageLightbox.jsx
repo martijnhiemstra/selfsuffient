@@ -1,19 +1,15 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, X, Download } from 'lucide-react';
 
 /**
- * Full-screen image lightbox with prev/next navigation, keyboard support, and thumbnail strip.
- *
- * Props:
- *  - images: Array<{ id, url, filename }> — all images to navigate through
- *  - currentIndex: number — initially selected image index
- *  - open: boolean
- *  - onClose: () => void
- *  - getImageSrc: (image) => string — function to resolve image URL (for auth tokens etc.)
+ * Full-screen image lightbox with prev/next navigation, keyboard support,
+ * swipe gestures, thumbnail strip, and download.
  */
 export const ImageLightbox = ({ images = [], currentIndex = 0, open, onClose, getImageSrc }) => {
   const [index, setIndex] = useState(currentIndex);
+  const touchStartRef = useRef(null);
+  const touchDeltaRef = useRef(0);
 
   useEffect(() => {
     setIndex(currentIndex);
@@ -41,6 +37,26 @@ export const ImageLightbox = ({ images = [], currentIndex = 0, open, onClose, ge
     }
   }, [open]);
 
+  // Swipe gesture handlers
+  const handleTouchStart = useCallback((e) => {
+    touchStartRef.current = e.touches[0].clientX;
+    touchDeltaRef.current = 0;
+  }, []);
+
+  const handleTouchMove = useCallback((e) => {
+    if (touchStartRef.current === null) return;
+    touchDeltaRef.current = e.touches[0].clientX - touchStartRef.current;
+  }, []);
+
+  const handleTouchEnd = useCallback(() => {
+    const delta = touchDeltaRef.current;
+    const threshold = 50;
+    if (delta < -threshold) goNext();
+    else if (delta > threshold) goPrev();
+    touchStartRef.current = null;
+    touchDeltaRef.current = 0;
+  }, [goNext, goPrev]);
+
   if (!open || images.length === 0) return null;
 
   const current = images[index];
@@ -59,6 +75,9 @@ export const ImageLightbox = ({ images = [], currentIndex = 0, open, onClose, ge
       className="fixed inset-0 z-50 bg-black/95 flex flex-col"
       data-testid="image-lightbox"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
     >
       {/* Top Bar */}
       <div className="flex items-center justify-between px-4 py-3 bg-gradient-to-b from-black/80 to-transparent absolute top-0 left-0 right-0 z-10">

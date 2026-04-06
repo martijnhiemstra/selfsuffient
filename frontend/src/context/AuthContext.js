@@ -15,11 +15,12 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [token, setToken] = useState(() => localStorage.getItem('token') || sessionStorage.getItem('token'));
   const [loading, setLoading] = useState(true);
 
   const logout = useCallback(() => {
     localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
     setToken(null);
     setUser(null);
   }, []);
@@ -47,11 +48,16 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, [token, logout]);
 
-  const login = async (email, password) => {
-    const response = await axios.post(`${API}/auth/login`, { email, password });
+  const login = async (email, password, rememberMe = false) => {
+    const response = await axios.post(`${API}/auth/login`, { email, password, remember_me: rememberMe });
     const { access_token, user: userData } = response.data;
     
-    localStorage.setItem('token', access_token);
+    // Clear both storages first
+    localStorage.removeItem('token');
+    sessionStorage.removeItem('token');
+    
+    const storage = rememberMe ? localStorage : sessionStorage;
+    storage.setItem('token', access_token);
     setToken(access_token);
     setUser(userData);
     

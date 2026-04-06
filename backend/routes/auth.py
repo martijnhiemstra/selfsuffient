@@ -28,7 +28,7 @@ async def login(data: UserLogin):
         from fastapi import HTTPException
         raise HTTPException(status_code=401, detail="Invalid credentials")
     
-    token = create_token(user["id"], user["email"])
+    token = create_token(user["id"], user["email"], remember_me=data.remember_me)
     
     user_response = UserResponse(
         id=user["id"],
