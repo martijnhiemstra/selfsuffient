@@ -51,7 +51,8 @@ import {
   Lock,
   Upload,
   Image,
-  X
+  X,
+  Library
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
@@ -161,6 +162,17 @@ export const BlogPage = () => {
       setEntries(entries.filter(e => e.id !== entryId));
     } catch (error) {
       toast.error('Failed to delete entry');
+    }
+  };
+
+  const handleConvertToLibrary = async (entryId) => {
+    try {
+      const res = await axios.post(`${API}/projects/${projectId}/blog/${entryId}/convert-to-library`, {}, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      toast.success(`Converted to library entry (${res.data.images_copied} image${res.data.images_copied !== 1 ? 's' : ''} copied)`);
+    } catch (error) {
+      toast.error(error.response?.data?.detail || 'Failed to convert to library');
     }
   };
 
@@ -431,15 +443,36 @@ export const BlogPage = () => {
                     </p>
                   </div>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => setViewingEntry(entry)}>
+                    <Button variant="ghost" size="icon" onClick={() => setViewingEntry(entry)} data-testid={`view-blog-${entry.id}`}>
                       <Eye className="w-4 h-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(entry)}>
+                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(entry)} data-testid={`edit-blog-${entry.id}`}>
                       <Edit className="w-4 h-4" />
                     </Button>
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
-                        <Button variant="ghost" size="icon" className="text-destructive">
+                        <Button variant="ghost" size="icon" title="Convert to Library" data-testid={`convert-blog-${entry.id}`}>
+                          <Library className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Convert to Library Entry?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will create a new library entry with the same title, content, and images. The original blog post will be kept.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => handleConvertToLibrary(entry.id)}>
+                            Convert
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="ghost" size="icon" className="text-destructive" data-testid={`delete-blog-${entry.id}`}>
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </AlertDialogTrigger>

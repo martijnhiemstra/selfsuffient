@@ -7,6 +7,7 @@ from config import db
 from models import (
     ProjectResponse, ProjectListResponse, BlogEntryResponse, BlogListResponse,
     LibraryFolderResponse, LibraryEntryResponse, LibraryListResponse,
+    LibraryImageResponse,
     GalleryFolderResponse, GalleryImageResponse, PublicGalleryResponse,
     PublicUserProfileResponse
 )
@@ -147,6 +148,15 @@ async def get_public_blog_entry(project_id: str, entry_id: str):
     return await build_blog_response(entry)
 
 
+async def build_library_entry_response(entry: dict) -> LibraryEntryResponse:
+    """Build a library entry response with images"""
+    images = await db.library_images.find({"entry_id": entry["id"]}, {"_id": 0}).to_list(100)
+    return LibraryEntryResponse(
+        **{k: v for k, v in entry.items() if k != "_id"},
+        images=[LibraryImageResponse(**img) for img in images]
+    )
+
+
 # Public Library routes
 @router.get("/projects/{project_id}/library", response_model=LibraryListResponse)
 async def list_public_library_contents(
@@ -175,9 +185,13 @@ async def list_public_library_contents(
     folders = await db.library_folders.find(folder_query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
     entries = await db.library_entries.find(entry_query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
     
+    entry_responses = []
+    for e in entries:
+        entry_responses.append(await build_library_entry_response(e))
+    
     return LibraryListResponse(
         folders=[LibraryFolderResponse(**f) for f in folders],
-        entries=[LibraryEntryResponse(**e) for e in entries]
+        entries=entry_responses
     )
 
 
@@ -194,7 +208,7 @@ async def get_public_library_entry(project_id: str, entry_id: str):
     await db.library_entries.update_one({"id": entry_id}, {"$inc": {"views": 1}})
     entry["views"] = entry.get("views", 0) + 1
     
-    return LibraryEntryResponse(**entry)
+    return await build_library_entry_response(entry)
 
 
 # Public Gallery routes

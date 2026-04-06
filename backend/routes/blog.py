@@ -240,3 +240,67 @@ async def delete_blog_image(
     await db.blog_images.delete_one({"id": image_id})
     
     return MessageResponse(message="Image deleted")
+
+
+@router.post("/projects/{project_id}/blog/{entry_id}/convert-to-library")
+async def convert_blog_to_library(
+    project_id: str,
+    entry_id: str,
+    current_user: dict = Depends(get_current_user)
+):
+    """Convert a blog post into a library entry, copying content and images."""
+    import shutil
+    await verify_project_access(project_id, current_user["id"])
+
+    blog_entry = await db.blog_entries.find_one({"id": entry_id, "project_id": project_id}, {"_id": 0})
+    if not blog_entry:
+        raise HTTPException(status_code=404, detail="Blog entry not found")
+
+    # Create new library entry
+    library_entry_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+
+    library_doc = {
+        "id": library_entry_id,
+        "project_id": project_id,
+        "folder_id": None,
+        "title": blog_entry["title"],
+        "description": blog_entry["description"],
+        "is_public": blog_entry.get("is_public", False),
+        "views": 0,
+        "created_at": now,
+        "updated_at": now,
+    }
+    await db.library_entries.insert_one(library_doc)
+
+    # Copy images
+    blog_images = await db.blog_images.find({"blog_id": entry_id, "project_id": project_id}, {"_id": 0}).to_list(100)
+    copied_images = 0
+    for img in blog_images:
+        new_image_id = str(uuid.uuid4())
+        src_path = UPLOADS_DIR / img["url"].split("/uploads/")[-1]
+
+        lib_dir = UPLOADS_DIR / "library" / project_id / library_entry_id
+        lib_dir.mkdir(parents=True, exist_ok=True)
+        file_ext = img["filename"].split(".")[-1] if "." in img["filename"] else "jpg"
+        new_filename = f"{new_image_id}.{file_ext}"
+        dest_path = lib_dir / new_filename
+
+        if src_path.exists():
+            shutil.copy2(str(src_path), str(dest_path))
+            lib_image_doc = {
+                "id": new_image_id,
+                "entry_id": library_entry_id,
+                "project_id": project_id,
+                "filename": img["filename"],
+                "url": f"/uploads/library/{project_id}/{library_entry_id}/{new_filename}",
+                "created_at": now,
+            }
+            await db.library_images.insert_one(lib_image_doc)
+            copied_images += 1
+
+    return {
+        "message": "Blog post converted to library entry",
+        "library_entry_id": library_entry_id,
+        "images_copied": copied_images,
+    }

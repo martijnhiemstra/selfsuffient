@@ -38,6 +38,7 @@ import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { getImageUrl } from '../utils';
 import { ShareButton, ShareIcons } from '../components/ShareButton';
+import { ImageLightbox } from '../components/ImageLightbox';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -63,6 +64,10 @@ export const PublicProjectPage = () => {
   // Image modal state
   const [viewingImage, setViewingImage] = useState(null);
   const [imageModalOpen, setImageModalOpen] = useState(false);
+  
+  // Entry image lightbox state
+  const [entryLightboxOpen, setEntryLightboxOpen] = useState(false);
+  const [entryLightboxIndex, setEntryLightboxIndex] = useState(0);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -256,8 +261,43 @@ export const PublicProjectPage = () => {
               className="prose-content"
               dangerouslySetInnerHTML={{ __html: selectedEntry.description || '<p>No content</p>' }}
             />
+            {/* Entry Images */}
+            {selectedEntry.images?.length > 0 && (
+              <div className="mt-8 space-y-3">
+                <h3 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+                  <Image className="w-4 h-4" /> {selectedEntry.images.length} Image{selectedEntry.images.length > 1 ? 's' : ''}
+                </h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {selectedEntry.images.map((img, idx) => (
+                    <div
+                      key={img.id}
+                      className="aspect-square rounded-lg overflow-hidden cursor-pointer group"
+                      onClick={() => { setEntryLightboxIndex(idx); setEntryLightboxOpen(true); }}
+                      data-testid={`entry-image-${img.id}`}
+                    >
+                      <img
+                        src={getImageUrl(img.url)}
+                        alt={img.filename}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </article>
         </div>
+        
+        {/* Entry Image Lightbox */}
+        {selectedEntry.images?.length > 0 && (
+          <ImageLightbox
+            images={selectedEntry.images}
+            currentIndex={entryLightboxIndex}
+            open={entryLightboxOpen}
+            onClose={() => setEntryLightboxOpen(false)}
+            getImageSrc={(img) => getImageUrl(img.url)}
+          />
+        )}
       </div>
     );
   }
