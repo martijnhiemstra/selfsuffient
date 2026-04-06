@@ -140,6 +140,10 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - User Management tab lazy-loads user list only when selected
 - Removed standalone Manage Users page; consolidated into Admin page
 
+### Swipe Gestures & Stay Logged In - Apr 5, 2026
+- **ImageLightbox swipe gestures**: Touch handlers for mobile swipe navigation (left=next, right=prev, 50px threshold)
+- **Stay logged in**: Checkbox on login page. When checked, JWT expires in 14 days (stored in localStorage). When unchecked, 24 hours (stored in sessionStorage, clears on tab close)
+
 ### Image Lightbox Viewer - Apr 5, 2026
 - **ImageLightbox component** (`/app/frontend/src/components/ImageLightbox.jsx`): Full-screen overlay with prev/next navigation, keyboard support (Escape, ArrowLeft, ArrowRight), thumbnail strip, download button, and image counter
 - Integrated into Gallery (replaces old Dialog viewer), Blog (view entry images), and Library (view entry images)
