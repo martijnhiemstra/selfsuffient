@@ -58,6 +58,7 @@ import axios from 'axios';
 import { SimpleEditor } from '../components/SimpleEditor';
 import { ImageUploader } from '../components/ImageUploader';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { TranslationPanel } from '../components/TranslationPanel';
 import { getImageUrl, getThumbUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
@@ -86,6 +87,7 @@ export const LibraryPage = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxImages, setLightboxImages] = useState([]);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [project, setProject] = useState(null);
   
   const [entryForm, setEntryForm] = useState({
     title: '',
@@ -129,6 +131,8 @@ export const LibraryPage = () => {
 
   useEffect(() => {
     fetchLibrary();
+    axios.get(`${API}/projects/${projectId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setProject(r.data)).catch(() => {});
   }, [fetchLibrary]);
 
   useEffect(() => {
@@ -499,6 +503,22 @@ export const LibraryPage = () => {
                         <ImageIcon className="w-3 h-3 mr-1" />
                         Add Image {entry.images?.length > 0 ? `(${entry.images.length})` : ''}
                       </Button>
+                      {/* Translation Panel */}
+                      {project?.languages?.length > 1 && (
+                        <div className="mt-3 pt-3 border-t">
+                          <TranslationPanel
+                            projectId={projectId}
+                            entryId={entry.id}
+                            entryType="library"
+                            translations={entry.translations || {}}
+                            projectLanguages={project.languages}
+                            primaryLanguage={project.primary_language}
+                            contentField="description"
+                            token={token}
+                            onUpdate={fetchLibrary}
+                          />
+                        </div>
+                      )}
                     </CardContent>
                   </Card>
                 ))}

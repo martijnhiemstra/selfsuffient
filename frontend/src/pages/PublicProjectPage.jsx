@@ -39,6 +39,7 @@ import { format, parseISO } from 'date-fns';
 import { getImageUrl, getThumbUrl } from '../utils';
 import { ShareButton, ShareIcons } from '../components/ShareButton';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { LanguageSwitcher } from '../components/LanguageSwitcher';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -68,14 +69,25 @@ export const PublicProjectPage = () => {
   // Entry image lightbox state
   const [entryLightboxOpen, setEntryLightboxOpen] = useState(false);
   const [entryLightboxIndex, setEntryLightboxIndex] = useState(0);
+  
+  // Language state
+  const [currentLang, setCurrentLang] = useState(() => {
+    return sessionStorage.getItem(`lang_${projectId}`) || null;
+  });
+
+  const handleLangChange = (lang) => {
+    setCurrentLang(lang);
+    sessionStorage.setItem(`lang_${projectId}`, lang);
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
+        const langParam = currentLang ? `&lang=${currentLang}` : '';
         const [projectRes, blogRes, libraryRes, galleryRes] = await Promise.all([
           axios.get(`${API}/public/projects/${projectId}`),
-          axios.get(`${API}/public/projects/${projectId}/blog`),
-          axios.get(`${API}/public/projects/${projectId}/library`),
+          axios.get(`${API}/public/projects/${projectId}/blog?_=1${langParam}`),
+          axios.get(`${API}/public/projects/${projectId}/library?_=1${langParam}`),
           axios.get(`${API}/public/projects/${projectId}/gallery`)
         ]);
         
@@ -84,6 +96,11 @@ export const PublicProjectPage = () => {
         setLibraryEntries(libraryRes.data.entries || []);
         setGalleryFolders(galleryRes.data.folders || []);
         setGalleryImages(galleryRes.data.images || []);
+        
+        // Initialize language from project if not set
+        if (!currentLang && projectRes.data.primary_language) {
+          setCurrentLang(projectRes.data.primary_language);
+        }
       } catch (error) {
         console.error('Error fetching project:', error);
       } finally {
@@ -92,7 +109,7 @@ export const PublicProjectPage = () => {
     };
 
     fetchData();
-  }, [projectId]);
+  }, [projectId, currentLang]);
 
   // Filter and sort blog entries
   const filteredBlogEntries = useMemo(() => {
@@ -400,6 +417,17 @@ export const PublicProjectPage = () => {
 
       {/* Content */}
       <div className="max-w-7xl mx-auto px-6 py-12">
+        {/* Language Switcher */}
+        {project?.languages?.length > 1 && (
+          <div className="flex justify-end mb-4">
+            <LanguageSwitcher
+              languages={project.languages}
+              currentLang={currentLang || project.primary_language}
+              onChange={handleLangChange}
+            />
+          </div>
+        )}
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mb-6">
             <TabsTrigger value="blog" className="gap-2">

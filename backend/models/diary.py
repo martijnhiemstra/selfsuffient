@@ -1,6 +1,6 @@
 """Diary related Pydantic models."""
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class DiaryEntryCreate(BaseModel):
@@ -31,6 +31,7 @@ class DiaryEntryResponse(BaseModel):
     story: str
     entry_datetime: str
     images: List[DiaryImageResponse] = []
+    translations: Dict[str, Dict[str, str]] = {}
     created_at: str
     updated_at: str
 

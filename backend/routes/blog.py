@@ -18,7 +18,7 @@ async def get_blog_images(blog_id: str) -> List[dict]:
 
 
 async def build_blog_response(entry: dict) -> BlogEntryResponse:
-    """Build a blog entry response with images"""
+    """Build a blog entry response with images and translations"""
     images = await get_blog_images(entry["id"])
     return BlogEntryResponse(
         id=entry["id"],
@@ -28,6 +28,7 @@ async def build_blog_response(entry: dict) -> BlogEntryResponse:
         is_public=entry.get("is_public", False),
         views=entry.get("views", 0),
         images=[BlogImageResponse(**img) for img in images],
+        translations=entry.get("translations", {}),
         created_at=entry["created_at"],
         updated_at=entry["updated_at"]
     )

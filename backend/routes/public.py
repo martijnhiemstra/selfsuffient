@@ -84,18 +84,25 @@ async def get_blog_images(blog_id: str) -> list:
     return images
 
 
-async def build_blog_response(entry: dict) -> BlogEntryResponse:
-    """Build a blog entry response with images"""
+async def build_blog_response(entry: dict, lang: str = None) -> BlogEntryResponse:
+    """Build a blog entry response with images, optionally applying translation."""
     from models import BlogImageResponse
     images = await get_blog_images(entry["id"])
+    translations = entry.get("translations", {})
+    title = entry["title"]
+    description = entry["description"]
+    if lang and lang in translations:
+        title = translations[lang].get("title", title)
+        description = translations[lang].get("description", description)
     return BlogEntryResponse(
         id=entry["id"],
         project_id=entry["project_id"],
-        title=entry["title"],
-        description=entry["description"],
+        title=title,
+        description=description,
         is_public=entry.get("is_public", False),
         views=entry.get("views", 0),
         images=[BlogImageResponse(**img) for img in images],
+        translations=translations,
         created_at=entry["created_at"],
         updated_at=entry["updated_at"]
     )
@@ -107,7 +114,8 @@ async def list_public_blog_entries(
     project_id: str,
     search: Optional[str] = None,
     sort_by: str = "created_at",
-    sort_order: str = "desc"
+    sort_order: str = "desc",
+    lang: Optional[str] = None
 ):
     project = await db.projects.find_one({"id": project_id, "is_public": True})
     if not project:
@@ -124,16 +132,15 @@ async def list_public_blog_entries(
     total = await db.blog_entries.count_documents(query)
     entries = await db.blog_entries.find(query, {"_id": 0}).sort(sort_by, sort_direction).to_list(1000)
     
-    # Build responses with images
     responses = []
     for entry in entries:
-        responses.append(await build_blog_response(entry))
+        responses.append(await build_blog_response(entry, lang))
     
     return BlogListResponse(entries=responses, total=total)
 
 
 @router.get("/projects/{project_id}/blog/{entry_id}", response_model=BlogEntryResponse)
-async def get_public_blog_entry(project_id: str, entry_id: str):
+async def get_public_blog_entry(project_id: str, entry_id: str, lang: Optional[str] = None):
     project = await db.projects.find_one({"id": project_id, "is_public": True})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -145,14 +152,24 @@ async def get_public_blog_entry(project_id: str, entry_id: str):
     await db.blog_entries.update_one({"id": entry_id}, {"$inc": {"views": 1}})
     entry["views"] = entry.get("views", 0) + 1
     
-    return await build_blog_response(entry)
+    return await build_blog_response(entry, lang)
 
 
-async def build_library_entry_response(entry: dict) -> LibraryEntryResponse:
-    """Build a library entry response with images"""
+async def build_library_entry_response(entry: dict, lang: str = None) -> LibraryEntryResponse:
+    """Build a library entry response with images, optionally applying translation."""
     images = await db.library_images.find({"entry_id": entry["id"]}, {"_id": 0}).to_list(100)
+    translations = entry.get("translations", {})
+    title = entry.get("title", "")
+    description = entry.get("description", "")
+    if lang and lang in translations:
+        title = translations[lang].get("title", title)
+        description = translations[lang].get("description", description)
+    data = {k: v for k, v in entry.items() if k != "_id"}
+    data["title"] = title
+    data["description"] = description
+    data["translations"] = translations
     return LibraryEntryResponse(
-        **{k: v for k, v in entry.items() if k != "_id"},
+        **data,
         images=[LibraryImageResponse(**img) for img in images]
     )
 
@@ -164,7 +181,8 @@ async def list_public_library_contents(
     folder_id: Optional[str] = None,
     search: Optional[str] = None,
     sort_by: str = "created_at",
-    sort_order: str = "desc"
+    sort_order: str = "desc",
+    lang: Optional[str] = None
 ):
     project = await db.projects.find_one({"id": project_id, "is_public": True})
     if not project:
@@ -187,7 +205,7 @@ async def list_public_library_contents(
     
     entry_responses = []
     for e in entries:
-        entry_responses.append(await build_library_entry_response(e))
+        entry_responses.append(await build_library_entry_response(e, lang))
     
     return LibraryListResponse(
         folders=[LibraryFolderResponse(**f) for f in folders],
@@ -196,7 +214,7 @@ async def list_public_library_contents(
 
 
 @router.get("/projects/{project_id}/library/entries/{entry_id}", response_model=LibraryEntryResponse)
-async def get_public_library_entry(project_id: str, entry_id: str):
+async def get_public_library_entry(project_id: str, entry_id: str, lang: Optional[str] = None):
     project = await db.projects.find_one({"id": project_id, "is_public": True})
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
@@ -208,7 +226,7 @@ async def get_public_library_entry(project_id: str, entry_id: str):
     await db.library_entries.update_one({"id": entry_id}, {"$inc": {"views": 1}})
     entry["views"] = entry.get("views", 0) + 1
     
-    return await build_library_entry_response(entry)
+    return await build_library_entry_response(entry, lang)
 
 
 # Public Gallery routes

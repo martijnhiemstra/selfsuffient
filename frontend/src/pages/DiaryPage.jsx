@@ -55,6 +55,7 @@ import { toast } from 'sonner';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
 import { getImageUrl, getThumbUrl } from '../utils';
+import { TranslationPanel } from '../components/TranslationPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -76,6 +77,7 @@ export const DiaryPage = () => {
   const [diaryImageUploaderOpen, setDiaryImageUploaderOpen] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [project, setProject] = useState(null);
   
   const [formData, setFormData] = useState({
     title: '',
@@ -104,6 +106,8 @@ export const DiaryPage = () => {
 
   useEffect(() => {
     fetchEntries();
+    axios.get(`${API}/projects/${projectId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setProject(r.data)).catch(() => {});
   }, [fetchEntries]);
 
   const handleSubmit = async (e) => {
@@ -517,6 +521,22 @@ export const DiaryPage = () => {
                       />
                     ))}
                   </div>
+                </div>
+              )}
+              {/* Translation Panel */}
+              {project?.languages?.length > 1 && (
+                <div className="border-t pt-4 mt-4">
+                  <TranslationPanel
+                    projectId={projectId}
+                    entryId={viewingEntry.id}
+                    entryType="diary"
+                    translations={viewingEntry.translations || {}}
+                    projectLanguages={project.languages}
+                    primaryLanguage={project.primary_language}
+                    contentField="story"
+                    token={token}
+                    onUpdate={fetchEntries}
+                  />
                 </div>
               )}
             </>

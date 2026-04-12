@@ -51,6 +51,7 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import { getImageUrl, validateImageFile } from '../utils';
+import { LANG_NAMES, FLAG_EMOJI } from '../components/TranslationPanel';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -63,7 +64,7 @@ export const ProjectDetailPage = () => {
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editData, setEditData] = useState({ name: '', description: '', is_public: false });
+  const [editData, setEditData] = useState({ name: '', description: '', is_public: false, languages: ['en'], primary_language: 'en' });
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -83,7 +84,9 @@ export const ProjectDetailPage = () => {
       setEditData({
         name: response.data.name,
         description: response.data.description,
-        is_public: response.data.is_public
+        is_public: response.data.is_public,
+        languages: response.data.languages || ['en'],
+        primary_language: response.data.primary_language || 'en'
       });
     } catch (error) {
       toast.error('Failed to load project');
@@ -286,6 +289,11 @@ export const ProjectDetailPage = () => {
                         Private
                       </span>
                     )}
+                    {project.languages?.length > 1 && (
+                      <span className="inline-flex items-center gap-1 text-sm text-muted-foreground ml-2">
+                        {project.languages.map(l => FLAG_EMOJI[l]).join(' ')}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -370,6 +378,59 @@ export const ProjectDetailPage = () => {
                   onCheckedChange={(checked) => setEditData({ ...editData, is_public: checked })}
                   data-testid="edit-project-public"
                 />
+              </div>
+
+              {/* Language Configuration */}
+              <div className="space-y-3 border-t pt-4">
+                <Label className="flex items-center gap-2">
+                  <Globe className="w-4 h-4" />
+                  Languages
+                </Label>
+                <p className="text-sm text-muted-foreground">Select languages for this project. Content can be translated into these languages.</p>
+                <div className="grid grid-cols-2 gap-2 max-h-48 overflow-y-auto">
+                  {Object.entries(LANG_NAMES).map(([code, name]) => (
+                    <label
+                      key={code}
+                      className={`flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-colors ${
+                        editData.languages?.includes(code) ? 'bg-primary/10 border-primary/30' : 'hover:bg-muted'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={editData.languages?.includes(code)}
+                        onChange={(e) => {
+                          const langs = editData.languages || [];
+                          const updated = e.target.checked
+                            ? [...langs, code]
+                            : langs.filter((l) => l !== code);
+                          if (updated.length === 0) return;
+                          const newPrimary = updated.includes(editData.primary_language) ? editData.primary_language : updated[0];
+                          setEditData({ ...editData, languages: updated, primary_language: newPrimary });
+                        }}
+                        className="rounded"
+                        data-testid={`lang-checkbox-${code}`}
+                      />
+                      <span>{FLAG_EMOJI[code]}</span>
+                      <span className="text-sm">{name}</span>
+                    </label>
+                  ))}
+                </div>
+                {editData.languages?.length > 1 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="primary-lang">Primary Language (original writing language)</Label>
+                    <select
+                      id="primary-lang"
+                      value={editData.primary_language}
+                      onChange={(e) => setEditData({ ...editData, primary_language: e.target.value })}
+                      className="w-full h-10 rounded-md border border-input bg-background px-3 text-sm"
+                      data-testid="primary-language-select"
+                    >
+                      {editData.languages.map((code) => (
+                        <option key={code} value={code}>{FLAG_EMOJI[code]} {LANG_NAMES[code]}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
             </div>
             <DialogFooter>

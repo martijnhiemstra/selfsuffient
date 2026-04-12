@@ -1,6 +1,6 @@
 """Library related Pydantic models."""
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict
 
 
 class LibraryFolderCreate(BaseModel):
@@ -45,6 +45,7 @@ class LibraryEntryResponse(BaseModel):
     is_public: bool
     views: int = 0
     images: List['LibraryImageResponse'] = []
+    translations: Dict[str, Dict[str, str]] = {}
     created_at: str
     updated_at: str
 

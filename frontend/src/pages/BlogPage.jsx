@@ -9,6 +9,7 @@ import { Switch } from '../components/ui/switch';
 import { Badge } from '../components/ui/badge';
 import { ImageUploader } from '../components/ImageUploader';
 import { ImageLightbox } from '../components/ImageLightbox';
+import { TranslationPanel } from '../components/TranslationPanel';
 import {
   Dialog,
   DialogContent,
@@ -71,6 +72,7 @@ export const BlogPage = () => {
   const [search, setSearch] = useState('');
   const [sortBy, setSortBy] = useState('created_at');
   const [sortOrder, setSortOrder] = useState('desc');
+  const [project, setProject] = useState(null);
   
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState(null);
@@ -108,6 +110,8 @@ export const BlogPage = () => {
 
   useEffect(() => {
     fetchEntries();
+    axios.get(`${API}/projects/${projectId}`, { headers: { Authorization: `Bearer ${token}` } })
+      .then(r => setProject(r.data)).catch(() => {});
   }, [fetchEntries]);
 
   const handleSubmit = async (e) => {
@@ -562,6 +566,22 @@ export const BlogPage = () => {
                       />
                     ))}
                   </div>
+                </div>
+              )}
+              {/* Translation Panel */}
+              {project?.languages?.length > 1 && (
+                <div className="border-t pt-4 mt-4">
+                  <TranslationPanel
+                    projectId={projectId}
+                    entryId={viewingEntry.id}
+                    entryType="blog"
+                    translations={viewingEntry.translations || {}}
+                    projectLanguages={project.languages}
+                    primaryLanguage={project.primary_language}
+                    contentField="description"
+                    token={token}
+                    onUpdate={fetchEntries}
+                  />
                 </div>
               )}
             </>
