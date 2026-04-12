@@ -164,6 +164,15 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - Disabled Garden Designer page: route and import commented out in App.js, link removed from project detail
 - Code preserved in GardenDesignerPage.jsx for future re-enablement
 
+### Public Page Images & Blog-to-Library Conversion - Apr 12, 2026
+- **Fixed P0 bug**: Public pages now correctly display images attached to blog and library entries
+  - Backend: `public.py` library endpoints now use `build_library_entry_response()` to fetch and include images
+  - Frontend: `PublicProjectPage.jsx` entry detail view renders image grid with clickable lightbox
+- **New feature**: Convert Blog Post to Library Entry
+  - Backend: `POST /api/projects/{pid}/blog/{eid}/convert-to-library` copies title, content, images to new library entry
+  - Frontend: Library icon button on each blog entry card with confirmation dialog
+  - Original blog post is preserved after conversion
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
