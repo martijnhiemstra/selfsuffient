@@ -121,6 +121,31 @@ export const getImageUrl = (imagePath, token = null) => {
 };
 
 /**
+ * Get the thumbnail URL for an uploaded image (on-demand generated, ~300px wide)
+ * @param {string} imagePath - The image path from the database (e.g., "/uploads/blog/123/456/img.jpg")
+ * @param {string} token - Optional auth token for private images
+ * @returns {string} The full URL to access the thumbnail
+ */
+export const getThumbUrl = (imagePath, token = null) => {
+  if (!imagePath) return null;
+  
+  if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    return imagePath;
+  }
+  
+  if (imagePath.startsWith('/uploads/')) {
+    const filePath = imagePath.replace('/uploads/', '');
+    let url = `${API_URL}/api/files/thumb/${filePath}`;
+    if (token) {
+      url += `?token=${encodeURIComponent(token)}`;
+    }
+    return url;
+  }
+  
+  return `${API_URL}${imagePath}`;
+};
+
+/**
  * Strip HTML tags from a string
  * @param {string} html - HTML string to strip
  * @returns {string} Plain text without HTML tags

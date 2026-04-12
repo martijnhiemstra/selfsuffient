@@ -57,7 +57,7 @@ import {
 import { toast } from 'sonner';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { getImageUrl, validateImageFile, getMaxUploadSizeMB } from '../utils';
+import { getImageUrl, getThumbUrl, validateImageFile, getMaxUploadSizeMB } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -506,7 +506,7 @@ export const BlogPage = () => {
                     {entry.images.slice(0, 4).map((img) => (
                       <img
                         key={img.id}
-                        src={getImageUrl(img.url, token)}
+                        src={getThumbUrl(img.url, token)}
                         alt={img.filename}
                         className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
                       />

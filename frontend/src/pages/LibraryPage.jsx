@@ -58,7 +58,7 @@ import axios from 'axios';
 import { SimpleEditor } from '../components/SimpleEditor';
 import { ImageUploader } from '../components/ImageUploader';
 import { ImageLightbox } from '../components/ImageLightbox';
-import { getImageUrl } from '../utils';
+import { getImageUrl, getThumbUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -472,7 +472,7 @@ export const LibraryPage = () => {
                           {entry.images.map((img, idx) => (
                             <div key={img.id} className="relative group flex-shrink-0">
                               <img
-                                src={getImageUrl(img.url, token)}
+                                src={getThumbUrl(img.url, token)}
                                 alt={img.filename}
                                 className="w-20 h-20 object-cover rounded-lg border cursor-pointer hover:opacity-90 transition-opacity"
                                 onClick={() => { setLightboxImages(entry.images); setLightboxIndex(idx); setLightboxOpen(true); }}

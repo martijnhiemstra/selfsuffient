@@ -5,7 +5,7 @@ from .auth import (
     ChangePasswordRequest, MessageResponse
 )
 from .project import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse
-from .diary import DiaryEntryCreate, DiaryEntryUpdate, DiaryEntryResponse, DiaryListResponse
+from .diary import DiaryEntryCreate, DiaryEntryUpdate, DiaryEntryResponse, DiaryListResponse, DiaryImageResponse
 from .gallery import (
     GalleryFolderCreate, GalleryFolderUpdate, GalleryFolderResponse,
     GalleryImageResponse, GalleryListResponse, PublicGalleryResponse
@@ -50,7 +50,7 @@ __all__ = [
     # Project
     "ProjectCreate", "ProjectUpdate", "ProjectResponse", "ProjectListResponse",
     # Diary
-    "DiaryEntryCreate", "DiaryEntryUpdate", "DiaryEntryResponse", "DiaryListResponse",
+    "DiaryEntryCreate", "DiaryEntryUpdate", "DiaryEntryResponse", "DiaryListResponse", "DiaryImageResponse",
     # Gallery
     "GalleryFolderCreate", "GalleryFolderUpdate", "GalleryFolderResponse",
     "GalleryImageResponse", "GalleryListResponse", "PublicGalleryResponse",

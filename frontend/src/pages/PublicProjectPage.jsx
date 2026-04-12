@@ -36,7 +36,7 @@ import {
 } from 'lucide-react';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
-import { getImageUrl } from '../utils';
+import { getImageUrl, getThumbUrl } from '../utils';
 import { ShareButton, ShareIcons } from '../components/ShareButton';
 import { ImageLightbox } from '../components/ImageLightbox';
 

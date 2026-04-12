@@ -55,7 +55,7 @@ async def get_optional_user(
             return None
         user = await db.users.find_one({"id": user_id}, {"_id": 0, "password": 0})
         return user
-    except:
+    except Exception:
         return None
 
 
@@ -125,6 +125,62 @@ async def check_gallery_image_access(file_path: str, user: Optional[dict]) -> bo
     return project.get("user_id") == user.get("id")
 
 
+THUMB_DIR = UPLOADS_DIR / "thumbs"
+THUMB_DIR.mkdir(exist_ok=True)
+THUMB_WIDTH = 300
+
+
+@router.get("/files/thumb/{file_path:path}")
+async def serve_thumbnail(
+    file_path: str,
+    token: Optional[str] = None,
+    credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
+):
+    """Serve a thumbnail version of an uploaded image. Generated on-demand and cached."""
+    current_user = await get_optional_user(credentials, token)
+
+    original_path = UPLOADS_DIR / file_path
+    if not original_path.exists() or not original_path.is_file():
+        raise HTTPException(status_code=404, detail="File not found")
+
+    try:
+        original_path.resolve().relative_to(UPLOADS_DIR.resolve())
+    except ValueError:
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    if file_path.startswith("gallery/"):
+        has_access = await check_gallery_image_access(file_path, current_user)
+        if not has_access:
+            raise HTTPException(status_code=403, detail="Access denied")
+
+    thumb_path = THUMB_DIR / file_path
+    if not thumb_path.exists():
+        try:
+            from PIL import Image as PILImage
+            thumb_path.parent.mkdir(parents=True, exist_ok=True)
+            img = PILImage.open(original_path)
+            if img.mode in ('RGBA', 'P'):
+                img = img.convert('RGB')
+            ratio = THUMB_WIDTH / img.width
+            new_height = int(img.height * ratio)
+            if img.width > THUMB_WIDTH:
+                img = img.resize((THUMB_WIDTH, new_height), PILImage.LANCZOS)
+            img.save(str(thumb_path), "JPEG", quality=75)
+        except Exception:
+            return FileResponse(
+                original_path,
+                headers={"Access-Control-Allow-Origin": "*", "Cross-Origin-Resource-Policy": "cross-origin"}
+            )
+
+    return FileResponse(
+        thumb_path,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Cross-Origin-Resource-Policy": "cross-origin"
+        }
+    )
+
+
 @router.get("/files/{file_path:path}")
 async def serve_file(
     file_path: str,
@@ -132,7 +188,6 @@ async def serve_file(
     credentials: Optional[HTTPAuthorizationCredentials] = Depends(security)
 ):
     """Serve uploaded files with access control for private gallery images"""
-    # Get user from either header or query param
     current_user = await get_optional_user(credentials, token)
     
     full_path = UPLOADS_DIR / file_path
@@ -140,13 +195,11 @@ async def serve_file(
     if not full_path.exists() or not full_path.is_file():
         raise HTTPException(status_code=404, detail="File not found")
     
-    # Security check - ensure path is within uploads directory
     try:
         full_path.resolve().relative_to(UPLOADS_DIR.resolve())
     except ValueError:
         raise HTTPException(status_code=403, detail="Access denied")
     
-    # Check gallery image access permissions
     if file_path.startswith("gallery/"):
         has_access = await check_gallery_image_access(file_path, current_user)
         if not has_access:

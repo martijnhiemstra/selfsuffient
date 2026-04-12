@@ -5,6 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
+import { Badge } from '../components/ui/badge';
+import { ImageUploader } from '../components/ImageUploader';
+import { ImageLightbox } from '../components/ImageLightbox';
 import {
   Dialog,
   DialogContent,
@@ -43,11 +46,15 @@ import {
   Trash2,
   ArrowUpDown,
   Loader2,
-  Eye
+  Eye,
+  Upload,
+  Image,
+  X
 } from 'lucide-react';
 import { toast } from 'sonner';
 import axios from 'axios';
 import { format, parseISO } from 'date-fns';
+import { getImageUrl, getThumbUrl } from '../utils';
 
 const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
 
@@ -65,12 +72,17 @@ export const DiaryPage = () => {
   const [editingEntry, setEditingEntry] = useState(null);
   const [viewingEntry, setViewingEntry] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [diaryImageUploaderOpen, setDiaryImageUploaderOpen] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   
   const [formData, setFormData] = useState({
     title: '',
     story: '',
     entry_datetime: new Date().toISOString().slice(0, 16)
   });
+  const [entryImages, setEntryImages] = useState([]);
 
   const fetchEntries = useCallback(async () => {
     try {
@@ -109,9 +121,21 @@ export const DiaryPage = () => {
         });
         toast.success('Entry updated!');
       } else {
-        await axios.post(`${API}/projects/${projectId}/diary`, formData, {
+        const response = await axios.post(`${API}/projects/${projectId}/diary`, formData, {
           headers: { Authorization: `Bearer ${token}` }
         });
+        if (entryImages.length > 0) {
+          toast.info(`Uploading ${entryImages.length} image(s)...`);
+          for (const img of entryImages) {
+            if (img.file) {
+              const fd = new FormData();
+              fd.append('file', img.file);
+              await axios.post(`${API}/projects/${projectId}/diary/${response.data.id}/images`, fd, {
+                headers: { Authorization: `Bearer ${token}` }
+              });
+            }
+          }
+        }
         toast.success('Entry created!');
       }
       setDialogOpen(false);
@@ -136,6 +160,48 @@ export const DiaryPage = () => {
     }
   };
 
+  const handleImageUpload = async (file) => {
+    if (editingEntry) {
+      setUploading(true);
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        const response = await axios.post(
+          `${API}/projects/${projectId}/diary/${editingEntry.id}/images`,
+          fd,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEntryImages([...entryImages, response.data]);
+        toast.success('Image uploaded!');
+      } catch (error) {
+        toast.error('Failed to upload image');
+      } finally {
+        setUploading(false);
+      }
+    } else {
+      const preview = URL.createObjectURL(file);
+      setEntryImages([...entryImages, { id: `temp-${Date.now()}`, file, preview, filename: file.name }]);
+    }
+  };
+
+  const handleDeleteImage = async (image) => {
+    if (image.file) {
+      setEntryImages(entryImages.filter(i => i.id !== image.id));
+      URL.revokeObjectURL(image.preview);
+    } else if (editingEntry) {
+      try {
+        await axios.delete(
+          `${API}/projects/${projectId}/diary/${editingEntry.id}/images/${image.id}`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        setEntryImages(entryImages.filter(i => i.id !== image.id));
+        toast.success('Image deleted');
+      } catch (error) {
+        toast.error('Failed to delete image');
+      }
+    }
+  };
+
   const openEditDialog = (entry) => {
     setEditingEntry(entry);
     setFormData({
@@ -143,6 +209,7 @@ export const DiaryPage = () => {
       story: entry.story,
       entry_datetime: entry.entry_datetime.slice(0, 16)
     });
+    setEntryImages(entry.images || []);
     setDialogOpen(true);
   };
 
@@ -153,6 +220,10 @@ export const DiaryPage = () => {
       story: '',
       entry_datetime: new Date().toISOString().slice(0, 16)
     });
+    entryImages.forEach(img => {
+      if (img.preview) URL.revokeObjectURL(img.preview);
+    });
+    setEntryImages([]);
   };
 
   return (
@@ -215,6 +286,49 @@ export const DiaryPage = () => {
                     onChange={(html) => setFormData({ ...formData, story: html })}
                     placeholder="Write your diary entry..."
                   />
+                </div>
+
+                {/* Image Attachments */}
+                <div className="space-y-2">
+                  <Label>Images</Label>
+                  <div className="border border-input rounded-lg p-4">
+                    {entryImages.length > 0 && (
+                      <div className="grid grid-cols-3 gap-2 mb-4">
+                        {entryImages.map((image) => (
+                          <div key={image.id} className="relative group aspect-square">
+                            <img
+                              src={image.preview || getImageUrl(image.url, token)}
+                              alt={image.filename}
+                              className="w-full h-full object-cover rounded-lg"
+                            />
+                            <Button
+                              type="button"
+                              variant="destructive"
+                              size="icon"
+                              className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDeleteImage(image)}
+                            >
+                              <X className="w-3 h-3" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setDiaryImageUploaderOpen(true)}
+                      disabled={uploading}
+                      className="w-full"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                      ) : (
+                        <Upload className="w-4 h-4 mr-2" />
+                      )}
+                      Add Image
+                    </Button>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
@@ -288,7 +402,14 @@ export const DiaryPage = () => {
               <CardHeader className="pb-2">
                 <div className="flex items-start justify-between">
                   <div>
-                    <CardTitle className="font-display text-lg">{entry.title}</CardTitle>
+                    <div className="flex items-center gap-2 mb-1">
+                      <CardTitle className="font-display text-lg">{entry.title}</CardTitle>
+                      {entry.images?.length > 0 && (
+                        <Badge variant="outline" className="gap-1">
+                          <Image className="w-3 h-3" /> {entry.images.length}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground font-mono-data flex items-center gap-2 mt-1">
                       <Calendar className="w-4 h-4" />
                       {format(parseISO(entry.entry_datetime), 'PPp')}
@@ -321,7 +442,7 @@ export const DiaryPage = () => {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Entry?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            This will permanently delete this diary entry.
+                            This will permanently delete this diary entry and all its images.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
@@ -343,6 +464,23 @@ export const DiaryPage = () => {
                   className="prose-content text-muted-foreground line-clamp-3"
                   dangerouslySetInnerHTML={{ __html: entry.story || '<p>No content</p>' }}
                 />
+                {entry.images?.length > 0 && (
+                  <div className="flex gap-2 mt-3 overflow-x-auto">
+                    {entry.images.slice(0, 4).map((img) => (
+                      <img
+                        key={img.id}
+                        src={getThumbUrl(img.url, token)}
+                        alt={img.filename}
+                        className="w-16 h-16 object-cover rounded-lg flex-shrink-0"
+                      />
+                    ))}
+                    {entry.images.length > 4 && (
+                      <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                        <span className="text-sm text-muted-foreground">+{entry.images.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
@@ -364,10 +502,46 @@ export const DiaryPage = () => {
                 className="prose-content py-4"
                 dangerouslySetInnerHTML={{ __html: viewingEntry.story || '<p>No content</p>' }}
               />
+              {viewingEntry.images?.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">Attached Images</h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {viewingEntry.images.map((img, idx) => (
+                      <img
+                        key={img.id}
+                        src={getImageUrl(img.url, token)}
+                        alt={img.filename}
+                        className="w-full rounded-lg cursor-pointer hover:opacity-90 transition-opacity"
+                        onClick={() => { setLightboxIndex(idx); setLightboxOpen(true); }}
+                        data-testid={`diary-image-${img.id}`}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </DialogContent>
       </Dialog>
+
+      <ImageUploader
+        open={diaryImageUploaderOpen}
+        onClose={() => setDiaryImageUploaderOpen(false)}
+        onUpload={handleImageUpload}
+        mode="free"
+        maxWidth={1600}
+        title="Upload Diary Image"
+      />
+
+      {viewingEntry?.images?.length > 0 && (
+        <ImageLightbox
+          images={viewingEntry.images}
+          currentIndex={lightboxIndex}
+          open={lightboxOpen}
+          onClose={() => setLightboxOpen(false)}
+          getImageSrc={(img) => getImageUrl(img.url, token)}
+        />
+      )}
     </div>
   );
 };
