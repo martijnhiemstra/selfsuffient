@@ -183,6 +183,16 @@ Build an application that helps users setup a self-sufficient lifestyle with:
   - Full-size images still served via `getImageUrl()` for lightbox/detail views
   - ~95% bandwidth reduction for preview images (e.g., 33KB → 1.5KB)
 
+### Multi-Language Translation Feature - Apr 12, 2026
+- **Project language configuration**: Projects can define supported languages (from 27 available) and a primary writing language
+- **On-demand translation**: Authors translate entries (Blog/Library/Diary) via OpenAI using their configured API key
+- **Translation storage**: Translations stored as `translations` dict in entry documents, keyed by language code
+- **Editable translations**: Authors can manually edit AI-generated translations
+- **Public language switcher**: Public project pages show a language dropdown; visitor preference remembered in sessionStorage
+- **API endpoints**: `POST/PUT/DELETE /api/projects/{pid}/{type}/{eid}/translate/{lang}` for all 3 entry types
+- **Backend files**: `/app/backend/routes/translation.py`, `/app/backend/services/translation.py`
+- **Frontend files**: `/app/frontend/src/components/TranslationPanel.jsx`, `/app/frontend/src/components/LanguageSwitcher.jsx`
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
