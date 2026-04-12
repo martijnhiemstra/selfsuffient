@@ -173,6 +173,16 @@ Build an application that helps users setup a self-sufficient lifestyle with:
   - Frontend: Library icon button on each blog entry card with confirmation dialog
   - Original blog post is preserved after conversion
 
+### Diary Image Attachments & Thumbnail Previews - Apr 12, 2026
+- **Diary images**: Full CRUD support for image attachments on diary entries
+  - Backend: `diary_images` MongoDB collection, upload/delete endpoints, auto-cleanup on entry delete
+  - Frontend: `ImageUploader` + `ImageLightbox` integrated into DiaryPage, same UX as Blog/Library
+- **On-demand thumbnail generation**: Performance optimization for image previews across the app
+  - Backend: `GET /api/files/thumb/{path}` endpoint generates ~300px wide JPEG thumbnails lazily on first request, cached in `uploads/thumbs/`
+  - Frontend: New `getThumbUrl()` utility used for card preview images in Blog, Library, and Diary listing pages
+  - Full-size images still served via `getImageUrl()` for lightbox/detail views
+  - ~95% bandwidth reduction for preview images (e.g., 33KB → 1.5KB)
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality
