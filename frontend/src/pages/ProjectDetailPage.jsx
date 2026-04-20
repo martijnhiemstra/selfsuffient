@@ -202,7 +202,7 @@ export const ProjectDetailPage = () => {
               <AlertDialogHeader>
                 <AlertDialogTitle>Delete Project?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  This will permanently delete "{project.name}" and all its data including diary entries, gallery images, blog posts, and tasks. This action cannot be undone.
+                  This will permanently delete "{project.name}" and all its data including blog posts, library entries, diary entries, gallery images, checklists, tasks, routines, and translations. This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>

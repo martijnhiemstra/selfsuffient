@@ -105,22 +105,44 @@ async def delete_project(project_id: str, current_user: dict = Depends(get_curre
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Delete project image if exists
+    # Delete project cover image if exists
     if project.get("image"):
         image_path = UPLOADS_DIR / project["image"].split("/uploads/")[-1]
         if image_path.exists():
             image_path.unlink()
     
-    # Delete all related data
+    # Delete all uploaded files for this project
+    import shutil
+    for folder in ["blog", "library", "diary", "gallery", "projects"]:
+        folder_path = UPLOADS_DIR / folder / project_id
+        if folder_path.exists():
+            shutil.rmtree(str(folder_path), ignore_errors=True)
+    # Also clean up any cached thumbnails
+    for folder in ["blog", "library", "diary", "gallery", "projects"]:
+        thumb_path = UPLOADS_DIR / "thumbs" / folder / project_id
+        if thumb_path.exists():
+            shutil.rmtree(str(thumb_path), ignore_errors=True)
+
+    # Delete all related data from every collection
+    await db.blog_entries.delete_many({"project_id": project_id})
+    await db.blog_images.delete_many({"project_id": project_id})
+    await db.library_entries.delete_many({"project_id": project_id})
+    await db.library_folders.delete_many({"project_id": project_id})
+    await db.library_images.delete_many({"project_id": project_id})
     await db.diary_entries.delete_many({"project_id": project_id})
+    await db.diary_images.delete_many({"project_id": project_id})
     await db.gallery_folders.delete_many({"project_id": project_id})
     await db.gallery_images.delete_many({"project_id": project_id})
-    await db.blog_entries.delete_many({"project_id": project_id})
-    await db.library_folders.delete_many({"project_id": project_id})
-    await db.library_entries.delete_many({"project_id": project_id})
     await db.tasks.delete_many({"project_id": project_id})
     await db.startup_tasks.delete_many({"project_id": project_id})
     await db.shutdown_tasks.delete_many({"project_id": project_id})
+    await db.checklists.delete_many({"project_id": project_id})
+    await db.checklist_items.delete_many({"project_id": project_id})
+    await db.routine_tasks.delete_many({"project_id": project_id})
+    await db.routine_completions.delete_many({"project_id": project_id})
+    await db.expense_periods.delete_many({"project_id": project_id})
+    await db.expected_items.delete_many({"project_id": project_id})
+    await db.project_views.delete_many({"project_id": project_id})
     
     await db.projects.delete_one({"id": project_id})
     
