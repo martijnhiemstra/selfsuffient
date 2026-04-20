@@ -11,13 +11,8 @@ root.render(
   </React.StrictMode>,
 );
 
-// Register service worker for PWA functionality
-serviceWorkerRegistration.register({
-  onUpdate: (registration) => {
-    // Show a toast or notification when new content is available
-    console.log('[PWA] New version available! Refresh to update.');
-  },
-  onSuccess: (registration) => {
-    console.log('[PWA] Content cached for offline use.');
-  },
-});
+// Unregister service worker and clear all caches to fix stale deployments
+serviceWorkerRegistration.unregister();
+if ('caches' in window) {
+  caches.keys().then((names) => names.forEach((name) => caches.delete(name)));
+}

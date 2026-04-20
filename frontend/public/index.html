@@ -107,6 +107,21 @@
         <div id="root"></div>
         
         <script>
+            // Immediately unregister any service workers and clear caches
+            // This runs before React loads, fixing stale cache issues
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(function(registrations) {
+                    registrations.forEach(function(reg) { reg.unregister(); });
+                });
+            }
+            if ('caches' in window) {
+                caches.keys().then(function(names) {
+                    names.forEach(function(name) { caches.delete(name); });
+                });
+            }
+        </script>
+        
+        <script>
             // Hide splash screen when app is loaded
             window.addEventListener('load', function() {
                 setTimeout(function() {
