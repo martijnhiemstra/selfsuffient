@@ -1,129 +1,67 @@
-// Earthly Life Service Worker
-const CACHE_NAME = 'earthly-life-v1';
-const STATIC_CACHE = 'earthly-life-static-v1';
-const DYNAMIC_CACHE = 'earthly-life-dynamic-v1';
+// Earthly Life Service Worker - Network First
+// Version is auto-incremented to bust cache on every deploy
+const CACHE_VERSION = 'v2-' + Date.now();
+const CACHE_NAME = `earthly-life-${CACHE_VERSION}`;
 
-// Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
-];
-
-// Install event - cache static assets
+// Install: skip waiting to activate immediately
 self.addEventListener('install', (event) => {
-  console.log('[Service Worker] Installing...');
-  event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[Service Worker] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .catch((err) => {
-        console.log('[Service Worker] Cache failed:', err);
-      })
-  );
-  // Activate immediately
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
+// Activate: delete ALL old caches
 self.addEventListener('activate', (event) => {
-  console.log('[Service Worker] Activating...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
-        cacheNames
-          .filter((name) => name !== STATIC_CACHE && name !== DYNAMIC_CACHE)
-          .map((name) => {
-            console.log('[Service Worker] Deleting old cache:', name);
+        cacheNames.map((name) => {
+          if (name !== CACHE_NAME) {
             return caches.delete(name);
-          })
+          }
+        })
       );
     })
   );
-  // Claim all clients immediately
   self.clients.claim();
 });
 
-// Fetch event - Network First strategy for API, Cache First for static assets
+// Fetch: Network-First for everything
 self.addEventListener('fetch', (event) => {
   const { request } = event;
+
+  // Only handle GET requests over HTTP(S)
+  if (request.method !== 'GET') return;
   const url = new URL(request.url);
+  if (!url.protocol.startsWith('http')) return;
 
-  // Skip non-GET requests
-  if (request.method !== 'GET') {
-    return;
-  }
-
-  // Skip chrome-extension and other non-http(s) requests
-  if (!url.protocol.startsWith('http')) {
-    return;
-  }
-
-  // API requests - Network First
+  // Never cache API requests - always go to network
   if (url.pathname.startsWith('/api')) {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Clone and cache successful responses
-          if (response.ok) {
-            const responseClone = response.clone();
-            caches.open(DYNAMIC_CACHE).then((cache) => {
-              cache.put(request, responseClone);
-            });
-          }
-          return response;
-        })
-        .catch(() => {
-          // Return cached response if network fails
-          return caches.match(request);
-        })
-    );
+    event.respondWith(fetch(request));
     return;
   }
 
-  // Static assets - Cache First with Network Fallback
+  // For everything else: Network first, fall back to cache
   event.respondWith(
-    caches.match(request)
-      .then((cachedResponse) => {
-        if (cachedResponse) {
-          // Return cached response and update cache in background
-          fetch(request).then((response) => {
-            if (response.ok) {
-              caches.open(STATIC_CACHE).then((cache) => {
-                cache.put(request, response);
-              });
-            }
-          }).catch(() => {});
-          return cachedResponse;
+    fetch(request)
+      .then((response) => {
+        if (response.ok) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
-
-        // No cache, fetch from network
-        return fetch(request)
-          .then((response) => {
-            if (response.ok) {
-              const responseClone = response.clone();
-              caches.open(DYNAMIC_CACHE).then((cache) => {
-                cache.put(request, responseClone);
-              });
-            }
-            return response;
-          })
-          .catch(() => {
-            // Return offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match('/');
-            }
-            return new Response('Offline', { status: 503 });
-          });
+        return response;
+      })
+      .catch(() => {
+        return caches.match(request).then((cached) => {
+          if (cached) return cached;
+          // For navigation requests, return cached index
+          if (request.mode === 'navigate') {
+            return caches.match('/');
+          }
+          return new Response('', { status: 408 });
+        });
       })
   );
 });
 
-// Handle messages from the app
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
