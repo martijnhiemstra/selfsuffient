@@ -15,7 +15,7 @@ import {
   Plus, Trash2, Edit, Wallet, TrendingUp, 
   PiggyBank, Calculator, AlertTriangle, RefreshCw,
   ArrowUpCircle, ArrowDownCircle, Landmark, Coins, Package,
-  CheckCircle2, Circle, CalendarRange, Upload, FileSpreadsheet, X,
+  CheckCircle2, Circle, XCircle, CalendarRange, Upload, FileSpreadsheet, X,
   Sparkles, Loader2, CheckCircle
 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -829,12 +829,23 @@ export const FinancePage = () => {
                           const negativeCls = 'font-medium text-red-600';
 
                           return (
-                            <TableRow key={item.expected_item_id} className={item.is_matched ? 'bg-green-50 dark:bg-green-900/10' : 'bg-orange-50 dark:bg-orange-900/10'}>
+                            <TableRow
+                              key={item.expected_item_id}
+                              className={
+                                !item.is_matched
+                                  ? 'bg-orange-50 dark:bg-orange-900/10'
+                                  : isNegative
+                                    ? 'bg-red-50 dark:bg-red-900/10'
+                                    : 'bg-green-50 dark:bg-green-900/10'
+                              }
+                            >
                               <TableCell>
-                                {item.is_matched ? (
-                                  <CheckCircle2 className="w-5 h-5 text-green-500" />
-                                ) : (
+                                {!item.is_matched ? (
                                   <Circle className="w-5 h-5 text-orange-400" />
+                                ) : isNegative ? (
+                                  <XCircle className="w-5 h-5 text-red-500" />
+                                ) : (
+                                  <CheckCircle2 className="w-5 h-5 text-green-500" />
                                 )}
                               </TableCell>
                               <TableCell className="font-medium">{item.name}</TableCell>
