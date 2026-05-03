@@ -561,7 +561,7 @@ export const FinancePage = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>{tx.account_name}</TableCell>
-                      <TableCell className="max-w-[200px] truncate">{tx.notes}</TableCell>
+                      <TableCell className="max-w-[400px] whitespace-normal break-words text-sm text-muted-foreground">{tx.notes}</TableCell>
                       <TableCell className={`text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                         {tx.amount >= 0 ? '+' : ''}{formatCurrency(tx.amount)}
                       </TableCell>
@@ -882,7 +882,7 @@ export const FinancePage = () => {
                           <TableRow key={tx.id}>
                             <TableCell>{tx.date}</TableCell>
                             <TableCell>{tx.category}</TableCell>
-                            <TableCell className="max-w-[200px] truncate">{tx.notes || '—'}</TableCell>
+                            <TableCell className="max-w-[400px] whitespace-normal break-words text-sm text-muted-foreground">{tx.notes || '—'}</TableCell>
                             <TableCell className={`text-right font-medium ${tx.amount >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                               {formatCurrency(tx.amount)}
                             </TableCell>
