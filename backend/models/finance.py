@@ -11,12 +11,6 @@ class AccountType(str, Enum):
     asset = "asset"
 
 
-class CategoryType(str, Enum):
-    income = "income"
-    expense = "expense"
-    investment = "investment"
-
-
 class RecurringFrequency(str, Enum):
     monthly = "monthly"
     yearly = "yearly"
@@ -56,22 +50,21 @@ class AccountListResponse(BaseModel):
 
 
 # Category models
+# Categories are pure labels for budget matching. Income vs expense is derived
+# from the transaction amount sign at query time.
 class CategoryCreate(BaseModel):
     project_id: str
     name: str
-    type: CategoryType
 
 
 class CategoryUpdate(BaseModel):
     name: Optional[str] = None
-    type: Optional[CategoryType] = None
 
 
 class CategoryResponse(BaseModel):
     id: str
     project_id: str
     name: str
-    type: CategoryType
     created_at: str
 
 
@@ -176,7 +169,6 @@ class ProjectFinanceSummary(BaseModel):
     project_name: str
     total_income: float
     total_expenses: float
-    total_investments: float
     net_balance: float
     avg_monthly_burn: float
     months_active: int
@@ -186,7 +178,6 @@ class MonthlyOverview(BaseModel):
     month: str  # YYYY-MM format
     total_income: float
     total_expenses: float
-    total_investments: float
     net_result: float
     by_project: List[dict]
     by_category: List[dict]
@@ -201,19 +192,19 @@ class RunwayCalculation(BaseModel):
     accounts_included: List[dict]
 
 
-# Default categories to seed
+# Default categories to seed (pure labels - no type)
 DEFAULT_CATEGORIES = [
-    {"name": "Income", "type": "income"},
-    {"name": "Rent", "type": "expense"},
-    {"name": "Food", "type": "expense"},
-    {"name": "Utilities", "type": "expense"},
-    {"name": "Transport", "type": "expense"},
-    {"name": "Animals", "type": "expense"},
-    {"name": "Tools", "type": "expense"},
-    {"name": "Infrastructure", "type": "expense"},
-    {"name": "Land", "type": "investment"},
-    {"name": "Investment", "type": "investment"},
-    {"name": "Misc", "type": "expense"},
+    {"name": "Income"},
+    {"name": "Rent"},
+    {"name": "Food"},
+    {"name": "Utilities"},
+    {"name": "Transport"},
+    {"name": "Animals"},
+    {"name": "Tools"},
+    {"name": "Infrastructure"},
+    {"name": "Land"},
+    {"name": "Investment"},
+    {"name": "Misc"},
 ]
 
 

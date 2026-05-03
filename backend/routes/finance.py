@@ -136,7 +136,6 @@ async def create_category(data: CategoryCreate, current_user: dict = Depends(get
         "user_id": current_user["id"],
         "project_id": data.project_id,
         "name": data.name,
-        "type": data.type.value,
         "created_at": now
     }
     
@@ -182,7 +181,6 @@ async def seed_default_categories(project_id: str, current_user: dict = Depends(
             "user_id": current_user["id"],
             "project_id": project_id,
             "name": cat["name"],
-            "type": cat["type"],
             "created_at": now
         }
         await db.finance_categories.insert_one(category_doc)
@@ -195,7 +193,7 @@ async def seed_default_categories(project_id: str, current_user: dict = Depends(
 async def update_category(
     category_id: str, data: CategoryUpdate, current_user: dict = Depends(get_current_user)
 ):
-    """Update a category (rename or change its type)."""
+    """Rename a category."""
     category = await db.finance_categories.find_one(
         {"id": category_id, "user_id": current_user["id"]}
     )
@@ -218,8 +216,6 @@ async def update_category(
         if clash:
             raise HTTPException(status_code=400, detail="Another category with that name already exists in this project")
         update_data["name"] = new_name
-    if data.type is not None:
-        update_data["type"] = data.type.value
 
     if not update_data:
         raise HTTPException(status_code=400, detail="No fields to update")
@@ -296,7 +292,6 @@ async def create_transaction(data: TransactionCreate, current_user: dict = Depen
         account_name=account["name"],
         project_name=project["name"],
         category_name=category["name"],
-        category_type=category["type"],
         savings_goal_name=savings_goal["name"] if savings_goal else None
     )
 
@@ -348,7 +343,7 @@ async def list_transactions(
     for tx in transactions:
         account = await db.finance_accounts.find_one({"id": tx["account_id"]}, {"_id": 0, "name": 1})
         project = await db.projects.find_one({"id": tx["project_id"]}, {"_id": 0, "name": 1})
-        category = await db.finance_categories.find_one({"id": tx["category_id"]}, {"_id": 0, "name": 1, "type": 1})
+        category = await db.finance_categories.find_one({"id": tx["category_id"]}, {"_id": 0, "name": 1})
         savings_goal = None
         if tx.get("savings_goal_id"):
             savings_goal = await db.finance_savings_goals.find_one({"id": tx["savings_goal_id"]}, {"_id": 0, "name": 1})
@@ -358,7 +353,6 @@ async def list_transactions(
             account_name=account["name"] if account else None,
             project_name=project["name"] if project else None,
             category_name=category["name"] if category else None,
-            category_type=category["type"] if category else None,
             savings_goal_name=savings_goal["name"] if savings_goal else None
         ))
     
@@ -391,7 +385,7 @@ async def update_transaction(
     
     account = await db.finance_accounts.find_one({"id": updated["account_id"]}, {"_id": 0, "name": 1})
     project = await db.projects.find_one({"id": updated["project_id"]}, {"_id": 0, "name": 1})
-    category = await db.finance_categories.find_one({"id": updated["category_id"]}, {"_id": 0, "name": 1, "type": 1})
+    category = await db.finance_categories.find_one({"id": updated["category_id"]}, {"_id": 0, "name": 1})
     savings_goal = None
     if updated.get("savings_goal_id"):
         savings_goal = await db.finance_savings_goals.find_one({"id": updated["savings_goal_id"]}, {"_id": 0, "name": 1})
@@ -401,7 +395,6 @@ async def update_transaction(
         account_name=account["name"] if account else None,
         project_name=project["name"] if project else None,
         category_name=category["name"] if category else None,
-        category_type=category["type"] if category else None,
         savings_goal_name=savings_goal["name"] if savings_goal else None
     )
 
@@ -439,31 +432,24 @@ async def get_project_finance_dashboard(project_id: str, current_user: dict = De
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
     
-    # Get all categories for this project to identify types
-    categories = await db.finance_categories.find({"project_id": project_id}, {"_id": 0}).to_list(1000)
-    cat_types = {c["id"]: c["type"] for c in categories}
-    
     # Get all transactions for this project
     transactions = await db.finance_transactions.find({"project_id": project_id}, {"_id": 0}).to_list(10000)
     
     total_income = 0.0
     total_expenses = 0.0
-    total_investments = 0.0
     
     for tx in transactions:
-        cat_type = cat_types.get(tx["category_id"], "expense")
-        if cat_type == "income" or tx["amount"] > 0:
-            total_income += abs(tx["amount"])
-        elif cat_type == "investment":
-            total_investments += abs(tx["amount"])
+        amount = tx["amount"]
+        if amount > 0:
+            total_income += amount
         else:
-            total_expenses += abs(tx["amount"])
+            total_expenses += abs(amount)
     
     # Calculate months active
     start_date = datetime.fromisoformat(project["created_at"].replace("Z", "+00:00"))
     months_active = max(1, (datetime.now(timezone.utc) - start_date).days // 30)
     
-    # Average monthly burn (expenses only, not investments)
+    # Average monthly burn (expenses only)
     avg_monthly_burn = total_expenses / months_active if months_active > 0 else 0.0
     
     return ProjectFinanceSummary(
@@ -471,8 +457,7 @@ async def get_project_finance_dashboard(project_id: str, current_user: dict = De
         project_name=project["name"],
         total_income=round(total_income, 2),
         total_expenses=round(total_expenses, 2),
-        total_investments=round(total_investments, 2),
-        net_balance=round(total_income - total_expenses - total_investments, 2),
+        net_balance=round(total_income - total_expenses, 2),
         avg_monthly_burn=round(avg_monthly_burn, 2),
         months_active=months_active
     )
@@ -504,7 +489,7 @@ async def get_monthly_overview(
     
     transactions = await db.finance_transactions.find(query, {"_id": 0}).to_list(10000)
     
-    # Get categories for type lookup
+    # Get categories for name lookup
     cat_ids = list(set(tx["category_id"] for tx in transactions))
     categories = await db.finance_categories.find({"id": {"$in": cat_ids}}, {"_id": 0}).to_list(1000)
     cat_map = {c["id"]: c for c in categories}
@@ -516,46 +501,46 @@ async def get_monthly_overview(
     
     total_income = 0.0
     total_expenses = 0.0
-    total_investments = 0.0
     by_project = {}
     by_category = {}
     
     for tx in transactions:
         cat = cat_map.get(tx["category_id"], {})
-        cat_type = cat.get("type", "expense")
         cat_name = cat.get("name", "Unknown")
         proj_name = proj_map.get(tx["project_id"], "Unknown")
         
         amount = tx["amount"]
+        is_income = amount > 0
         
-        if cat_type == "income" or amount > 0:
-            total_income += abs(amount)
-        elif cat_type == "investment":
-            total_investments += abs(amount)
+        if is_income:
+            total_income += amount
         else:
             total_expenses += abs(amount)
         
         # By project
         if proj_name not in by_project:
-            by_project[proj_name] = {"income": 0, "expenses": 0, "investments": 0}
-        if cat_type == "income" or amount > 0:
-            by_project[proj_name]["income"] += abs(amount)
-        elif cat_type == "investment":
-            by_project[proj_name]["investments"] += abs(amount)
+            by_project[proj_name] = {"income": 0, "expenses": 0}
+        if is_income:
+            by_project[proj_name]["income"] += amount
         else:
             by_project[proj_name]["expenses"] += abs(amount)
         
-        # By category
+        # By category (sum the signed amount so callers know direction)
         if cat_name not in by_category:
-            by_category[cat_name] = {"type": cat_type, "total": 0}
-        by_category[cat_name]["total"] += abs(amount)
+            by_category[cat_name] = {"total": 0.0, "income": 0.0, "expenses": 0.0}
+        if is_income:
+            by_category[cat_name]["income"] += amount
+        else:
+            by_category[cat_name]["expenses"] += abs(amount)
+        by_category[cat_name]["total"] = (
+            by_category[cat_name]["income"] - by_category[cat_name]["expenses"]
+        )
     
     return MonthlyOverview(
         month=month,
         total_income=round(total_income, 2),
         total_expenses=round(total_expenses, 2),
-        total_investments=round(total_investments, 2),
-        net_result=round(total_income - total_expenses - total_investments, 2),
+        net_result=round(total_income - total_expenses, 2),
         by_project=[{"name": k, **v} for k, v in by_project.items()],
         by_category=[{"name": k, **v} for k, v in by_category.items()]
     )
@@ -604,17 +589,10 @@ async def calculate_runway(
     end_date = datetime.now(timezone.utc)
     start_date = end_date - relativedelta(months=months_for_average)
     
-    # Get expense categories (exclude income and investment)
-    expense_categories = await db.finance_categories.find(
-        {"user_id": current_user["id"], "type": "expense"},
-        {"_id": 0, "id": 1}
-    ).to_list(1000)
-    expense_cat_ids = [c["id"] for c in expense_categories]
-    
-    # Get expense transactions
+    # Sum all outgoing transactions (negative amounts) over the window
     expenses = await db.finance_transactions.find({
         "user_id": current_user["id"],
-        "category_id": {"$in": expense_cat_ids},
+        "amount": {"$lt": 0},
         "date": {"$gte": start_date.strftime("%Y-%m-%d"), "$lte": end_date.strftime("%Y-%m-%d")}
     }, {"_id": 0, "amount": 1}).to_list(10000)
     

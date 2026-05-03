@@ -21,7 +21,6 @@ async def get_or_create_category(
     user_id: str,
     project_id: str,
     name: str,
-    type_hint: str = "expense",
 ) -> str:
     """Find an existing category by case-insensitive name in the project, or create it."""
     name = (name or "").strip()
@@ -47,7 +46,6 @@ async def get_or_create_category(
         "user_id": user_id,
         "project_id": project_id,
         "name": name,
-        "type": type_hint if type_hint in ("income", "expense", "investment") else "expense",
         "created_at": now,
     })
     return new_id
@@ -457,16 +455,11 @@ async def confirm_import(
 
             if not resolved_directly and override:
                 # Treat as free-text category name → find or create
-                if tx.ai_type in ("income", "expense", "investment"):
-                    type_hint = tx.ai_type
-                else:
-                    type_hint = "income" if tx.amount >= 0 else "expense"
                 try:
                     category_id = await get_or_create_category(
                         current_user["id"],
                         data.project_id,
                         override,
-                        type_hint,
                     )
                 except ValueError:
                     category_id = data.default_category_id

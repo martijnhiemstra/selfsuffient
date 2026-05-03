@@ -22,7 +22,7 @@ from .routine import (
 )
 from .public import PublicUserProfileResponse
 from .finance import (
-    AccountType, CategoryType, RecurringFrequency,
+    AccountType, RecurringFrequency,
     AccountCreate, AccountUpdate, AccountResponse, AccountListResponse,
     CategoryCreate, CategoryUpdate, CategoryResponse, CategoryListResponse,
     TransactionCreate, TransactionUpdate, TransactionResponse, TransactionListResponse,
@@ -67,7 +67,7 @@ __all__ = [
     # Public
     "PublicUserProfileResponse",
     # Finance
-    "AccountType", "CategoryType", "RecurringFrequency",
+    "AccountType", "RecurringFrequency",
     "AccountCreate", "AccountUpdate", "AccountResponse", "AccountListResponse",
     "CategoryCreate", "CategoryUpdate", "CategoryResponse", "CategoryListResponse",
     "TransactionCreate", "TransactionUpdate", "TransactionResponse", "TransactionListResponse",

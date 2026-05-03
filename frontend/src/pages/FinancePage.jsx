@@ -248,14 +248,12 @@ export const FinancePage = () => {
       if (categoryDialog.data?.id) {
         await axios.put(`${API}/finance/categories/${categoryDialog.data.id}`, {
           name: data.name,
-          type: data.type,
         }, { headers });
         toast.success('Category updated');
       } else {
         await axios.post(`${API}/finance/categories`, {
           project_id: data.project_id,
           name: data.name,
-          type: data.type,
         }, { headers });
         toast.success('Category created');
       }
@@ -558,7 +556,7 @@ export const FinancePage = () => {
                       <TableCell>{tx.date}</TableCell>
                       <TableCell>{tx.project_name}</TableCell>
                       <TableCell>
-                        <Badge variant={tx.category_type === 'income' ? 'default' : tx.category_type === 'investment' ? 'secondary' : 'destructive'}>
+                        <Badge variant={tx.amount >= 0 ? 'default' : 'destructive'}>
                           {tx.category_name}
                         </Badge>
                       </TableCell>
@@ -679,7 +677,6 @@ export const FinancePage = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Name</TableHead>
-                    <TableHead>Type</TableHead>
                     <TableHead>Project</TableHead>
                     <TableHead className="text-right">Transactions</TableHead>
                     <TableHead className="w-24"></TableHead>
@@ -692,11 +689,6 @@ export const FinancePage = () => {
                     return (
                       <TableRow key={cat.id} data-testid={`category-row-${cat.id}`}>
                         <TableCell className="font-medium">{cat.name}</TableCell>
-                        <TableCell>
-                          <Badge variant={cat.type === 'income' ? 'default' : cat.type === 'investment' ? 'secondary' : 'destructive'}>
-                            {cat.type}
-                          </Badge>
-                        </TableCell>
                         <TableCell className="text-muted-foreground">{project?.name || '—'}</TableCell>
                         <TableCell className="text-right text-muted-foreground">{txCount}</TableCell>
                         <TableCell>
@@ -1008,7 +1000,7 @@ export const FinancePage = () => {
           
           {monthlyOverview ? (
             <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Card>
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2">
@@ -1027,17 +1019,6 @@ export const FinancePage = () => {
                       <div>
                         <p className="text-sm text-muted-foreground">Expenses</p>
                         <p className="text-xl font-bold text-red-600">{formatCurrency(monthlyOverview.total_expenses)}</p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2">
-                      <TrendingUp className="w-5 h-5 text-blue-500" />
-                      <div>
-                        <p className="text-sm text-muted-foreground">Investments</p>
-                        <p className="text-xl font-bold text-blue-600">{formatCurrency(monthlyOverview.total_investments)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1089,19 +1070,18 @@ export const FinancePage = () => {
                       <p className="text-muted-foreground">No data for this month</p>
                     ) : (
                       <div className="space-y-2">
-                        {monthlyOverview.by_category.map((cat, i) => (
-                          <div key={i} className="flex justify-between items-center p-2 bg-muted rounded-lg">
-                            <div className="flex items-center gap-2">
+                        {monthlyOverview.by_category.map((cat, i) => {
+                          const net = (cat.income || 0) - (cat.expenses || 0);
+                          const isPositive = net >= 0;
+                          return (
+                            <div key={i} className="flex justify-between items-center p-2 bg-muted rounded-lg">
                               <span className="font-medium">{cat.name}</span>
-                              <Badge variant={cat.type === 'income' ? 'default' : cat.type === 'investment' ? 'secondary' : 'destructive'}>
-                                {cat.type}
-                              </Badge>
+                              <span className={`font-medium ${isPositive ? 'text-green-600' : 'text-red-600'}`}>
+                                {isPositive ? '+' : '-'}{formatCurrency(Math.abs(net))}
+                              </span>
                             </div>
-                            <span className={`font-medium ${cat.type === 'income' ? 'text-green-600' : cat.type === 'investment' ? 'text-blue-600' : 'text-red-600'}`}>
-                              {cat.type === 'income' ? '+' : '-'}{formatCurrency(cat.total)}
-                            </span>
-                          </div>
-                        ))}
+                          );
+                        })}
                       </div>
                     )}
                   </CardContent>
@@ -1465,7 +1445,6 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
   const [isExpense, setIsExpense] = useState(true);
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryType, setNewCategoryType] = useState('expense');
   const [creatingCategory, setCreatingCategory] = useState(false);
 
   useEffect(() => {
@@ -1510,7 +1489,6 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
       const res = await axios.post(`${API}/finance/categories`, {
         project_id: form.project_id,
         name: newCategoryName,
-        type: newCategoryType
       }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Category created');
       setForm({ ...form, category_id: res.data.id });
@@ -1606,16 +1584,6 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
                   placeholder="Category name"
                 />
                 <div className="flex gap-2">
-                  <Select value={newCategoryType} onValueChange={setNewCategoryType}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="investment">Investment</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <Button type="button" size="sm" onClick={handleCreateCategory} disabled={creatingCategory}>
                     {creatingCategory ? 'Creating...' : 'Add'}
                   </Button>
@@ -1631,7 +1599,7 @@ const TransactionDialog = ({ open, data, projects, accounts, categories, savings
                 </SelectTrigger>
                 <SelectContent>
                   {projectCategories.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -1773,7 +1741,6 @@ const ExpectedItemDialog = ({ open, data, periodId, periods, categories, onClose
   });
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState('');
-  const [newCategoryType, setNewCategoryType] = useState('expense');
   const [creatingCategory, setCreatingCategory] = useState(false);
 
   const selectedPeriod = periods.find(p => p.id === form.period_id);
@@ -1817,7 +1784,6 @@ const ExpectedItemDialog = ({ open, data, periodId, periods, categories, onClose
       const res = await axios.post(`${API}/finance/categories`, {
         project_id: selectedPeriod.project_id,
         name: newCategoryName,
-        type: newCategoryType
       }, { headers: { Authorization: `Bearer ${token}` } });
       toast.success('Category created');
       setForm({ ...form, category_id: res.data.id });
@@ -1920,16 +1886,6 @@ const ExpectedItemDialog = ({ open, data, periodId, periods, categories, onClose
                   placeholder="Category name"
                 />
                 <div className="flex gap-2">
-                  <Select value={newCategoryType} onValueChange={setNewCategoryType}>
-                    <SelectTrigger className="flex-1">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="expense">Expense</SelectItem>
-                      <SelectItem value="investment">Investment</SelectItem>
-                    </SelectContent>
-                  </Select>
                   <Button type="button" size="sm" onClick={handleCreateCategory} disabled={creatingCategory}>
                     {creatingCategory ? 'Creating...' : 'Add'}
                   </Button>
@@ -1946,7 +1902,7 @@ const ExpectedItemDialog = ({ open, data, periodId, periods, categories, onClose
                 <SelectContent>
                   <SelectItem value="none">None (match by amount)</SelectItem>
                   {projectCategories.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -3021,7 +2977,7 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                   </SelectTrigger>
                   <SelectContent>
                     {projectCategories.map(c => (
-                      <SelectItem key={c.id} value={c.id}>{c.name} ({c.type})</SelectItem>
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -3069,7 +3025,6 @@ const CategoryDialog = ({ open, data, projects, selectedProjectId, onClose, onSa
   const [form, setForm] = useState({
     project_id: '',
     name: '',
-    type: 'expense',
   });
 
   useEffect(() => {
@@ -3078,13 +3033,11 @@ const CategoryDialog = ({ open, data, projects, selectedProjectId, onClose, onSa
         setForm({
           project_id: data.project_id || '',
           name: data.name || '',
-          type: data.type || 'expense',
         });
       } else {
         setForm({
           project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
           name: '',
-          type: 'expense',
         });
       }
     }
@@ -3104,7 +3057,6 @@ const CategoryDialog = ({ open, data, projects, selectedProjectId, onClose, onSa
     onSave({
       project_id: form.project_id,
       name: form.name.trim(),
-      type: form.type,
     });
   };
 
@@ -3138,19 +3090,6 @@ const CategoryDialog = ({ open, data, projects, selectedProjectId, onClose, onSa
               placeholder="e.g. Groceries"
               data-testid="category-name-input"
             />
-          </div>
-          <div>
-            <Label>Type</Label>
-            <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
-              <SelectTrigger data-testid="category-type-select">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="income">Income</SelectItem>
-                <SelectItem value="expense">Expense</SelectItem>
-                <SelectItem value="investment">Investment</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </div>
         <DialogFooter>

@@ -194,10 +194,17 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Frontend files**: `/app/frontend/src/components/TranslationPanel.jsx`, `/app/frontend/src/components/LanguageSwitcher.jsx`
 
 ### Finance Categories Hybrid Model + Categories Tab - May 3, 2026
-- **Dedicated "Categories" tab** on the Finance page (between Accounts and Savings) with full CRUD: add, rename (PUT `/api/finance/categories/{id}`), change type, delete (only when no transactions reference it). Shows transaction count per category and project association.
+- **Dedicated "Categories" tab** on the Finance page (between Accounts and Savings) with full CRUD: add, rename (PUT `/api/finance/categories/{id}`), delete (only when no transactions reference it). Shows transaction count per category and project association.
 - **Hybrid free-text categories on import**: The CSV import preview's per-row category cell is now a free-text input with autocomplete (HTML `<datalist>`) suggesting both existing project categories and AI-suggested names. Users can type any new category name.
-- **Backend auto-creation**: `confirm_import` calls a new `get_or_create_category` helper that performs case-insensitive lookup within the project; missing categories are created on the fly with type inferred from `ai_type` or amount sign. Backwards compatible with the legacy `ai:` prefix.
+- **Backend auto-creation**: `confirm_import` calls a new `get_or_create_category` helper that performs case-insensitive lookup within the project; missing categories are created on the fly. Backwards compatible with the legacy `ai:` prefix.
 - **Files**: `/app/backend/routes/finance.py` (new PUT endpoint), `/app/backend/routes/import_transactions.py` (helper + simplified resolution), `/app/frontend/src/pages/FinancePage.jsx` (new tab + `CategoryDialog` + free-text autocomplete in import preview).
+
+### Finance Categories Type Removed - May 3, 2026
+- **Categories are now pure labels** (no `type` field). Income vs expense is derived purely from the transaction amount sign at query time.
+- **Removed `CategoryType` enum**, `category.type`, `category_type` from `TransactionResponse`, and the third "investment" bucket from analytics. Monthly overview, project finance summary, and runway burn all derive their numbers from `amount > 0` (income) vs `amount < 0` (expense).
+- **One-shot data migration** ran via motor: `db.finance_categories.update_many({}, {"$unset": {"type": ""}})`. 15 documents cleaned up.
+- **Frontend cleanup**: dropped Type column from Categories tab, removed Type field from `CategoryDialog` and inline new-category UIs in `TransactionDialog`/`ExpectedItemDialog`, transactions table badge color now from amount sign, monthly view dropped the Investments card and its by-category type badges.
+- **Verified end-to-end**: create/list/rename/delete categories work with the simplified payload; import auto-create works without a type hint; monthly aggregation returns correct income/expenses/net.
 
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
