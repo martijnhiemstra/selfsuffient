@@ -2735,7 +2735,7 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                     <TableHead className="text-right">Amount</TableHead>
                     {aiAnalyzed && (
                       <>
-                        <TableHead>AI Category</TableHead>
+                        <TableHead>Category</TableHead>
                         <TableHead>AI Insights</TableHead>
                       </>
                     )}
@@ -2767,25 +2767,33 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                       </TableCell>
                       {aiAnalyzed && (
                         <>
-                          <TableCell>
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              tx.ai_type === 'income' 
-                                ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
-                                : 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
-                            }`}>
-                              {tx.ai_category || 'Unknown'}
-                            </span>
+                          <TableCell onClick={(e) => e.stopPropagation()}>
+                            <select
+                              className="text-xs rounded border border-input bg-background px-2 py-1 w-full max-w-[140px]"
+                              value={tx.category_override || ''}
+                              onChange={(e) => {
+                                const updated = [...previewData];
+                                updated[i] = { ...updated[i], category_override: e.target.value || null };
+                                setPreviewData(updated);
+                              }}
+                              data-testid={`category-select-${i}`}
+                            >
+                              <option value="">{tx.ai_category || 'Uncategorized'} (AI)</option>
+                              {projectCategories.map((cat) => (
+                                <option key={cat.id} value={cat.id}>{cat.name}</option>
+                              ))}
+                            </select>
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1 flex-wrap">
                               {tx.ai_is_recurring && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-                                  🔄 {tx.ai_recurring_frequency || 'Recurring'}
+                                  Recurring
                                 </span>
                               )}
                               {tx.ai_is_unusual && (
                                 <span className="text-xs px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400" title={tx.ai_unusual_reason}>
-                                  ⚠️ Unusual
+                                  Unusual
                                 </span>
                               )}
                               {tx.ai_confidence && (
@@ -2883,7 +2891,7 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                   </SelectContent>
                 </Select>
                 <p className="text-xs text-muted-foreground">
-                  All imported transactions will use this category. You can change individual transactions later.
+                  Used for transactions without a specific category override from the preview step.
                 </p>
               </div>
             </div>

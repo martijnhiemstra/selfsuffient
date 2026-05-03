@@ -396,6 +396,9 @@ async def confirm_import(
         if tx.ref_number:
             notes_parts.append(f"Ref: {tx.ref_number}")
         
+        # Use per-transaction category override if set, otherwise default
+        category_id = tx.category_override or data.default_category_id
+        
         tx_doc = {
             "id": tx_id,
             "user_id": current_user["id"],
@@ -403,7 +406,7 @@ async def confirm_import(
             "amount": tx.amount,
             "account_id": data.account_id,
             "project_id": data.project_id,
-            "category_id": data.default_category_id,
+            "category_id": category_id,
             "notes": " | ".join(notes_parts) if notes_parts else None,
             "linked_transaction_id": None,
             "savings_goal_id": None,
