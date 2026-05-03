@@ -2769,7 +2769,7 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                         <>
                           <TableCell onClick={(e) => e.stopPropagation()}>
                             <select
-                              className="text-xs rounded border border-input bg-background px-2 py-1 w-full max-w-[140px]"
+                              className="text-xs rounded border border-input bg-background px-2 py-1 w-full max-w-[160px]"
                               value={tx.category_override || ''}
                               onChange={(e) => {
                                 const updated = [...previewData];
@@ -2779,9 +2779,28 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                               data-testid={`category-select-${i}`}
                             >
                               <option value="">{tx.ai_category || 'Uncategorized'} (AI)</option>
-                              {projectCategories.map((cat) => (
-                                <option key={cat.id} value={cat.id}>{cat.name}</option>
-                              ))}
+                              {projectCategories.length > 0 && (
+                                <optgroup label="Project Categories">
+                                  {projectCategories.map((cat) => (
+                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                                  ))}
+                                </optgroup>
+                              )}
+                              {(() => {
+                                const aiCats = [...new Set(previewData.map(t => t.ai_category).filter(Boolean))];
+                                const dbNames = projectCategories.map(c => c.name.toLowerCase());
+                                const uniqueAiCats = aiCats.filter(c => !dbNames.includes(c.toLowerCase()));
+                                if (uniqueAiCats.length > 0) {
+                                  return (
+                                    <optgroup label="AI Suggestions">
+                                      {uniqueAiCats.map((cat) => (
+                                        <option key={`ai-${cat}`} value={`ai:${cat}`}>{cat}</option>
+                                      ))}
+                                    </optgroup>
+                                  );
+                                }
+                                return null;
+                              })()}
                             </select>
                           </TableCell>
                           <TableCell>

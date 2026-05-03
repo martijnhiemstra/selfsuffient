@@ -396,8 +396,33 @@ async def confirm_import(
         if tx.ref_number:
             notes_parts.append(f"Ref: {tx.ref_number}")
         
-        # Use per-transaction category override if set, otherwise default
-        category_id = tx.category_override or data.default_category_id
+        # Determine category: per-transaction override > default
+        category_id = data.default_category_id
+        if tx.category_override:
+            if tx.category_override.startswith("ai:"):
+                # AI-suggested category name - find or create
+                cat_name = tx.category_override[3:]
+                cat_type = "income" if tx.amount >= 0 else "expense"
+                existing = await db.finance_categories.find_one(
+                    {"name": {"$regex": f"^{cat_name}$", "$options": "i"}, "project_id": data.project_id},
+                    {"_id": 0}
+                )
+                if existing:
+                    category_id = existing["id"]
+                else:
+                    new_cat_id = str(uuid.uuid4())
+                    await db.finance_categories.insert_one({
+                        "id": new_cat_id,
+                        "user_id": current_user["id"],
+                        "project_id": data.project_id,
+                        "name": cat_name,
+                        "type": cat_type,
+                        "created_at": now,
+                        "updated_at": now
+                    })
+                    category_id = new_cat_id
+            else:
+                category_id = tx.category_override
         
         tx_doc = {
             "id": tx_id,
