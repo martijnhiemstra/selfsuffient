@@ -479,10 +479,9 @@ async def get_monthly_budget_comparison(
     
     for tx in transactions:
         cat = cat_map.get(tx.get("category_id"), {})
-        cat_type = cat.get("type", "expense")
-        
-        if tx["amount"] > 0 or cat_type == "income":
-            actual_income += abs(tx["amount"])
+
+        if tx["amount"] > 0:
+            actual_income += tx["amount"]
         else:
             actual_expenses += abs(tx["amount"])
         
