@@ -412,9 +412,13 @@ async def get_sample_csv():
         ],
         "supported_date_formats": [
             "YYYY-MM-DD (2024-01-15)",
+            "DD-MM-YYYY (15-01-2024)",
             "DD/MM/YYYY (15/01/2024)",
             "MM/DD/YYYY (01/15/2024)",
-            "DD.MM.YYYY (15.01.2024)"
+            "DD.MM.YYYY (15.01.2024)",
+            "YYYY/MM/DD (2024/01/15)",
+            "MM-DD-YYYY (01-15-2024)",
+            "YYYYMMDD (20240115)"
         ],
         "amount_notes": [
             "Positive numbers = income",

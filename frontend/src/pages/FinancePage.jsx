@@ -2525,10 +2525,14 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="%Y-%m-%d">YYYY-MM-DD</SelectItem>
-                      <SelectItem value="%d/%m/%Y">DD/MM/YYYY</SelectItem>
-                      <SelectItem value="%m/%d/%Y">MM/DD/YYYY</SelectItem>
-                      <SelectItem value="%d.%m.%Y">DD.MM.YYYY</SelectItem>
+                      <SelectItem value="%Y-%m-%d">YYYY-MM-DD (2024-01-15)</SelectItem>
+                      <SelectItem value="%d-%m-%Y">DD-MM-YYYY (15-01-2024)</SelectItem>
+                      <SelectItem value="%d/%m/%Y">DD/MM/YYYY (15/01/2024)</SelectItem>
+                      <SelectItem value="%m/%d/%Y">MM/DD/YYYY (01/15/2024)</SelectItem>
+                      <SelectItem value="%d.%m.%Y">DD.MM.YYYY (15.01.2024)</SelectItem>
+                      <SelectItem value="%Y/%m/%d">YYYY/MM/DD (2024/01/15)</SelectItem>
+                      <SelectItem value="%m-%d-%Y">MM-DD-YYYY (01-15-2024)</SelectItem>
+                      <SelectItem value="%Y%m%d">YYYYMMDD (20240115)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
