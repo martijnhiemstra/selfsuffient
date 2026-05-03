@@ -867,6 +867,26 @@ export const FinancePage = () => {
                             </TableRow>
                           );
                         })}
+                        {/* Static "Uncategorized" row — net of all unmatched transactions */}
+                        {(() => {
+                          const unmatched = budgetComparison.unmatched_transactions || [];
+                          const net = unmatched.reduce((sum, tx) => sum + (tx.amount || 0), 0);
+                          const netRounded = Math.round(net * 100) / 100;
+                          const isPos = netRounded >= 0;
+                          return (
+                            <TableRow data-testid="budget-uncategorized-row" className="bg-muted/30">
+                              <TableCell></TableCell>
+                              <TableCell className="font-medium italic text-muted-foreground">Uncategorized</TableCell>
+                              <TableCell></TableCell>
+                              <TableCell className="text-muted-foreground">—</TableCell>
+                              <TableCell className="text-right text-muted-foreground">{formatCurrency(0)}</TableCell>
+                              <TableCell className={`text-right font-medium ${isPos ? 'text-green-600' : 'text-red-600'}`}>
+                                {isPos && netRounded > 0 ? '+' : ''}{formatCurrency(netRounded)}
+                              </TableCell>
+                              <TableCell className="text-right text-muted-foreground">—</TableCell>
+                            </TableRow>
+                          );
+                        })()}
                       </TableBody>
                     </Table>
                   </Card>
