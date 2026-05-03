@@ -78,6 +78,8 @@ async def preview_csv_import(
     amount_column: Optional[str] = Form(None),
     description_column: Optional[str] = Form(None),
     date_format: str = Form("%Y-%m-%d"),
+    direction_column: Optional[str] = Form(None),
+    credit_value: Optional[str] = Form(None),
     current_user: dict = Depends(get_current_user)
 ):
     """
@@ -94,7 +96,7 @@ async def preview_csv_import(
     except UnicodeDecodeError:
         try:
             text = content.decode('latin-1')
-        except:
+        except Exception:
             raise HTTPException(status_code=400, detail="Cannot decode file. Please use UTF-8 or Latin-1 encoding.")
     
     # Parse CSV
@@ -114,12 +116,18 @@ async def preview_csv_import(
         # Generate column names
         columns = [f"Column {i+1}" for i in range(len(rows[0]))]
     
+    # Get sample values from first data row
+    sample_values = []
+    if data_rows:
+        sample_values = [v.strip() for v in data_rows[0]]
+    
     # If no column mappings provided, just return columns for user to map
     if not date_column or not amount_column:
         return ImportPreviewResponse(
             transactions=[],
             total=len(data_rows),
             columns=columns,
+            sample_values=sample_values,
             warnings=["Please map the date and amount columns to continue."]
         )
     
@@ -131,11 +139,12 @@ async def preview_csv_import(
         date_idx = columns.index(date_column)
         amount_idx = columns.index(amount_column)
         desc_idx = columns.index(description_column) if description_column and description_column in columns else None
+        direction_idx = columns.index(direction_column) if direction_column and direction_column in columns else None
     except ValueError as e:
         raise HTTPException(status_code=400, detail=f"Column not found: {str(e)}")
     
     for row_num, row in enumerate(data_rows, start=2 if has_header else 1):
-        if len(row) <= max(date_idx, amount_idx, desc_idx or 0):
+        if len(row) <= max(date_idx, amount_idx, desc_idx or 0, direction_idx or 0):
             warnings.append(f"Row {row_num}: Not enough columns, skipping")
             continue
         
@@ -143,6 +152,13 @@ async def preview_csv_import(
             date = parse_date(row[date_idx], date_format)
             amount = parse_amount(row[amount_idx])
             description = row[desc_idx].strip() if desc_idx is not None else None
+            
+            # Apply direction column logic
+            if direction_idx is not None and credit_value:
+                direction_val = row[direction_idx].strip()
+                amount = abs(amount)
+                if direction_val.lower() != credit_value.lower():
+                    amount = -amount
             
             transactions.append(ImportedTransaction(
                 date=date,
@@ -159,6 +175,7 @@ async def preview_csv_import(
         transactions=transactions,
         total=len(transactions),
         columns=columns,
+        sample_values=sample_values,
         warnings=warnings[:20]  # Limit warnings to first 20
     )
 
@@ -209,7 +226,7 @@ async def preview_ofx_import(
             try:
                 date = tx.date.strftime("%Y-%m-%d") if tx.date else None
                 if not date:
-                    warnings.append(f"Transaction skipped: missing date")
+                    warnings.append("Transaction skipped: missing date")
                     continue
                 
                 amount = float(tx.amount) if tx.amount else 0
@@ -313,7 +330,7 @@ async def check_duplicates(
                         existing_words = set(existing_desc.split())
                         import_words = set(import_desc.split())
                         if existing_words & import_words:
-                            duplicate_reason = f"Same date, amount, and similar description"
+                            duplicate_reason = "Same date, amount, and similar description"
                         else:
                             duplicate_reason = f"Same date and amount (${abs(tx.amount):.2f})"
                     else:

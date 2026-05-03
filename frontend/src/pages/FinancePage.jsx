@@ -2139,13 +2139,17 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
   const [fileType, setFileType] = useState(null); // csv or ofx
   const [file, setFile] = useState(null);
   const [columns, setColumns] = useState([]);
+  const [sampleValues, setSampleValues] = useState([]);
   const [columnMapping, setColumnMapping] = useState({
     date_column: '',
     amount_column: '',
     description_column: '',
     date_format: '%Y-%m-%d',
     delimiter: ',',
-    has_header: true
+    has_header: true,
+    amount_mode: 'signed',
+    direction_column: '',
+    credit_value: ''
   });
   const [previewData, setPreviewData] = useState([]);
   const [selectedTransactions, setSelectedTransactions] = useState([]);
@@ -2170,13 +2174,17 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
       setFileType(null);
       setFile(null);
       setColumns([]);
+      setSampleValues([]);
       setColumnMapping({
         date_column: '',
         amount_column: '',
         description_column: '',
         date_format: '%Y-%m-%d',
         delimiter: ',',
-        has_header: true
+        has_header: true,
+        amount_mode: 'signed',
+        direction_column: '',
+        credit_value: ''
       });
       setPreviewData([]);
       setSelectedTransactions([]);
@@ -2225,6 +2233,10 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
         formData.append('description_column', columnMapping.description_column);
       }
       formData.append('date_format', columnMapping.date_format);
+      if (columnMapping.amount_mode === 'direction' && columnMapping.direction_column) {
+        formData.append('direction_column', columnMapping.direction_column);
+        formData.append('credit_value', columnMapping.credit_value);
+      }
     }
     
     try {
@@ -2232,6 +2244,9 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
       
       if (res.data.columns && res.data.columns.length > 0) {
         setColumns(res.data.columns);
+      }
+      if (res.data.sample_values) {
+        setSampleValues(res.data.sample_values);
       }
       
       if (res.data.transactions && res.data.transactions.length > 0) {
@@ -2485,8 +2500,10 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                       <SelectValue placeholder="Select column" />
                     </SelectTrigger>
                     <SelectContent>
-                      {columns.map(col => (
-                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      {columns.map((col, idx) => (
+                        <SelectItem key={col} value={col}>
+                          {col}{sampleValues[idx] ? ` (${sampleValues[idx]})` : ''}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -2498,8 +2515,10 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                       <SelectValue placeholder="Select column" />
                     </SelectTrigger>
                     <SelectContent>
-                      {columns.map(col => (
-                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      {columns.map((col, idx) => (
+                        <SelectItem key={col} value={col}>
+                          {col}{sampleValues[idx] ? ` (${sampleValues[idx]})` : ''}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -2512,8 +2531,10 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="none">None</SelectItem>
-                      {columns.map(col => (
-                        <SelectItem key={col} value={col}>{col}</SelectItem>
+                      {columns.map((col, idx) => (
+                        <SelectItem key={col} value={col}>
+                          {col}{sampleValues[idx] ? ` (${sampleValues[idx]})` : ''}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
@@ -2538,10 +2559,78 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                 </div>
               </div>
 
-              {columns.length > 0 && (
+              {/* Income/Expense detection */}
+              <div className="space-y-3 border-t pt-4">
+                <Label>How is income/expense indicated?</Label>
+                <div className="space-y-2">
+                  <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${columnMapping.amount_mode === 'signed' ? 'bg-primary/10 border-primary/30' : ''}`}>
+                    <input
+                      type="radio"
+                      name="amount_mode"
+                      value="signed"
+                      checked={columnMapping.amount_mode === 'signed'}
+                      onChange={() => setColumnMapping({ ...columnMapping, amount_mode: 'signed' })}
+                    />
+                    <div>
+                      <p className="text-sm font-medium">Signed amount</p>
+                      <p className="text-xs text-muted-foreground">Positive = income, negative = expense</p>
+                    </div>
+                  </label>
+                  <label className={`flex items-center gap-2 p-3 rounded-lg border cursor-pointer ${columnMapping.amount_mode === 'direction' ? 'bg-primary/10 border-primary/30' : ''}`}>
+                    <input
+                      type="radio"
+                      name="amount_mode"
+                      value="direction"
+                      checked={columnMapping.amount_mode === 'direction'}
+                      onChange={() => setColumnMapping({ ...columnMapping, amount_mode: 'direction' })}
+                    />
+                    <div>
+                      <p className="text-sm font-medium">Separate credit/debit column</p>
+                      <p className="text-xs text-muted-foreground">A column indicates if it's income or expense</p>
+                    </div>
+                  </label>
+                </div>
+                
+                {columnMapping.amount_mode === 'direction' && (
+                  <div className="grid grid-cols-2 gap-4 pl-6">
+                    <div className="space-y-2">
+                      <Label>Direction Column *</Label>
+                      <Select value={columnMapping.direction_column} onValueChange={(v) => setColumnMapping({ ...columnMapping, direction_column: v })}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select column" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {columns.map((col, idx) => (
+                            <SelectItem key={col} value={col}>
+                              {col}{sampleValues[idx] ? ` (${sampleValues[idx]})` : ''}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Credit value (income) *</Label>
+                      <Input
+                        placeholder="e.g. Credit, Bij, C, +"
+                        value={columnMapping.credit_value}
+                        onChange={(e) => setColumnMapping({ ...columnMapping, credit_value: e.target.value })}
+                      />
+                      <p className="text-xs text-muted-foreground">Rows matching this value = income. Other rows = expense.</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {columns.length > 0 && sampleValues.length > 0 && (
                 <div className="bg-muted p-3 rounded-lg">
-                  <p className="text-xs font-medium mb-1">Detected columns:</p>
-                  <p className="text-xs text-muted-foreground">{columns.join(', ')}</p>
+                  <p className="text-xs font-medium mb-2">First row preview:</p>
+                  <div className="grid gap-1">
+                    {columns.map((col, idx) => (
+                      <p key={col} className="text-xs text-muted-foreground">
+                        <span className="font-medium">{col}:</span> {sampleValues[idx] || '(empty)'}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>
@@ -2550,7 +2639,7 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
               <Button variant="outline" onClick={() => setStep('upload')}>Back</Button>
               <Button 
                 onClick={() => handleUploadCSV(true)}
-                disabled={!columnMapping.date_column || !columnMapping.amount_column || isLoading}
+                disabled={!columnMapping.date_column || !columnMapping.amount_column || isLoading || (columnMapping.amount_mode === 'direction' && (!columnMapping.direction_column || !columnMapping.credit_value))}
               >
                 {isLoading ? 'Processing...' : 'Parse'}
               </Button>

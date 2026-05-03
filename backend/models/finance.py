@@ -296,6 +296,7 @@ class ImportPreviewResponse(BaseModel):
     transactions: List[ImportedTransaction]
     total: int
     columns: Optional[List[str]] = None  # For CSV, the detected columns
+    sample_values: Optional[List[str]] = None  # First data row values for column preview
     warnings: List[str] = []
     ai_analyzed: bool = False  # Whether AI analysis was performed
 
