@@ -193,6 +193,12 @@ Build an application that helps users setup a self-sufficient lifestyle with:
 - **Backend files**: `/app/backend/routes/translation.py`, `/app/backend/services/translation.py`
 - **Frontend files**: `/app/frontend/src/components/TranslationPanel.jsx`, `/app/frontend/src/components/LanguageSwitcher.jsx`
 
+### Finance Categories Hybrid Model + Categories Tab - May 3, 2026
+- **Dedicated "Categories" tab** on the Finance page (between Accounts and Savings) with full CRUD: add, rename (PUT `/api/finance/categories/{id}`), change type, delete (only when no transactions reference it). Shows transaction count per category and project association.
+- **Hybrid free-text categories on import**: The CSV import preview's per-row category cell is now a free-text input with autocomplete (HTML `<datalist>`) suggesting both existing project categories and AI-suggested names. Users can type any new category name.
+- **Backend auto-creation**: `confirm_import` calls a new `get_or_create_category` helper that performs case-insensitive lookup within the project; missing categories are created on the fly with type inferred from `ai_type` or amount sign. Backwards compatible with the legacy `ai:` prefix.
+- **Files**: `/app/backend/routes/finance.py` (new PUT endpoint), `/app/backend/routes/import_transactions.py` (helper + simplified resolution), `/app/frontend/src/pages/FinancePage.jsx` (new tab + `CategoryDialog` + free-text autocomplete in import preview).
+
 ## Upcoming Tasks (P0-P1)
 1. (P1) PWA refinement and offline capabilities
 3. (P1) Project export/import functionality

@@ -17,6 +17,42 @@ from services import get_current_user
 router = APIRouter()
 
 
+async def get_or_create_category(
+    user_id: str,
+    project_id: str,
+    name: str,
+    type_hint: str = "expense",
+) -> str:
+    """Find an existing category by case-insensitive name in the project, or create it."""
+    name = (name or "").strip()
+    if not name:
+        raise ValueError("Category name cannot be empty")
+
+    safe_name = re.escape(name)
+    existing = await db.finance_categories.find_one(
+        {
+            "user_id": user_id,
+            "project_id": project_id,
+            "name": {"$regex": f"^{safe_name}$", "$options": "i"},
+        },
+        {"_id": 0},
+    )
+    if existing:
+        return existing["id"]
+
+    new_id = str(uuid.uuid4())
+    now = datetime.now(timezone.utc).isoformat()
+    await db.finance_categories.insert_one({
+        "id": new_id,
+        "user_id": user_id,
+        "project_id": project_id,
+        "name": name,
+        "type": type_hint if type_hint in ("income", "expense", "investment") else "expense",
+        "created_at": now,
+    })
+    return new_id
+
+
 def parse_date(date_str: str, date_format: str = "%Y-%m-%d") -> str:
     """Parse date string and return ISO format YYYY-MM-DD"""
     # Common date formats to try
@@ -399,30 +435,41 @@ async def confirm_import(
         # Determine category: per-transaction override > default
         category_id = data.default_category_id
         if tx.category_override:
-            if tx.category_override.startswith("ai:"):
-                # AI-suggested category name - find or create
-                cat_name = tx.category_override[3:]
-                cat_type = "income" if tx.amount >= 0 else "expense"
-                existing = await db.finance_categories.find_one(
-                    {"name": {"$regex": f"^{cat_name}$", "$options": "i"}, "project_id": data.project_id},
-                    {"_id": 0}
+            override = tx.category_override.strip()
+            # Strip legacy "ai:" prefix from earlier versions
+            if override.lower().startswith("ai:"):
+                override = override[3:].strip()
+
+            # If the override looks like a UUID and matches an existing category, use it directly
+            looks_like_uuid = (
+                len(override) == 36
+                and override.count("-") == 4
+            )
+            resolved_directly = False
+            if looks_like_uuid:
+                existing_cat = await db.finance_categories.find_one(
+                    {"id": override, "user_id": current_user["id"]},
+                    {"_id": 0},
                 )
-                if existing:
-                    category_id = existing["id"]
+                if existing_cat:
+                    category_id = override
+                    resolved_directly = True
+
+            if not resolved_directly and override:
+                # Treat as free-text category name → find or create
+                if tx.ai_type in ("income", "expense", "investment"):
+                    type_hint = tx.ai_type
                 else:
-                    new_cat_id = str(uuid.uuid4())
-                    await db.finance_categories.insert_one({
-                        "id": new_cat_id,
-                        "user_id": current_user["id"],
-                        "project_id": data.project_id,
-                        "name": cat_name,
-                        "type": cat_type,
-                        "created_at": now,
-                        "updated_at": now
-                    })
-                    category_id = new_cat_id
-            else:
-                category_id = tx.category_override
+                    type_hint = "income" if tx.amount >= 0 else "expense"
+                try:
+                    category_id = await get_or_create_category(
+                        current_user["id"],
+                        data.project_id,
+                        override,
+                        type_hint,
+                    )
+                except ValueError:
+                    category_id = data.default_category_id
         
         tx_doc = {
             "id": tx_id,

@@ -191,6 +191,44 @@ async def seed_default_categories(project_id: str, current_user: dict = Depends(
     return CategoryListResponse(categories=categories, total=len(categories))
 
 
+@router.put("/categories/{category_id}", response_model=CategoryResponse)
+async def update_category(
+    category_id: str, data: CategoryUpdate, current_user: dict = Depends(get_current_user)
+):
+    """Update a category (rename or change its type)."""
+    category = await db.finance_categories.find_one(
+        {"id": category_id, "user_id": current_user["id"]}
+    )
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+
+    update_data = {}
+    if data.name is not None:
+        new_name = data.name.strip()
+        if not new_name:
+            raise HTTPException(status_code=400, detail="Category name cannot be empty")
+        # Prevent duplicate name within the same project (case-insensitive)
+        import re as _re
+        clash = await db.finance_categories.find_one({
+            "user_id": current_user["id"],
+            "project_id": category["project_id"],
+            "name": {"$regex": f"^{_re.escape(new_name)}$", "$options": "i"},
+            "id": {"$ne": category_id},
+        })
+        if clash:
+            raise HTTPException(status_code=400, detail="Another category with that name already exists in this project")
+        update_data["name"] = new_name
+    if data.type is not None:
+        update_data["type"] = data.type.value
+
+    if not update_data:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    await db.finance_categories.update_one({"id": category_id}, {"$set": update_data})
+    updated = await db.finance_categories.find_one({"id": category_id}, {"_id": 0})
+    return CategoryResponse(**updated)
+
+
 @router.delete("/categories/{category_id}", response_model=MessageResponse)
 async def delete_category(category_id: str, current_user: dict = Depends(get_current_user)):
     """Delete a category (only if no transactions)"""

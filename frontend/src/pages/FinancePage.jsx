@@ -62,6 +62,7 @@ export const FinancePage = () => {
   const [expectedItemDialog, setExpectedItemDialog] = useState({ open: false, data: null, periodId: null });
   const [savingsGoalDialog, setSavingsGoalDialog] = useState({ open: false, data: null });
   const [importDialog, setImportDialog] = useState({ open: false });
+  const [categoryDialog, setCategoryDialog] = useState({ open: false, data: null });
 
   const headers = { Authorization: `Bearer ${token}` };
 
@@ -239,6 +240,41 @@ export const FinancePage = () => {
       fetchCategories();
     } catch (err) {
       toast.error(err.response?.data?.detail || 'Failed to seed categories');
+    }
+  };
+
+  const handleSaveCategory = async (data) => {
+    try {
+      if (categoryDialog.data?.id) {
+        await axios.put(`${API}/finance/categories/${categoryDialog.data.id}`, {
+          name: data.name,
+          type: data.type,
+        }, { headers });
+        toast.success('Category updated');
+      } else {
+        await axios.post(`${API}/finance/categories`, {
+          project_id: data.project_id,
+          name: data.name,
+          type: data.type,
+        }, { headers });
+        toast.success('Category created');
+      }
+      setCategoryDialog({ open: false, data: null });
+      fetchCategories();
+      fetchTransactions();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to save category');
+    }
+  };
+
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Delete this category? This is only allowed when no transactions use it.')) return;
+    try {
+      await axios.delete(`${API}/finance/categories/${id}`, { headers });
+      toast.success('Category deleted');
+      fetchCategories();
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Failed to delete category');
     }
   };
 
@@ -471,9 +507,10 @@ export const FinancePage = () => {
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="transactions" data-testid="tab-transactions">Transactions</TabsTrigger>
           <TabsTrigger value="accounts" data-testid="tab-accounts">Accounts</TabsTrigger>
+          <TabsTrigger value="categories" data-testid="tab-categories">Categories</TabsTrigger>
           <TabsTrigger value="savings" data-testid="tab-savings">Savings</TabsTrigger>
           <TabsTrigger value="budget" data-testid="tab-budget">Budget</TabsTrigger>
           <TabsTrigger value="periods" data-testid="tab-periods">Expense Periods</TabsTrigger>
@@ -602,32 +639,94 @@ export const FinancePage = () => {
               })}
             </div>
           )}
+        </TabsContent>
 
-          {/* Categories Section */}
-          <div className="mt-8">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-semibold">Categories</h2>
+        {/* Categories Tab */}
+        <TabsContent value="categories" className="space-y-4">
+          <div className="flex justify-between items-center">
+            <h2 className="text-xl font-semibold">Categories</h2>
+            <div className="flex gap-2">
               {selectedProjectId !== 'all' && categories.filter(c => c.project_id === selectedProjectId).length === 0 && (
-                <Button variant="outline" onClick={() => handleSeedCategories(selectedProjectId)}>
+                <Button
+                  variant="outline"
+                  onClick={() => handleSeedCategories(selectedProjectId)}
+                  data-testid="seed-categories-btn"
+                >
                   Seed Default Categories
                 </Button>
               )}
-            </div>
-            
-            <div className="flex flex-wrap gap-2">
-              {categories.map(cat => (
-                <Badge 
-                  key={cat.id} 
-                  variant={cat.type === 'income' ? 'default' : cat.type === 'investment' ? 'secondary' : 'destructive'}
-                >
-                  {cat.name}
-                </Badge>
-              ))}
-              {categories.length === 0 && (
-                <p className="text-muted-foreground">No categories. Select a project and seed default categories.</p>
-              )}
+              <Button
+                onClick={() => setCategoryDialog({ open: true, data: null })}
+                disabled={selectedProjectId === 'all' && projects.length === 0}
+                data-testid="add-category-btn"
+              >
+                <Plus className="w-4 h-4 mr-2" /> Add Category
+              </Button>
             </div>
           </div>
+
+          {categories.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center text-muted-foreground">
+                {selectedProjectId === 'all'
+                  ? 'No categories yet. Select a project and add categories, or seed defaults.'
+                  : 'No categories for this project. Click "Seed Default Categories" or "Add Category".'}
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Project</TableHead>
+                    <TableHead className="text-right">Transactions</TableHead>
+                    <TableHead className="w-24"></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {categories.map(cat => {
+                    const project = projects.find(p => p.id === cat.project_id);
+                    const txCount = transactions.filter(t => t.category_id === cat.id).length;
+                    return (
+                      <TableRow key={cat.id} data-testid={`category-row-${cat.id}`}>
+                        <TableCell className="font-medium">{cat.name}</TableCell>
+                        <TableCell>
+                          <Badge variant={cat.type === 'income' ? 'default' : cat.type === 'investment' ? 'secondary' : 'destructive'}>
+                            {cat.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-muted-foreground">{project?.name || '—'}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{txCount}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => setCategoryDialog({ open: true, data: cat })}
+                              data-testid={`edit-category-${cat.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleDeleteCategory(cat.id)}
+                              disabled={txCount > 0}
+                              data-testid={`delete-category-${cat.id}`}
+                            >
+                              <Trash2 className={`w-4 h-4 ${txCount > 0 ? 'text-muted-foreground' : 'text-red-500'}`} />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </Card>
+          )}
         </TabsContent>
 
         {/* Budget Tab */}
@@ -1230,8 +1329,18 @@ export const FinancePage = () => {
           fetchMonthly();
           fetchRunway();
           fetchBudgetComparison();
+          fetchCategories();
         }}
         token={token}
+      />
+
+      <CategoryDialog
+        open={categoryDialog.open}
+        data={categoryDialog.data}
+        projects={projects}
+        selectedProjectId={selectedProjectId}
+        onClose={() => setCategoryDialog({ open: false, data: null })}
+        onSave={handleSaveCategory}
       />
     </div>
   );
@@ -2768,40 +2877,47 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
                       {aiAnalyzed && (
                         <>
                           <TableCell onClick={(e) => e.stopPropagation()}>
-                            <select
-                              className="text-xs rounded border border-input bg-background px-2 py-1 w-full max-w-[160px]"
-                              value={tx.category_override || ''}
-                              onChange={(e) => {
-                                const updated = [...previewData];
-                                updated[i] = { ...updated[i], category_override: e.target.value || null };
-                                setPreviewData(updated);
-                              }}
-                              data-testid={`category-select-${i}`}
-                            >
-                              <option value="">{tx.ai_category || 'Uncategorized'} (AI)</option>
-                              {projectCategories.length > 0 && (
-                                <optgroup label="Project Categories">
-                                  {projectCategories.map((cat) => (
-                                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                  ))}
-                                </optgroup>
-                              )}
-                              {(() => {
-                                const aiCats = [...new Set(previewData.map(t => t.ai_category).filter(Boolean))];
-                                const dbNames = projectCategories.map(c => c.name.toLowerCase());
-                                const uniqueAiCats = aiCats.filter(c => !dbNames.includes(c.toLowerCase()));
-                                if (uniqueAiCats.length > 0) {
-                                  return (
-                                    <optgroup label="AI Suggestions">
-                                      {uniqueAiCats.map((cat) => (
-                                        <option key={`ai-${cat}`} value={`ai:${cat}`}>{cat}</option>
-                                      ))}
-                                    </optgroup>
-                                  );
+                            {(() => {
+                              const dataListId = `category-suggestions-${i}`;
+                              const aiCats = [...new Set(previewData.map(t => t.ai_category).filter(Boolean))];
+                              const dbNames = projectCategories.map(c => c.name);
+                              // Union (case-insensitive) of DB categories + AI suggestions
+                              const seen = new Set();
+                              const suggestions = [];
+                              for (const n of [...dbNames, ...aiCats]) {
+                                const key = n.toLowerCase();
+                                if (!seen.has(key)) {
+                                  seen.add(key);
+                                  suggestions.push(n);
                                 }
-                                return null;
-                              })()}
-                            </select>
+                              }
+                              const displayValue =
+                                tx.category_override !== undefined && tx.category_override !== null
+                                  ? tx.category_override
+                                  : (tx.ai_category || '');
+                              return (
+                                <>
+                                  <input
+                                    type="text"
+                                    list={dataListId}
+                                    className="text-xs rounded border border-input bg-background px-2 py-1 w-full max-w-[180px]"
+                                    value={displayValue}
+                                    placeholder={tx.ai_category || 'Category'}
+                                    onChange={(e) => {
+                                      const updated = [...previewData];
+                                      updated[i] = { ...updated[i], category_override: e.target.value };
+                                      setPreviewData(updated);
+                                    }}
+                                    data-testid={`category-input-${i}`}
+                                  />
+                                  <datalist id={dataListId}>
+                                    {suggestions.map((cat) => (
+                                      <option key={cat} value={cat} />
+                                    ))}
+                                  </datalist>
+                                </>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell>
                             <div className="flex items-center gap-1 flex-wrap">
@@ -2943,6 +3059,106 @@ const ImportDialog = ({ open, projects, accounts, categories, selectedProjectId,
             </DialogFooter>
           </div>
         )}
+      </DialogContent>
+    </Dialog>
+  );
+};
+
+// Category Dialog Component
+const CategoryDialog = ({ open, data, projects, selectedProjectId, onClose, onSave }) => {
+  const [form, setForm] = useState({
+    project_id: '',
+    name: '',
+    type: 'expense',
+  });
+
+  useEffect(() => {
+    if (open) {
+      if (data) {
+        setForm({
+          project_id: data.project_id || '',
+          name: data.name || '',
+          type: data.type || 'expense',
+        });
+      } else {
+        setForm({
+          project_id: selectedProjectId !== 'all' ? selectedProjectId : '',
+          name: '',
+          type: 'expense',
+        });
+      }
+    }
+  }, [open, data, selectedProjectId]);
+
+  const isEdit = !!data?.id;
+
+  const handleSubmit = () => {
+    if (!form.name.trim()) {
+      toast.error('Please enter a category name');
+      return;
+    }
+    if (!isEdit && !form.project_id) {
+      toast.error('Please select a project');
+      return;
+    }
+    onSave({
+      project_id: form.project_id,
+      name: form.name.trim(),
+      type: form.type,
+    });
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent data-testid="category-dialog">
+        <DialogHeader>
+          <DialogTitle>{isEdit ? 'Edit Category' : 'New Category'}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {!isEdit && (
+            <div>
+              <Label>Project</Label>
+              <Select value={form.project_id} onValueChange={(v) => setForm({ ...form, project_id: v })}>
+                <SelectTrigger data-testid="category-project-select">
+                  <SelectValue placeholder="Select project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          <div>
+            <Label>Name</Label>
+            <Input
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              placeholder="e.g. Groceries"
+              data-testid="category-name-input"
+            />
+          </div>
+          <div>
+            <Label>Type</Label>
+            <Select value={form.type} onValueChange={(v) => setForm({ ...form, type: v })}>
+              <SelectTrigger data-testid="category-type-select">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="income">Income</SelectItem>
+                <SelectItem value="expense">Expense</SelectItem>
+                <SelectItem value="investment">Investment</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} data-testid="category-save-btn">
+            {isEdit ? 'Save' : 'Create'}
+          </Button>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
   );
