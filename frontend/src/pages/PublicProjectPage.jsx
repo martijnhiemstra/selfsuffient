@@ -463,8 +463,21 @@ export const PublicProjectPage = () => {
                 {filteredBlogEntries.map((entry) => (
                   <Card 
                     key={entry.id} 
-                    className="border border-border/50 hover:shadow-md transition-all"
+                    className="border border-border/50 hover:shadow-md transition-all overflow-hidden"
                   >
+                    {entry.images && entry.images.length > 0 && (
+                      <div
+                        className="w-full aspect-[3/1] bg-muted cursor-pointer overflow-hidden"
+                        onClick={() => viewEntry(entry, 'blog')}
+                      >
+                        <img
+                          src={getThumbUrl(entry.images[0].url)}
+                          alt={entry.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="cursor-pointer flex-1" onClick={() => viewEntry(entry, 'blog')}>
@@ -515,8 +528,21 @@ export const PublicProjectPage = () => {
                 {filteredLibraryEntries.map((entry) => (
                   <Card 
                     key={entry.id} 
-                    className="border border-border/50 hover:shadow-md transition-all"
+                    className="border border-border/50 hover:shadow-md transition-all overflow-hidden"
                   >
+                    {entry.images && entry.images.length > 0 && (
+                      <div
+                        className="w-full aspect-[3/1] bg-muted cursor-pointer overflow-hidden"
+                        onClick={() => viewEntry(entry, 'library')}
+                      >
+                        <img
+                          src={getThumbUrl(entry.images[0].url)}
+                          alt={entry.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                        />
+                      </div>
+                    )}
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <div className="cursor-pointer flex-1" onClick={() => viewEntry(entry, 'library')}>
